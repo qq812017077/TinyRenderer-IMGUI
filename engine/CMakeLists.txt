@@ -11,6 +11,7 @@ include_directories(
         include/editor
         include/inputs
         include/exceptions
+        include/tools
         3rdparty/imgui
         3rdparty/imgui/backends
 )
@@ -23,14 +24,17 @@ file(GLOB SRC
 
 if(WIN32)
         include_directories(
-                include/win
+                include/editor/win
         )
+        
         file(GLOB SRC_PLATFORM
                 ./3rdparty/imgui/backends/imgui_impl_win32.*
                 ./3rdparty/imgui/backends/imgui_impl_dx12.*
                 ./src/exceptions/*.cpp
-                ./src/win/editor/*.cpp
+                ./src/editor/win/*.cpp
+                ./src/tools/*.cpp
                 ./src/win/*.cpp
+                ./src/*.cpp
         )
 elseif(UNIX)
         file(GLOB SRC_PLATFORM

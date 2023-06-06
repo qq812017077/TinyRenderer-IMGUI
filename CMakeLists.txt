@@ -15,7 +15,7 @@ project(TinyRenderer_IMGUI)
 set(PROJECT_NAME tinyrenderer)
 
 # specify C++ standard
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 #add subdirectory
 add_subdirectory(engine)
