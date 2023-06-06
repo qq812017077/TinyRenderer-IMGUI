@@ -8,7 +8,9 @@ add_subdirectory(3rdparty)
 # specify include directories
 include_directories(
         include
+        include/editor
         include/inputs
+        include/exceptions
         3rdparty/imgui
         3rdparty/imgui/backends
 )
@@ -22,8 +24,6 @@ file(GLOB SRC
 if(WIN32)
         include_directories(
                 include/win
-                include/win/editor
-                include/win/exceptions
         )
         file(GLOB SRC_PLATFORM
                 ./3rdparty/imgui/backends/imgui_impl_win32.*
