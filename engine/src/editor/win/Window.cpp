@@ -33,6 +33,9 @@ Window::Window(int width, int height, const wchar_t * name): kbd()
     {
         throw WND_LAST_EXCEPT();
     }
+
+    pGfx = std::make_unique<Graphics>(hWnd);
+    
     ::ShowWindow(hWnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hWnd);
     

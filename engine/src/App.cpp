@@ -22,9 +22,12 @@ int App::Run()
 
 void App::DoFrame()
 {
-    const float t = timer.Peek();
-    //print
-    std::cout << "Time elapsed" << std::setprecision(1) << std::fixed << t  << std::endl;
+    const float c = sin(timer.Peek()) / 2.0f + 0.5f;
+    wnd.Gfx().ClearBuffer(c, c, 1.0f);
+    wnd.Gfx().EndFrame();
+    // const float t = timer.Peek();
+    // //print
+    // std::cout << "Time elapsed" << std::setprecision(1) << std::fixed << t  << std::endl;
     // while(!wnd.GetMouse().IsEmpty())
     // {
     //     const auto e = wnd.ReadMouseEvent();
@@ -55,8 +58,4 @@ void App::DoFrame()
     //         // }
     //     }
     // }
-    // const float c = sin(timer.Peek()) / 2.0f + 0.5f;
-    // wnd.Gfx().ClearBuffer(c, c, 1.0f);
-    // wnd.Gfx().DrawTestTriangle(timer.Peek());
-    // wnd.Gfx().EndFrame();
 }

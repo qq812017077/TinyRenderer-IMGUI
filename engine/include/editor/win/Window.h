@@ -4,6 +4,7 @@
 #include "Keyboard.h"
 #include "Mouse.h"
 #include <optional>
+#include "Graphics.h"
 
 class Window
 {
@@ -28,6 +29,8 @@ public:
     bool IsMiddleReleased() const noexcept { return mouse.WheelReleased(); }
     std::pair<int, int> GetMousePos() const noexcept { return mouse.GetPos(); }
 
+    //Graphics
+    Graphics& Gfx() { return *pGfx; }
     //Window 
     void SetTitle(const std::wstring& title) noexcept ;
     static std::optional<int> ProcessMessages() noexcept;
@@ -45,6 +48,7 @@ private:
     HWND hWnd;
     Keyboard kbd;
     Mouse mouse;
+    std::unique_ptr<Graphics> pGfx;
 
 private:
     static std::unordered_map<HWND, Window*> window_map;
