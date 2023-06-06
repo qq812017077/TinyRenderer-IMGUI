@@ -8,6 +8,8 @@ add_subdirectory(3rdparty)
 # specify include directories
 include_directories(
         include
+        include/exceptions
+        include/editor
         3rdparty/imgui
         3rdparty/imgui/backends
 )
@@ -15,14 +17,16 @@ include_directories(
 # set common source files
 file(GLOB SRC 
         ./3rdparty/imgui/*.h
-        ./3rdparty/imgui/*.cpp        
+        ./3rdparty/imgui/*.cpp
 )
 
 if(WIN32)
         file(GLOB SRC_PLATFORM
                 ./3rdparty/imgui/backends/imgui_impl_win32.*
                 ./3rdparty/imgui/backends/imgui_impl_dx12.*
-                ./src/win/main.cpp
+                ./src/exceptions/*.cpp
+                ./src/win/editor/*.cpp
+                ./src/win/*.cpp
         )
 elseif(UNIX)
         file(GLOB SRC_PLATFORM
