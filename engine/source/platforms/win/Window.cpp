@@ -1,8 +1,9 @@
 #include "Window.h"
+#include "WindowClass.h"
 #include <iostream>
+#include "EngineWin.h"
 
-Window::WindowClass Window::WindowClass::wndClass;
-std::unordered_map<HWND, Window*> Window::window_map{};
+WindowClass WindowClass::wndClass;
 
 #define LOG(X) std::cout << X << std::endl;
 #define BIT_IS_ZERO(val, bit) (((val) & (1 << (bit))) == 0)
@@ -19,46 +20,56 @@ Window::Window(int width, int height, const wchar_t * name): kbd()
     {
         throw WND_LAST_EXCEPT();
     }
-    this->width = width;
-    this->height = height;
+    windowInfo.width = width;
+    windowInfo.height = height;
 
-    hWnd = ::CreateWindowW(
+    windowInfo.hWnd = ::CreateWindowW(
         WindowClass::GetName(), name, WS_OVERLAPPEDWINDOW, 
         wr.left,  wr.top, width, height, 
         nullptr, nullptr, WindowClass::GetInstance(), this);
     
     // log hWnd
     // LOG("hWnd: " << hWnd);
-    if(hWnd == nullptr)
+    if(windowInfo.hWnd == nullptr)
     {
         throw WND_LAST_EXCEPT();
     }
 
-    pGfx = std::make_unique<Graphics>(hWnd);
+    pGfx = std::make_unique<Graphics>(this->windowInfo);
     
-    ::ShowWindow(hWnd, SW_SHOWDEFAULT);
-    ::UpdateWindow(hWnd);
+    ::ShowWindow(windowInfo.hWnd, SW_SHOWDEFAULT);
+    ::UpdateWindow(windowInfo.hWnd);
     
-    window_map[hWnd] = this;
     LOG("construct Window..  done");
 }
 
 Window::~Window()
 {
-    window_map.erase(hWnd);
-    ::DestroyWindow(hWnd);
+    ::DestroyWindow(windowInfo.hWnd);
 }
 
-void Window::SetTitle(const std::wstring& title) noexcept
+void Window::CloseWindow() noexcept
 {
-    if(!::SetWindowTextW(hWnd, title.c_str()))
+    LOG("Close window: " << windowInfo.hWnd);
+    ::DestroyWindow(windowInfo.hWnd);
+}
+
+void Window::SetTitle(const std::wstring& title)
+{
+    if(!::SetWindowTextW(windowInfo.hWnd, title.c_str()))
     {
         throw WND_LAST_EXCEPT();
     }
 }
 
-LRESULT Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+LRESULT Window::HandleMsg(WinMsg message) noexcept
 {
+    // unzip message
+    HWND hwnd = message.hwnd;
+    UINT msg = message.message;
+    WPARAM wParam = message.wParam;
+    LPARAM lParam = message.lParam;
+
     switch (msg)
     {
     case WM_SIZE:
@@ -96,10 +107,10 @@ LRESULT Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
     case WM_MOUSEMOVE:
         {
             int x = LOWORD(lParam);
-            int y = HIWORD(lParam);
+            int y = HIWORD(lParam); 
             
             // if mouse is in window, send move event
-            if(x >= 0 && x < width && y >= 0 && y < height)
+            if(x >= 0 && x < windowInfo.width && y >= 0 && y < windowInfo.height)
             {
                 mouse.OnMouseMove(x, y);
                 if(!mouse.IsInWindow())
@@ -171,7 +182,8 @@ std::optional<int> Window::ProcessMessages() noexcept
     {
         if(msg.message == WM_QUIT)
         {
-            return msg.wParam;
+            // convert WPARAM to int
+            return static_cast<int>(msg.wParam);
         }
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
@@ -180,69 +192,5 @@ std::optional<int> Window::ProcessMessages() noexcept
     return {};
 }
 
-void Window::CloseWindow(HWND &hwnd)
-{
-    LOG("Try to close window: " << hwnd);
-    auto it = window_map.find(hwnd);
-    if(it != window_map.end())
-    {
-        it->second->ClostWindow();
-        window_map.erase(it);
-    }else
-    {
-        LOG("CloseWindow: can't find hwnd: " << hwnd);
-    }
-}
-Window::WindowClass::WindowClass() noexcept
-    :
-    hInst(GetModuleHandle(nullptr))
-{
-    
-    LOG("construct WindowClass..");
-    WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, HandleMsgSetup, 0L, 0L, GetInstance(), nullptr, nullptr, nullptr, nullptr, wndClassName, nullptr };
-    RegisterClassExW(&wc);
-    LOG("construct WindowClass.. Done");
-}
-
-Window::WindowClass::~WindowClass()
-{
-    UnregisterClassW(wndClassName, GetInstance());
-}
 
 
-
-
-// Static methods part
-const wchar_t* Window::WindowClass::GetName() noexcept
-{
-    return wndClassName;
-}
-
-HINSTANCE Window::WindowClass::GetInstance() noexcept
-{
-    return wndClass.hInst;
-}
-
-LRESULT WINAPI Window::HandleMsgThunk(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
-{
-    Window* const pWnd = reinterpret_cast<Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-    return pWnd->HandleMsg(hwnd, msg, wParam, lParam);
-}
-
-LRESULT WINAPI Window::HandleMsgSetup(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
-{
-    if (msg == WM_NCCREATE)
-    {
-        // extract ptr to window class from creation data
-        const CREATESTRUCTW* const pCreate = reinterpret_cast<CREATESTRUCTW*>(lParam);
-        Window* const pWnd = static_cast<Window*>(pCreate->lpCreateParams);
-        // set WinAPI-managed user data to store ptr to window class
-        SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
-        // set message proc to normal (non-setup) handler now that setup is finished
-        SetWindowLongPtr(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&Window::HandleMsgThunk));
-        // forward message to window instance handler
-        return pWnd->HandleMsg(hwnd, msg, wParam, lParam);
-    }
-
-    return DefWindowProcW(hwnd, msg, wParam, lParam);
-}

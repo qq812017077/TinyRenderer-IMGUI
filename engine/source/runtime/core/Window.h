@@ -1,9 +1,10 @@
-#include "EngineWin.h"
+#pragma once
 #include <unordered_map>
 #include "WindowException.h"
 #include "Keyboard.h"
 #include "Mouse.h"
 #include <optional>
+#include "WindowInfo.h"
 #include "Graphics.h"
 
 class Window
@@ -13,11 +14,14 @@ public:
     ~Window();
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
+
+    WindowInfo GetWindowInfo() const noexcept { return windowInfo; }
+
     //Keyboard events
     Keyboard::KeyEvent ReadKeyEvent() { return kbd.ReadKey(); }
     bool IsKeyPressed(unsigned char keycode) const noexcept { return kbd.KeyPressed(keycode); }
     bool IsKeyReleased(unsigned char keycode) const noexcept { return kbd.KeyReleased(keycode); }
-
+    
     //Mouse events
     Mouse::MouseEvent ReadMouseEvent() { return mouse.Read();}
     Mouse& GetMouse() { return mouse;}
@@ -32,45 +36,19 @@ public:
     //Graphics
     Graphics& Gfx() { return *pGfx; }
     //Window 
-    void SetTitle(const std::wstring& title) noexcept ;
+    void SetTitle(const std::wstring& title);
     static std::optional<int> ProcessMessages() noexcept;
-    static void CloseWindow(HWND & hwnd);
-    static int GetWindowCount() noexcept
-    {
-        return window_map.size();
-    }
-
+    // static void CloseWindow(WindowInfo & window);
+    
+    LRESULT HandleMsg(WinMsg message) noexcept;
 private:
-    LRESULT HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
-    void ClostWindow() noexcept { ::DestroyWindow(hWnd); }
-    int width;
-    int height;
-    HWND hWnd;
+    void CloseWindow() noexcept;
+    WindowInfo windowInfo;
     Keyboard kbd;
     Mouse mouse;
     std::unique_ptr<Graphics> pGfx;
-
 private:
-    static std::unordered_map<HWND, Window*> window_map;
-    static LRESULT WINAPI HandleMsgSetup(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
-    static LRESULT WINAPI HandleMsgThunk(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
     
-    // singloton
-    class WindowClass
-    {
-    public:
-        static const wchar_t* GetName() noexcept;
-        static HINSTANCE GetInstance() noexcept;
-    private:
-        WindowClass() noexcept;
-        ~WindowClass();
-        WindowClass(const WindowClass&) = delete;
-        WindowClass& operator=(const WindowClass&) = delete;
-        HINSTANCE hInst;
-
-        static constexpr const wchar_t* wndClassName = L"Engine Window";
-        static WindowClass wndClass;
-    };
 };
 
 // error exception macro

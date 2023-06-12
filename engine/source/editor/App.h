@@ -11,9 +11,7 @@ public:
 private:
     void DoFrame();
 private:
-#ifdef _WIN32
     Window wnd;
-#endif
     Timer timer;
 };
 

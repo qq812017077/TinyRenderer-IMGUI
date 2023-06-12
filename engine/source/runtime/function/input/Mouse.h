@@ -19,9 +19,7 @@ enum class MouseState
 
 class Mouse
 {
-#ifdef _WIN32
-    friend class Window;
-#endif
+friend class Window;
 
 public:
     class MouseEvent

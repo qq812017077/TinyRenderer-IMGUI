@@ -1,9 +1,6 @@
 #include "App.h"
 #include <iomanip>
-App::App():
-#ifdef _WIN32
-    wnd(1280, 720, L"TinyRenderer")
-#endif
+App::App(): wnd(1280, 720, L"TinyRenderer")
 {
 }
 

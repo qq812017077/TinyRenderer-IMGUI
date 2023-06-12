@@ -1,8 +1,6 @@
 #include "Graphics.h"
 
-#pragma comment(lib, "d3d11.lib")
-
-Graphics::Graphics(HWND hWnd)
+Graphics::Graphics(WindowInfo &wnd)
 {
     DXGI_SWAP_CHAIN_DESC sd = {};
     sd.BufferDesc.Width = 0u;
@@ -16,7 +14,7 @@ Graphics::Graphics(HWND hWnd)
     sd.SampleDesc.Quality = 0u;
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     sd.BufferCount = 1u;
-    sd.OutputWindow = hWnd;
+    sd.OutputWindow = wnd.hWnd;
     sd.Windowed = TRUE;
     sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
     sd.Flags = 0u;
@@ -31,41 +29,41 @@ Graphics::Graphics(HWND hWnd)
         0u,                         // default feature level array size
         D3D11_SDK_VERSION,          // SDK version
         &sd,                        // swap chain description
-        &pSwap,                     // swap chain
-        &pDevice,                   // device
+        &info.pSwap,                     // swap chain
+        &info.pDevice,                   // device
         nullptr,                    // supported feature level
-        &pContext                   // device context
+        &info.pContext                   // device context
     );
 
     ID3D11Buffer *pBackBuffer = nullptr;
-    pSwap->GetBuffer(0u, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
-    pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pTarget);
+    info.pSwap->GetBuffer(0u, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
+    info.pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &info.pTarget);
 }
 
 Graphics::~Graphics()
 {
-    if (pTarget)
+    if (info.pTarget)
     {
-        pTarget->Release();
+        info.pTarget->Release();
     }
-    if (pSwap)
+    if (info.pSwap)
     {
-        pSwap->Release();
+        info.pSwap->Release();
     }
-    if (pContext)
+    if (info.pContext)
     {
-        pContext->Release();
+        info.pContext->Release();
     }
-    if (pDevice)
+    if (info.pDevice)
     {
-        pDevice->Release();
+        info.pDevice->Release();
     }
 }
 
 void Graphics::EndFrame()
 {
     HRESULT hr;
-    if (FAILED(hr = pSwap->Present(1u, 0u)))
+    if (FAILED(hr = info.pSwap->Present(1u, 0u)))
     {
         //if (hr == DXGI_ERROR_DEVICE_REMOVED)
         //{
@@ -81,5 +79,5 @@ void Graphics::EndFrame()
 void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 {
     const float color[] = { red, green, blue, 1.0f };
-    pContext->ClearRenderTargetView(pTarget, color);
+    info.pContext->ClearRenderTargetView(info.pTarget, color);
 }

@@ -11,9 +11,8 @@ enum class KeyState
 class Keyboard
 {
 // if is Windows 
-#ifdef _WIN32
-    friend class Window;
-#endif
+friend class Window;
+
 public:
     class KeyEvent
     {

@@ -1,8 +1,8 @@
 #pragma once
+
 #include "EngineException.h"
 #include "EngineWin.h"
 
-#ifdef _WIN32
 class WindowException : public EngineException
 {
 public:
@@ -15,4 +15,3 @@ public:
 private:
     HRESULT hr;
 };
-#endif
