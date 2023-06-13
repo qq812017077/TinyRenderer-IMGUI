@@ -2,6 +2,7 @@
 #include "Window.h"
 #include "Timer.h"
 
+
 class App
 {
 public:
@@ -11,7 +12,8 @@ public:
 private:
     void DoFrame();
 private:
-    Window wnd;
+    // wnd pointer
+    std::unique_ptr<Window> pWnd;
     Timer timer;
 };
 

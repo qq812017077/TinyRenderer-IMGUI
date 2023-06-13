@@ -1,35 +1,37 @@
-#include "Graphics.h"
+#include "DirectXGraphics.h"
 #include "Exceptions.h"
+#include <iostream>
+
+#define LOG(X) std::cout << X << std::endl;
 // add ComPtr
 namespace wrl = Microsoft::WRL;
-
-
-
 HRESULT hr;
 
-Graphics::Graphics(WindowInfo &wnd)
+DirectXGraphics::DirectXGraphics(HWND &hwnd):
+    hWnd(hwnd)
 {
-    CreateDevice(wnd, graphicsInfo);
-    CreateRenderTarget(graphicsInfo);
+    LOG("Directx Graphics  constructor begin")
+    CreateDevice();
+    CreateRenderTarget();
+    LOG("   Directx Graphics  constructor end")
 }
 
-Graphics::~Graphics()
+DirectXGraphics::~DirectXGraphics()
 {
-    ClearupDevice(graphicsInfo);
+    ClearupDevice();
 }
 
-void Graphics::EndFrame()
+void DirectXGraphics::EndFrame()
 {
 #ifndef NDEBUG
-    auto &infoManager = graphicsInfo.infoManager;
     infoManager.Set();
 #endif
     HRESULT hr;
-    if (FAILED(hr = graphicsInfo.pSwap->Present(1u, 0u)))
+    if (FAILED(hr = pSwap->Present(1u, 0u)))
     {
         if (hr == DXGI_ERROR_DEVICE_REMOVED)
         {
-            throw GFX_DEVICE_REMOVED_EXCEPT(graphicsInfo.pDevice->GetDeviceRemovedReason());
+            throw GFX_DEVICE_REMOVED_EXCEPT(pDevice->GetDeviceRemovedReason());
         }
         else
         {
@@ -38,14 +40,25 @@ void Graphics::EndFrame()
     }
 }
 
-void Graphics::ClearBuffer(float red, float green, float blue) noexcept
+void DirectXGraphics::ClearBuffer(float red, float green, float blue) noexcept
 {
     const float color[] = { red, green, blue, 1.0f };
-    graphicsInfo.pContext->ClearRenderTargetView(graphicsInfo.pTarget.Get(), color);
+    pContext->ClearRenderTargetView(pTarget.Get(), color);
 }
 
-void Graphics::CreateDevice(WindowInfo &wnd, GraphicsInfo &graphicsInfo)
+void DirectXGraphics::DrawTestTriangle()
 {
+    // pContext->Draw(3u, 0u);
+    // pContext->CreateBuffer();
+    namespace wrl = Microsoft::WRL;
+    wrl::ComPtr<ID3D11Buffer> pVertexBuffer;
+    D3D11_BUFFER_DESC bd = {};
+    
+}
+
+void DirectXGraphics::CreateDevice() 
+{
+    LOG("CreateDevice begin")
     DXGI_SWAP_CHAIN_DESC sd = {};
     ZeroMemory(&sd, sizeof(sd));
     sd.BufferCount = 2u;
@@ -59,7 +72,7 @@ void Graphics::CreateDevice(WindowInfo &wnd, GraphicsInfo &graphicsInfo)
 
     sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    sd.OutputWindow = wnd.hWnd;
+    sd.OutputWindow = hWnd;
     sd.SampleDesc.Count = 1u;
     sd.SampleDesc.Quality = 0u; // (HWND)1234567;
     sd.Windowed = TRUE;
@@ -68,7 +81,7 @@ void Graphics::CreateDevice(WindowInfo &wnd, GraphicsInfo &graphicsInfo)
 #ifndef NDEBUG
     sd.Flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
-    auto &infoManager = graphicsInfo.infoManager;
+
     GFX_THROW_INFO(
         D3D11CreateDeviceAndSwapChain(
         nullptr,                    // default adapter
@@ -79,27 +92,28 @@ void Graphics::CreateDevice(WindowInfo &wnd, GraphicsInfo &graphicsInfo)
         0u,                         // default feature level array size
         D3D11_SDK_VERSION,          // SDK version
         &sd,                        // swap chain description
-        &graphicsInfo.pSwap,                     // swap chain
-        &graphicsInfo.pDevice,                   // device
+        &pSwap,                     // swap chain
+        &pDevice,                   // device
         nullptr,                    // supported feature level
-        &graphicsInfo.pContext                   // device context
+        &pContext                   // device context
     ));
-}
 
-void Graphics::CreateRenderTarget(GraphicsInfo &info)
+    LOG("   CreateDevice end")
+}
+void DirectXGraphics::CreateRenderTarget()
 {
-    auto &infoManager = info.infoManager;
+    LOG("CreateRenderTarget begin")
     wrl::ComPtr<ID3D11Resource> pBackBuffer = nullptr;
-    GFX_THROW_INFO(info.pSwap->GetBuffer(0u, __uuidof(ID3D11Texture2D), &pBackBuffer));
-    GFX_THROW_INFO(info.pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &info.pTarget));
+    GFX_THROW_INFO(pSwap->GetBuffer(0u, __uuidof(ID3D11Texture2D), &pBackBuffer));
+    GFX_THROW_INFO(pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &pTarget));
+    LOG("   CreateRenderTarget end")
+}
+void DirectXGraphics::ClearupDevice()
+{
+    
 }
 
-void Graphics::ClearupDevice(GraphicsInfo &info)
+void DirectXGraphics::ClearupRenderTarget()
 {
-    ClearupRenderTarget(info);
-}
-
-void Graphics::ClearupRenderTarget(GraphicsInfo &info)
-{
-
+    
 }

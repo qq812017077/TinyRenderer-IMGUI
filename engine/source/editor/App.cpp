@@ -1,7 +1,17 @@
 #include "App.h"
 #include <iomanip>
-App::App(): wnd(1280, 720, L"TinyRenderer")
+#ifdef _WIN32
+#include "Win32Window.h"
+#elif __linux__
+#endif
+App::App()
 {
+// if win32 , use win32 window
+#ifdef _WIN32
+    pWnd = std::make_unique<Win32Window>(1280, 720, L"TinyRenderer");
+#elif __linux__
+    pWnd = std::make_unique<LinuxWindow>(1280, 720, L"TinyRenderer");
+#endif
 }
 
 int App::Run()
@@ -20,8 +30,8 @@ int App::Run()
 void App::DoFrame()
 {
     const float c = sin(timer.Peek()) / 2.0f + 0.5f;
-    wnd.Gfx().ClearBuffer(c, c, 1.0f);
-    wnd.Gfx().EndFrame();
+    pWnd->Gfx()->ClearBuffer(c, c, 1.0f);
+    pWnd->Gfx()->EndFrame();
     // const float t = timer.Peek();
     // //print
     // std::cout << "Time elapsed" << std::setprecision(1) << std::fixed << t  << std::endl;

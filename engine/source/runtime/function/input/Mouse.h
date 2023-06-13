@@ -1,5 +1,6 @@
 #pragma once
 #include <queue>
+#include "platform.h"
 
 enum class MouseState
 {

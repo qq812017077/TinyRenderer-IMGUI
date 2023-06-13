@@ -1,23 +1,22 @@
 #pragma once
-#include "GraphicsInfo.h"
-#include "WindowInfo.h"
 
 class Graphics
 {
+protected:
+    Graphics();
+
+    virtual void CreateDevice() = 0;
+    virtual void CreateRenderTarget() = 0;
+    virtual void ClearupDevice() = 0;
+    virtual void ClearupRenderTarget() = 0;
+
 public:
-    Graphics(WindowInfo &wnd);
     Graphics(const Graphics&) = delete;
     Graphics& operator=(const Graphics&) = delete;
     ~Graphics();
-    void EndFrame();
-    void ClearBuffer(float red, float green, float blue) noexcept;
+    virtual void EndFrame() = 0;
+    virtual void ClearBuffer(float red, float green, float blue) noexcept = 0;
 
-private:
-    GraphicsInfo graphicsInfo;
-
-    static void CreateDevice(WindowInfo &wndInfo, GraphicsInfo &graphicsInfo);
-    static void CreateRenderTarget(GraphicsInfo &info);
-    static void ClearupDevice(GraphicsInfo &info);
-    static void ClearupRenderTarget(GraphicsInfo &info);
+    virtual void DrawTestTriangle() = 0;
+    
 };
-
