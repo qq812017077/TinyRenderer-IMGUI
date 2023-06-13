@@ -2,8 +2,11 @@
 #include "WindowClass.h"
 #include <iostream>
 #include "EngineWin.h"
+#include "Exceptions.h"
 
 WindowClass WindowClass::wndClass;
+
+// error exception macro
 
 #define LOG(X) std::cout << X << std::endl;
 #define BIT_IS_ZERO(val, bit) (((val) & (1 << (bit))) == 0)
@@ -28,8 +31,6 @@ Window::Window(int width, int height, const wchar_t * name): kbd()
         wr.left,  wr.top, width, height, 
         nullptr, nullptr, WindowClass::GetInstance(), this);
     
-    // log hWnd
-    // LOG("hWnd: " << hWnd);
     if(windowInfo.hWnd == nullptr)
     {
         throw WND_LAST_EXCEPT();

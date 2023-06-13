@@ -10,6 +10,8 @@ include_directories(
         ${SOURCE_DIR}/editor
         ${SOURCE_DIR}/platforms
         ${SOURCE_DIR}/runtime/function/input
+        ${SOURCE_DIR}/runtime/function/renderer
+        ${SOURCE_DIR}/runtime/function/ui
         ${SOURCE_DIR}/runtime/core
         ${THIRD_PARTY_DIR}/imgui
         ${THIRD_PARTY_DIR}/imgui/backends
@@ -19,6 +21,7 @@ include_directories(
 if(WIN32)
         include_directories(
                 ${SOURCE_DIR}/platforms/win
+                ${SOURCE_DIR}/platforms/win/directX
         )
 elseif(UNIX)
         include_directories(

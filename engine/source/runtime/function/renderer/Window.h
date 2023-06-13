@@ -1,11 +1,13 @@
 #pragma once
+#include <iostream>
 #include <unordered_map>
-#include "WindowException.h"
+#include <optional>
+
+#include "Graphics.h"
+
+#include "WindowInfo.h"
 #include "Keyboard.h"
 #include "Mouse.h"
-#include <optional>
-#include "WindowInfo.h"
-#include "Graphics.h"
 
 class Window
 {
@@ -16,7 +18,7 @@ public:
     Window& operator=(const Window&) = delete;
 
     WindowInfo GetWindowInfo() const noexcept { return windowInfo; }
-
+    
     //Keyboard events
     Keyboard::KeyEvent ReadKeyEvent() { return kbd.ReadKey(); }
     bool IsKeyPressed(unsigned char keycode) const noexcept { return kbd.KeyPressed(keycode); }
@@ -50,7 +52,3 @@ private:
 private:
     
 };
-
-// error exception macro
-#define WND_EXCEPT(hr) WindowException(__LINE__, __FILE__, hr)
-#define WND_LAST_EXCEPT() WindowException(__LINE__, __FILE__, GetLastError())
