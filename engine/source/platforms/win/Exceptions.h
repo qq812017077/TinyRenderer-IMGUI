@@ -25,26 +25,36 @@ class GraphicsException : public EngineException
             HRESULT hr;
             std::string info;
     };
-    class DeviceRemovedException : public GraphicsException
-    {
-        using GraphicsException::GraphicsException;
-        public:
-            const char* GetType() const noexcept override;
-    };
-
-    class WindowException : public EngineException
+class DeviceRemovedException : public GraphicsException
 {
-public:
-    WindowException(int line, const char* file, HRESULT hr) noexcept;
-    const char* what() const noexcept override;
-    virtual const char* GetType() const noexcept override;
-    static std::string TranslateErrorCode(HRESULT hr) noexcept;
-    HRESULT GetErrorCode() const noexcept;
-    std::string GetErrorString() const noexcept;
-private:
-    HRESULT hr;
+    using GraphicsException::GraphicsException;
+    public:
+        const char* GetType() const noexcept override;
 };
 
+class WindowException : public EngineException
+{
+public:
+WindowException(int line, const char* file, HRESULT hr) noexcept;
+const char* what() const noexcept override;
+virtual const char* GetType() const noexcept override;
+static std::string TranslateErrorCode(HRESULT hr) noexcept;
+HRESULT GetErrorCode() const noexcept;
+std::string GetErrorString() const noexcept;
+private:
+HRESULT hr;
+};
+
+class InfoException : public EngineException
+{
+public:
+    InfoException(int line, const char* file, std::vector<std::string> infoMsgs) noexcept;
+    const char* what() const noexcept override;
+    virtual const char* GetType() const noexcept override;
+    std::string GetErrorInfo() const noexcept;
+private:
+    std::string info;
+};
 
 #define GFX_EXCEPT_NOINFO(hr) GraphicsException( __LINE__,__FILE__,(hr) )
 #define GFX_THROW_NOINFO(hrcall) if( FAILED( hr = (hrcall) ) ) throw GraphicsException(__LINE__,__FILE__,hr)
@@ -53,6 +63,7 @@ private:
 #define GFX_EXCEPT(hr) GraphicsException( __LINE__,__FILE__,(hr),infoManager.GetMessages() )
 #define GFX_THROW_INFO(hrcall) infoManager.Set(); if( FAILED( hr = (hrcall) ) ) throw GFX_EXCEPT(hr)
 #define GFX_DEVICE_REMOVED_EXCEPT(hr) DeviceRemovedException( __LINE__,__FILE__,(hr),infoManager.GetMessages() )
+#define GFX_THROW_INFO_ONLY(call) infoManager.Set(); (call); {auto v = infoManager.GetMessages(); if(!v.empty()){throw InfoException(__LINE__,__FILE__,std::move(v));}}
 #else
 #define GFX_EXCEPT(hr) GraphicsException( __LINE__,__FILE__,(hr) )
 #define GFX_THROW_INFO(hrcall) GFX_THROW_NOINFO(hrcall)

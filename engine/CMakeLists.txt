@@ -13,6 +13,7 @@ set(CMAKE_INSTALL_PREFIX "${PROJECT_ROOT_DIR}/bin")
 set(BINARY_ROOT_DIR "${CMAKE_INSTALL_PREFIX}/")
 set(ENGINE_ROOT_DIR "${PROJECT_ROOT_DIR}/engine")
 set(THIRD_PARTY_DIR "${ENGINE_ROOT_DIR}/3rdparty")
+set(SHADER_DIR "${ENGINE_ROOT_DIR}/shaders")
 
 message(STATUS "Configuring project...")
 message(STATUS "CMAKE_VERSION: ${CMAKE_VERSION}")
@@ -21,6 +22,7 @@ message(STATUS "CMAKE_GENERATOR_PLATFORM: ${CMAKE_GENERATOR_PLATFORM}")
 message(STATUS " ")
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
 message(STATUS "CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # specify project name
 set(PROJECT_NAME tinyrenderer)
@@ -30,3 +32,4 @@ set(CMAKE_CXX_STANDARD 17)
 #add subdirectory
 add_subdirectory(3rdparty)
 add_subdirectory(source)
+# add_subdirectory(shader)

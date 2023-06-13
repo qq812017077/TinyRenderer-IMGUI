@@ -1,5 +1,6 @@
 #include "App.h"
 #include <iomanip>
+#include "EngineException.h"
 #ifdef _WIN32
 #include "Win32Window.h"
 #elif __linux__
@@ -16,13 +17,28 @@ App::App()
 
 int App::Run()
 {
-    while (true)
+    try
     {
-        if (const auto ecode = Window::ProcessMessages())
+        while (true)
         {
-            return *ecode;
+            if (const auto ecode = Window::ProcessMessages())
+            {
+                return *ecode;
+            }
+            DoFrame();
         }
-        DoFrame();
+    }
+    catch(const EngineException& e)
+    {
+        MessageBox(nullptr, e.what(), e.GetType(), MB_OK | MB_ICONEXCLAMATION);
+    }
+    catch(const std::exception& e)
+    {
+        MessageBox(nullptr, e.what(), "Standard Exception", MB_OK | MB_ICONEXCLAMATION);
+    }
+    catch(...)
+    {
+        MessageBox(nullptr, "No details available", "Unknown Exception", MB_OK | MB_ICONEXCLAMATION);
     }
     return -1;
 }
@@ -31,6 +47,7 @@ void App::DoFrame()
 {
     const float c = sin(timer.Peek()) / 2.0f + 0.5f;
     pWnd->Gfx()->ClearBuffer(c, c, 1.0f);
+    pWnd->Gfx()->DrawTestTriangle();
     pWnd->Gfx()->EndFrame();
     // const float t = timer.Peek();
     // //print
