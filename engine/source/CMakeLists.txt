@@ -8,10 +8,12 @@ set(SOURCE_DIR ${ENGINE_ROOT_DIR}/source)
 include_directories(
         ${SOURCE_DIR}/editor
         ${SOURCE_DIR}/platforms
+        ${SOURCE_DIR}/runtime/primitives
         ${SOURCE_DIR}/runtime/function/input
         ${SOURCE_DIR}/runtime/function/renderer
         ${SOURCE_DIR}/runtime/function/ui
         ${SOURCE_DIR}/runtime/core
+        ${SOURCE_DIR}/runtime/core/math
         ${THIRD_PARTY_DIR}/imgui
         ${THIRD_PARTY_DIR}/imgui/backends
 )

@@ -32,7 +32,7 @@ public:
     Graphics& Gfx() { return *pGfx; }
     //Window 
     void SetTitle(const std::wstring& title);
-    static std::optional<int> ProcessMessages() noexcept;
+    std::optional<int> ProcessMessages() noexcept override;
     HWND GetHwnd() const noexcept { return hWnd; }
 protected:
     void CloseWindow() noexcept;

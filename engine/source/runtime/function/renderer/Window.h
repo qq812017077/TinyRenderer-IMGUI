@@ -35,7 +35,8 @@ public:
     std::unique_ptr<Graphics>& Gfx() { return pGfx; }
     //Window 
     virtual void SetTitle(const std::wstring& title) {}
-    static std::optional<int> ProcessMessages() noexcept;
+    virtual std::optional<int> ProcessMessages() noexcept;
+    // static std::optional<int> ProcessMessages() noexcept;
 
 protected:
     void ClearKeyboard() noexcept { kbd.ClearState(); }

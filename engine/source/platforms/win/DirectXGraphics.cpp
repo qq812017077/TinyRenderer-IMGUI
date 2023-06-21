@@ -2,11 +2,17 @@
 #include "Exceptions.h"
 #include <iostream>
 #include "DXUtil.h"
+#include "HLSLShader.h"
+#include "MaterialManager.h"
 
 #define LOG(X) std::cout << X << std::endl;
 // add ComPtr
 namespace wrl = Microsoft::WRL;
 HRESULT hr;
+
+/****************************************************************************************/
+/*                                      Public Part                                     */
+/****************************************************************************************/
 
 DirectXGraphics::DirectXGraphics(HWND &hwnd):
     hWnd(hwnd)
@@ -36,7 +42,7 @@ void DirectXGraphics::EndFrame()
         }
         else
         {
-            throw GFX_EXCEPT(hr);   
+            throw GFX_EXCEPT(hr);
         }
     }
 }
@@ -47,20 +53,62 @@ void DirectXGraphics::ClearBuffer(float red, float green, float blue) noexcept
     pContext->ClearRenderTargetView(pTarget.Get(), color);
 }
 
-void DirectXGraphics::DrawTestTriangle()
+void DirectXGraphics::DrawTestTriangle(float angle)
 {
+    struct ConstantBuffer
+    {
+        struct Transform {
+            float emelement[4][4];
+        };
+        Transform rotate;
+        Transform scale;
+    };
+
     struct Vertex
     {
-        float x;
-        float y;
+        struct
+        {
+            float x;
+            float y;
+        } pos;
+        struct 
+        {
+            unsigned char r;
+            unsigned char g;
+            unsigned char b;
+            unsigned char a;
+        } color;
     };
 
     const Vertex vertices[] = {
-        {0.0f, 0.5f},
-        {0.5f, -0.5f},
-        {-0.5f, -0.5f}
-    }; 
+        { 0.0f, 0.5f, 255u, 0u, 0u, 255u },
+        { 0.5f, -0.5f, 0u, 255u, 0u, 255u },
+        { -0.5f, -0.5f, 0u, 0u, 255u, 255u },
+        { -0.3f, 0.3f, 0u, 0u, 255u, 255u},
+        { 0.3f, 0.3f, 0u, 255u, 0u, 255u },
+        { 0.0f, -0.8f, 255u, 0u, 0u, 255u },
+    };
 
+    const unsigned short indices[] = {
+        0, 1, 2,
+        0, 2, 3,
+        0, 4, 1,
+        2, 1, 5
+    };
+    const ConstantBuffer cb ={
+        {
+            std::cos(angle),    std::sin(angle),    0.0f,   0.0f,
+            -std::sin(angle),   std::cos(angle),    0.0f,   0.0f,
+            0.0f,               0.0f,               1.f,    0.0f,
+            0.0f,               0.0f,               0.0f,   1.f
+        },
+        {
+            1.f,   0.0f,    0.0f,   0.0f,
+            0.0f,   1.0f,    0.0f,   0.0f,
+            0.0f,   0.0f,    1.f,    0.0f,
+            0.0f,   0.0f,    0.0f,   1.f
+        }
+    };
     // create vertex buffer
     namespace wrl = Microsoft::WRL;
     wrl::ComPtr<ID3D11Buffer> pVertexBuffer;
@@ -76,11 +124,31 @@ void DirectXGraphics::DrawTestTriangle()
     sd.pSysMem = vertices;
     GFX_THROW_INFO(pDevice->CreateBuffer(&bd, &sd ,&pVertexBuffer));
     
+    // create index buffer
+    wrl::ComPtr<ID3D11Buffer> pIndexBuffer;
+    D3D11_BUFFER_DESC ibd = {};
+    ibd.ByteWidth = sizeof(indices);
+    ibd.Usage = D3D11_USAGE_DEFAULT;
+    ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    ibd.CPUAccessFlags = 0u;
+    ibd.MiscFlags = 0u;
+    ibd.StructureByteStride = sizeof(unsigned short);
+
+    D3D11_SUBRESOURCE_DATA isd = {};
+    isd.pSysMem = indices;
+    GFX_THROW_INFO(pDevice->CreateBuffer(&ibd, &isd, &pIndexBuffer));
+
     // bind vertex buffer to pipeline
     const UINT stride = sizeof(Vertex);
     const UINT offset = 0u;
     pContext->IASetVertexBuffers(0u, 1u, pVertexBuffer.GetAddressOf(), &stride, &offset);
+
+    // bind index buffer to pipeline
+    pContext->IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0u);
+
+    // set primitive topology
     pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    // pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
 
     // set layout
     wrl::ComPtr<ID3D11InputLayout> pInputLayout;
@@ -88,8 +156,13 @@ void DirectXGraphics::DrawTestTriangle()
         {
             "Position", 0u, DXGI_FORMAT_R32G32_FLOAT, 
             0u, 0u, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u
+        },
+        {
+            "Color", 0u, DXGI_FORMAT_R8G8B8A8_UNORM,
+            0u, 8u, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u
         }
     };
+
     // create vertex shader
     wrl::ComPtr<ID3D11VertexShader> pVertexShader;
     wrl::ComPtr<ID3DBlob> pBlob;
@@ -97,8 +170,23 @@ void DirectXGraphics::DrawTestTriangle()
     GFX_THROW_INFO(CreateShaderFromFile(L"shaders/VertexShader.cso", L"shaders/VertexShader.hlsl","main", "vs_5_0", &pBlob));
     GFX_THROW_INFO(pDevice->CreateInputLayout(led, (UINT)std::size(led), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &pInputLayout));
     GFX_THROW_INFO(pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pVertexShader));
-    
-    
+
+    // create constant buffer
+    wrl::ComPtr<ID3D11Buffer> pConstantBuffer;
+    D3D11_BUFFER_DESC cbd = {};
+    cbd.ByteWidth = sizeof(cb);
+    cbd.Usage = D3D11_USAGE_DYNAMIC;
+    cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    cbd.MiscFlags = 0u;
+    cbd.StructureByteStride = 0u;
+    D3D11_SUBRESOURCE_DATA csd = {};
+    csd.pSysMem = &cb;
+    GFX_THROW_INFO(pDevice->CreateBuffer(&cbd, &csd, &pConstantBuffer));
+
+    // bind constant buffer to vertex shader
+    pContext->VSSetConstantBuffers(0u, 1u, pConstantBuffer.GetAddressOf());   
+
     // create pixel shader
     wrl::ComPtr<ID3D11PixelShader> pPixelShader;
     GFX_THROW_INFO(CreateShaderFromFile(L"shaders/PixelShader.cso", L"shaders/PixelShader.hlsl","main", "ps_5_0", &pBlob));
@@ -122,10 +210,75 @@ void DirectXGraphics::DrawTestTriangle()
     vp.TopLeftY = 0;
     pContext->RSSetViewports(1u, &vp);
 
-
-    GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
+    // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
+    GFX_THROW_INFO_ONLY(pContext->DrawIndexed((UINT)std::size(indices), 0u, 0u));
 }
 
+/***
+ * @brief Draw all game objects
+ *  1.  Update PerFrameConstantBuffer( view matrix, projection matrix, camera position, light position, light color, light intensity)
+ *  2.  Update PerMaterialConstantBuffer(material color, material texture, material sampler)
+ *  3.  Update PerObjectConstantBuffer(world matrix)
+*/
+void DirectXGraphics::DrawAll()
+{
+    //1. update per frame constant buffer
+    UpdateCBuffer(pFrameConstantBuffer, FrameUniformBufferManager::GetFrameBuffer());
+    BindCBuffer(FrameCBufSlot, pFrameConstantBuffer);
+
+    //2. update per material constant buffer
+    for(auto & pair : MaterialManager::GetMatRendererPair())
+    {
+        auto mat = pair.first;
+        auto& renderers = pair.second;
+        LoadMaterial(*mat);
+
+        for (auto& rendererwapper : renderers)
+        {
+            auto& renderer = rendererwapper.get();
+            UpdateCBuffer(pObjectConstantBuffer, renderer.GetObjBufferData());
+            BindCBuffer(ObjectCBufSlot, pObjectConstantBuffer);
+
+            // bind vertex buffer and index buffer
+            auto & mesh = renderer.GetMesh();
+            // bind input layout
+            mat->GetVertexShader()->SetInputLayout(mesh);
+
+            // BindMesh();
+            const UINT stride = mesh.GetVertexStride();
+            const UINT offset = 0u;
+            GFX_THROW_INFO(CreateVertexBuffer(pDevice, mesh.GetVertexBufferAddress(), mesh.GetVertexBufferSize(), mesh.GetVertexStride(), &pVertexBuffer));
+            GFX_THROW_INFO(CreateIndexBuffer(pDevice, mesh.GetIndexBufferAddress(), mesh.GetIndexBufferSize(), mesh.GetIndexStride(), &pIndexBuffer));
+            
+            pContext->IASetVertexBuffers(0u, 1u, pVertexBuffer.GetAddressOf(), &stride, &offset);
+            // bind index buffer to pipeline
+            pContext->IASetIndexBuffer(pIndexBuffer.Get(), GetIndexDataFormat(mesh.GetIndexStride()), 0u);
+
+            // set primitive topology
+            pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            
+            // bind render target
+            pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr);
+
+            // configure viewport
+            D3D11_VIEWPORT vp;
+            vp.Width = 1280;
+            vp.Height = 720;
+            vp.MinDepth = 0.0f;
+            vp.MaxDepth = 1.0f;
+            vp.TopLeftX = 0;
+            vp.TopLeftY = 0;
+            pContext->RSSetViewports(1u, &vp);
+
+            // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
+            GFX_THROW_INFO_ONLY(pContext->DrawIndexed(mesh.GetIndexCount(), 0u, 0u));
+        }
+    }
+}
+
+/****************************************************************************************/
+/*                                   Protected Part                                     */
+/****************************************************************************************/
 void DirectXGraphics::CreateDevice() 
 {
     LOG("CreateDevice begin")
@@ -183,8 +336,53 @@ void DirectXGraphics::ClearupDevice()
 {
     
 }
-
 void DirectXGraphics::ClearupRenderTarget()
 {
     
+}
+
+
+std::shared_ptr<VertexShader> DirectXGraphics::CreateVertexShader(const std::string& path)
+{
+    std::shared_ptr<HLSLVertexShader> pShader(new HLSLVertexShader(*this, std::wstring(path.begin(), path.end())));
+    return pShader;
+}
+
+std::shared_ptr<PixelShader> DirectXGraphics::CreatePixelShader(const std::string& path)
+{   
+    std::shared_ptr<HLSLPixelShader> pShader(new HLSLPixelShader(*this, std::wstring(path.begin(), path.end())));
+    return pShader;
+}
+
+
+void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, UniformBuffer & bufData)
+{
+    if(bufData.bytesize() == 0)
+    {
+        LOG("bufData is empty. " <<__FILE__ << "[" << __LINE__  << "]");
+        return ;
+    }
+    if(targetBuf == nullptr)
+    {
+        GFX_THROW_INFO(CreateConstantBuffer(pDevice, bufData.GetAddress(), bufData.bytesize(), &targetBuf));
+    }else
+        pContext->UpdateSubresource(targetBuf.Get(), 0, nullptr, bufData.GetAddress(), 0, 0);
+}
+
+void DirectXGraphics::BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& targetBuf, Graphics::ECBufBindType bindType)
+{
+    if(targetBuf == nullptr)
+    {
+        LOG("targetBuf is empty." <<__FILE__ << "[" << __LINE__  << "]");
+        return ;
+    }
+    if(bindType == Graphics::ECBufBindType::ToVS)
+        pContext->VSSetConstantBuffers(slot, 1u, targetBuf.GetAddressOf());
+    else if(bindType == Graphics::ECBufBindType::ToPS)
+        pContext->PSSetConstantBuffers(slot, 1u, targetBuf.GetAddressOf());
+    else if(bindType == Graphics::ECBufBindType::ToAll)
+    {
+        pContext->VSSetConstantBuffers(slot, 1u, targetBuf.GetAddressOf());
+        pContext->PSSetConstantBuffers(slot, 1u, targetBuf.GetAddressOf());
+    }
 }

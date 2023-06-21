@@ -166,8 +166,7 @@ LRESULT Win32Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
     return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
 
-// Window Class part
-std::optional<int> Window::ProcessMessages() noexcept
+std::optional<int> Win32Window::ProcessMessages() noexcept
 {
     MSG msg;
     while( PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))

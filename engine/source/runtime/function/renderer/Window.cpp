@@ -12,3 +12,9 @@ Window::~Window()
 {
     
 }
+
+
+std::optional<int> Window::ProcessMessages() noexcept
+{
+    return {};
+}

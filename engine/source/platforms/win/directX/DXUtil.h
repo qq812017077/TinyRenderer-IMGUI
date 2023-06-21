@@ -1,12 +1,16 @@
-#include "EngineWin.h"
+#pragma once
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include <d3d11shader.h>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib,"D3DCompiler.lib")
-
-// 安全COM组件释放宏
-#define SAFE_RELEASE(p) { if ((p)) { (p)->Release(); (p) = nullptr; } }
+//#pragma comment(lib, "d3d11shader.lib")
+#include <d3d11shader.h>
+#include <vector>
+#include <wrl.h>
+#include "Mesh.h"
+#include "UniformVar.h"
 
 // ------------------------------
 // CreateShaderFromFile函数
@@ -17,50 +21,20 @@
 // [In]shaderModel      着色器模型，格式为"*s_5_0"，*可以为c,d,g,h,p,v之一
 // [Out]ppBlobOut       输出着色器二进制信息
 HRESULT CreateShaderFromFile(const WCHAR * csoFileNameInOut, const WCHAR * hlslFileName,
-    LPCSTR entryPoint, LPCSTR shaderModel, ID3DBlob ** ppBlobOut)
-{
-    if ( !csoFileNameInOut || !entryPoint || !shaderModel || !ppBlobOut )
-       return E_INVALIDARG;
-    
-    HRESULT hr = S_OK;
+    LPCSTR entryPoint, LPCSTR shaderModel, ID3DBlob ** ppBlobOut);
 
-    // 寻找是否有已经编译好的顶点着色器
-    if (csoFileNameInOut && D3DReadFileToBlob(csoFileNameInOut, ppBlobOut) == S_OK)
-    {
-        return hr;
-    }
-    else
-    {
-        DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-#ifdef _DEBUG
-        // 设置 D3DCOMPILE_DEBUG 标志用于获取着色器调试信息。该标志可以提升调试体验，
-        // 但仍然允许着色器进行优化操作
-        dwShaderFlags |= D3DCOMPILE_DEBUG;
+DXGI_FORMAT GetInputElementFormatByMask(BYTE inputParamMask, D3D_REGISTER_COMPONENT_TYPE componentType);
 
-        // 在Debug环境下禁用优化以避免出现一些不合理的情况
-        dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-        ID3DBlob* errorBlob = nullptr;
-        hr = D3DCompileFromFile(hlslFileName, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint, shaderModel,
-            dwShaderFlags, 0, ppBlobOut, &errorBlob);
-        if (FAILED(hr))
-        {
-            if (errorBlob != nullptr)
-            {
-                const char* errorMsg = reinterpret_cast<const char*>(errorBlob->GetBufferPointer());
-                OutputDebugStringA(errorMsg);
-                MessageBox(nullptr, errorMsg, "Shader Compilation Error", MB_RETRYCANCEL);
-            }
-            SAFE_RELEASE(errorBlob);
-            return hr;
-        }
+HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, std::vector<UniformVar>* pUniformVars, std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed);
 
-        // 若指定了输出文件名，则将着色器二进制信息输出
-        if (csoFileNameInOut)
-        {
-            return D3DWriteBlobToFile(*ppBlobOut, csoFileNameInOut, FALSE);
-        }
-    }
+static HRESULT 
+CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, D3D11_BIND_FLAG bind_flag, void* pData, 
+    UINT bufByteSize, UINT stride, ID3D11Buffer **ppOutputBuffer);
+HRESULT CreateConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, void* pData, UINT bufByteSize, ID3D11Buffer** ppOutputBuffer);
 
-    return hr;
-}
+HRESULT CreateVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, void* pData, UINT bufByteSize, UINT stride, ID3D11Buffer** ppOutputBuffer);
+
+HRESULT CreateIndexBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, void* pData, UINT bufByteSize, UINT stride, ID3D11Buffer** ppOutputBuffer);
+
+DXGI_FORMAT GetVertexDataFormat(VertexDataType vertexType);
+DXGI_FORMAT GetIndexDataFormat(unsigned int indexStride);
