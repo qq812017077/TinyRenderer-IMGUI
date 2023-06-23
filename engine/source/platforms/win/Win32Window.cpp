@@ -74,7 +74,15 @@ LRESULT Win32Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
     case WM_CLOSE:
         PostQuitMessage(64);
         return 0;
-
+    // Window resize
+    case WM_SIZING:
+        {
+            RECT* rect = reinterpret_cast<RECT*>(lParam);
+            width = rect->right - rect->left;
+            height = rect->bottom - rect->top;
+            pGfx->OnResize(width, height);
+            return 0;
+        }
     // Keyboard part
     case WM_KILLFOCUS:
         ClearKeyboard();

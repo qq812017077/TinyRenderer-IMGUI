@@ -2,6 +2,9 @@
 #include "Singleton.h"
 #include <vector>
 #include "EngineMath.h"
+#include <memory>
+
+class Camera;
 
 class UniformBuffer
 {
@@ -38,7 +41,9 @@ public:
     static void UpdateFrameBuffer();
     static UniformBuffer& GetFrameBuffer();
     static void ClearFrameBuffer();
+    static void BindCamera(Camera* camera);
 
 private:
     UniformBuffer frameBuffer;
+    Camera* pCurCamera = nullptr;
 };

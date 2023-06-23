@@ -16,6 +16,7 @@ public:
     GameObject(GameObject&& other) noexcept = delete;
     virtual ~GameObject();
 
+    virtual void Init();
     // Getters
     std::string GetName() const;
 

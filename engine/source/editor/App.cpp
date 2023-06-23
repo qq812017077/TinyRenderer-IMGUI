@@ -6,23 +6,36 @@
 #elif __linux__
 #endif
 
-#include "Cube.h"
 #include "Material.h"
+#include "Cube.h"
 #include "Triangle.h"
+#include "Camera.h"
 App::App()
 {
+
 // if win32 , use win32 window
 #ifdef _WIN32
     pWnd = std::make_unique<Win32Window>(1280, 720, L"TinyRenderer");
 #elif __linux__
     pWnd = std::make_unique<LinuxWindow>(1280, 720, L"TinyRenderer");
 #endif
-
-    pGameObjects.emplace_back(std::make_unique<Triangle>()); // here will use move constructor;
+    pGameObjects.emplace_back(std::make_unique<Cube>()); // here will use move constructor;
+    auto curCam = std::make_unique<Camera>();
+    curCam->SetAspect(1280.0f / 720.0f);
+    curCam->transform.SetPosition({ 0.0f, 0.0f, -3.0f });
+    curCam->transform.SetRotation({ 0.0f, 0.0f, 0.0f });
+    FrameUniformBufferManager::BindCamera(curCam.get());
+    pGameObjects.emplace_back(std::move(curCam));
+    
 }
 
 int App::Run()
 {
+    for (auto& pGo : pGameObjects)
+    {
+        pGo->Init();
+    }
+    
     try
     {
         while (true)

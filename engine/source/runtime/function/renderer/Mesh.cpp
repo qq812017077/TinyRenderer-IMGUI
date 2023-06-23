@@ -110,7 +110,7 @@ bool Mesh::HasVertexDataType(VertexDataType vertexType)
 
 unsigned int Mesh::GetVertexCount()
 {
-    return vertices.size();
+    return static_cast<unsigned int>(vertices.size());
 }
 
 void * Mesh::GetVertexBufferAddress()
@@ -120,7 +120,7 @@ void * Mesh::GetVertexBufferAddress()
 
 unsigned int Mesh::GetVertexBufferSize()
 {
-    return vertices.size() * sizeof(Vertex);
+    return static_cast<unsigned int>(vertices.size() * sizeof(Vertex));
 }
 
 void * Mesh::GetIndexBufferAddress()
@@ -130,7 +130,7 @@ void * Mesh::GetIndexBufferAddress()
 
 unsigned int Mesh::GetIndexBufferSize()
 {
-    return indices.size() * sizeof(INDICE_TYPE);
+    return static_cast<unsigned int>(indices.size() * sizeof(INDICE_TYPE));
 }
 
 unsigned int Mesh::GetVertexStride()
@@ -145,7 +145,7 @@ unsigned int Mesh::GetIndexStride()
 
 unsigned int Mesh::GetIndexCount()
 {
-    return indices.size();
+    return static_cast<unsigned int>(indices.size());
 }
 VertexDataType Mesh::GetVertexDataType(const char* semanticName)
 {

@@ -1,6 +1,7 @@
 cbuffer FrameCBuf : register(b0)
 {
-	float3 cameraPos;
+	matrix g_View;
+	matrix g_Proj;
 };
 
 cbuffer MaterialCBuf : register(b1)

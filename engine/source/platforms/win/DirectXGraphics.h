@@ -30,6 +30,9 @@ public:
     void ClearBuffer(float red, float green, float blue) noexcept override;
     void DrawTestTriangle(float angle=0.0f) override;
     void DrawAll() override;
+
+    //Events
+    void OnResize(int width, int height) override;
 protected:
     void CreateDevice() override;
     void CreateRenderTarget() override;

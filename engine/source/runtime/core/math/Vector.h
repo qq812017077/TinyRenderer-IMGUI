@@ -1,6 +1,5 @@
-//Vecotr3.h  
-#pragma once  
-  
+#pragma once 
+struct Matrix3x3;
 extern const double uZero;  
   
 struct Vector3  
@@ -12,18 +11,28 @@ struct Vector3
     ~Vector3();
     void operator=(const Vector3 &v);  
     Vector3 operator+(const Vector3 &v);  
-    Vector3 operator-(const Vector3 &v);  
+
+    
+    Vector3 operator-();//overload operator - , make it possible to use -Vector3
+    Vector3 operator-(const Vector3 &v);
+    
     Vector3 operator/(const Vector3 &v);  
-    Vector3 operator*(const Vector3 &v);  
+    Vector3 operator*(const Vector3 &v);
     Vector3 operator+(float f);  
     Vector3 operator-(float f);  
     Vector3 operator/(float f);  
-    Vector3 operator*(float f);  
+    Vector3 operator*(float f);
+    float& operator[](int index);
     float dot(const Vector3 &v);  
     float length();
     void normalize();
     Vector3 crossProduct(const Vector3 &v);  
     void printVec3();  
+
+    static Vector3 Zero() { return Vector3(0.0f, 0.0f, 0.0f); }
+    static Vector3 Forward() { return Vector3(0.0f, 0.0f, 1.0f); }
+    static Vector3 Up() { return Vector3(0.0f, 1.0f, 0.0f); }
+    static Vector3 Right() { return Vector3(1.0f, 0.0f, 0.0f); }
 };
 
 struct Vector4

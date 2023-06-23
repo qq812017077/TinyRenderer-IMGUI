@@ -107,7 +107,7 @@ void HLSLVertexShader::SetInputLayout(Mesh & mesh)
     auto & infoManager = directXGfx.infoManager;
     GFX_THROW_INFO(directXGfx.pDevice->CreateInputLayout(
             inputLayoutDescs.data(),
-            inputLayoutDescs.size(),
+            static_cast<UINT>(inputLayoutDescs.size()),
             pBlob->GetBufferPointer(), 
             pBlob->GetBufferSize(),
             &pInputLayout));
@@ -125,7 +125,7 @@ void HLSLVertexShader::SetInputLayout(Mesh & mesh)
 void HLSLVertexShader::SetInputElementDescription(Mesh & mesh)
 {
     //we need set AlignedByteOffset and Format for each element based on mesh's vertex type
-    for(int i = 0, imax = inputLayoutDescs.size(); i < imax; i++)
+    for(int i = 0, imax = static_cast<int>(inputLayoutDescs.size()); i < imax; i++)
     {
         inputLayoutDescs[i].Format = GetVertexDataFormat(Mesh::GetVertexDataType(inputLayoutDescs[i].SemanticName));
         inputLayoutDescs[i].AlignedByteOffset = Mesh::GetAlignedByteOffset(inputLayoutDescs[i].SemanticName, inputLayoutDescs[i].SemanticIndex);

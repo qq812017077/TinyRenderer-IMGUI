@@ -1,15 +1,12 @@
 #include "UniformBuffer.h"
-
-
-
-
+#include "Camera.h"
 
 /****************************************************************************************/
 /*                                      UniformBuffer                                    */
 /****************************************************************************************/
 unsigned int UniformBuffer::bytesize()
 {
-    return buffers.size() * sizeof(float);
+    return static_cast<unsigned int>(buffers.size() * sizeof(float));
 }
 
 void * UniformBuffer::GetAddress()
@@ -29,10 +26,9 @@ void UniformBuffer::Clear()
 
 void UniformBuffer::AddData(Matrix4x4 data)
 {
-    float* p = (float*)data.GetData();
     for (unsigned int i = 0; i < 16; i++)
     {
-        buffers.push_back(p[i]);
+        buffers.push_back(data[i/4][i%4]);
     }
 }
 
@@ -79,8 +75,15 @@ UniformBuffer& UniformBuffer::operator=(UniformBuffer& other) noexcept
 
 void FrameUniformBufferManager::UpdateFrameBuffer()
 {
-
+    auto &manager = FrameUniformBufferManager::Get();
+    if(manager.pCurCamera == nullptr)
+    {
+        throw std::exception("No camera is binded to FrameUniformBufferManager");
+    }
+    manager.frameBuffer.AddData(manager.pCurCamera->GetViewMatrix());
+    manager.frameBuffer.AddData(manager.pCurCamera->GetProjectionMatrix());
 }
+
 UniformBuffer& FrameUniformBufferManager::GetFrameBuffer()
 {
     return FrameUniformBufferManager::Get().frameBuffer;
@@ -89,4 +92,9 @@ UniformBuffer& FrameUniformBufferManager::GetFrameBuffer()
 void FrameUniformBufferManager::ClearFrameBuffer()
 {
     FrameUniformBufferManager::Get().frameBuffer.Clear();
+}
+
+void FrameUniformBufferManager::BindCamera(Camera* camera)
+{
+    FrameUniformBufferManager::Get().pCurCamera = camera;
 }

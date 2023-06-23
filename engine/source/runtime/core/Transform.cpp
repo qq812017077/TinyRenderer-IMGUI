@@ -53,10 +53,25 @@ Vector3 Transform::GetScale() const
     return scale;
 }
 
+Vector3 Transform::forward() const
+{
+    return Matrix3x3::Rotation(rotation) * Vector3::Forward();
+}
+
+Vector3 Transform::right() const
+{
+    return Matrix3x3::Rotation(rotation) * Vector3::Right();
+}
+
+Vector3 Transform::up() const
+{
+    return Matrix3x3::Rotation(rotation) * Vector3::Up();
+}
+
 Matrix4x4 Transform::GetWorldMatrix() const
 {
     Matrix4x4 translation = Matrix4x4::Translation(position);
     Matrix4x4 rotation = Matrix4x4::Rotation(this->rotation);
     Matrix4x4 scale = Matrix4x4::Scale(this->scale);
-    return scale * rotation * translation;
+    return  translation * rotation * scale;
 }

@@ -1,5 +1,6 @@
 //Vector3.cpp 
 #include "Vector.h"
+#include "Matrix.h"
 #include<iostream>
   
 const double uZero = 1e-6;  
@@ -27,7 +28,12 @@ Vector3 Vector3::operator+(const Vector3 &v)
 {  
     return Vector3(x+v.x, y+v.y, z+v.z);  
 }  
-  
+
+Vector3 Vector3::operator-()  
+{  
+    return Vector3(-x, -y, -z);  
+}
+
 Vector3 Vector3::operator-(const Vector3 &v)  
 {  
     return Vector3(x-v.x, y-v.y, z-v.z);  
@@ -46,8 +52,9 @@ Vector3 Vector3::operator/(const Vector3 &v)
 Vector3 Vector3::operator*(const Vector3 &v)  
 {  
     return Vector3(x*v.x, y*v.y, z*v.z);  
-}  
-  
+}
+
+
 Vector3 Vector3::operator+(float f)  
 {  
     return Vector3(x+f, y+f, z+f);  
@@ -72,7 +79,12 @@ Vector3 Vector3::operator*(float f)
 {  
     return Vector3(x*f, y*f, z*f);  
 }  
-  
+
+float& Vector3::operator[](int index)
+{
+    return (&x)[index];
+}
+
 float Vector3::dot(const Vector3 &v)  
 {  
     return x*v.x + y*v.y + z*v.z;  
@@ -182,6 +194,7 @@ Vector4 Vector4::operator*(float f)
 {
     return Vector4(x*f, y*f, z*f, w*f);
 }
+
 
 float& Vector4::operator[](int index)
 {

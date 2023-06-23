@@ -29,6 +29,11 @@ GameObject::~GameObject()
     std::cout << "GameObject[" << name << "] destroyed at " << this << std::endl;
 }
 
+void GameObject::Init()
+{
+    
+}
+
 // Getters
 // Transform& GameObject::GetTransform()
 // {

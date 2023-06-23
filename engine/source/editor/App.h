@@ -20,6 +20,6 @@ private:
     // wnd pointer
     std::unique_ptr<Window> pWnd;
     Timer timer;
-
+    
     std::vector<std::unique_ptr<GameObject>> pGameObjects;
 };

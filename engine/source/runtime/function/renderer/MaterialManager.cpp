@@ -66,7 +66,7 @@ bool MaterialManager::ExistMaterial(unsigned int uniqueCode)
 
 unsigned int MaterialManager::UniqueCode(std::string vertexShaderPath, std::string pixelShaderPath)
 {
-    return std::hash<std::string>{}(vertexShaderPath + pixelShaderPath);
+    return static_cast<unsigned int>(std::hash<std::string>{}(vertexShaderPath + pixelShaderPath));
 }
 
 std::unordered_map<std::shared_ptr<Material>, std::vector<std::reference_wrapper<Renderer>>>& MaterialManager::GetMatRendererPair()

@@ -123,6 +123,7 @@ HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, std::ve
 static HRESULT CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, D3D11_BIND_FLAG bind_flag, void* pData, UINT bufByteSize, UINT stride, ID3D11Buffer **ppOutputBuffer)
 {
     D3D11_BUFFER_DESC cbd = {};
+    ZeroMemory(&cbd, sizeof(cbd));
     cbd.ByteWidth = bufByteSize;
     cbd.Usage = D3D11_USAGE_DEFAULT;
     cbd.BindFlags = bind_flag;

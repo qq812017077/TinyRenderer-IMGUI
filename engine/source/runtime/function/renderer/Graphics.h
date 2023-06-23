@@ -54,7 +54,8 @@ public:
     
     virtual void OnFrameBegin();
     virtual void OnFrameEnd();
-
     virtual void DrawTestTriangle(float angle=0.0f) = 0;
     
+    //Events
+    virtual void OnResize(int width, int height) = 0;
 };

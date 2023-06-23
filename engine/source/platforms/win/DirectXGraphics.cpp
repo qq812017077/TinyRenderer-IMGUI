@@ -20,6 +20,7 @@ DirectXGraphics::DirectXGraphics(HWND &hwnd):
     LOG("Directx Graphics  constructor begin")
     CreateDevice();
     CreateRenderTarget();
+    OnResize(1280, 720);
     LOG("   Directx Graphics  constructor end")
 }
 
@@ -260,21 +261,30 @@ void DirectXGraphics::DrawAll()
             // bind render target
             pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr);
 
-            // configure viewport
-            D3D11_VIEWPORT vp;
-            vp.Width = 1280;
-            vp.Height = 720;
-            vp.MinDepth = 0.0f;
-            vp.MaxDepth = 1.0f;
-            vp.TopLeftX = 0;
-            vp.TopLeftY = 0;
-            pContext->RSSetViewports(1u, &vp);
-
             // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
             GFX_THROW_INFO_ONLY(pContext->DrawIndexed(mesh.GetIndexCount(), 0u, 0u));
         }
     }
 }
+
+/****************************************************************************************/
+/*                                      Event  Part                                     */
+/****************************************************************************************/
+void DirectXGraphics::OnResize(int width, int height)
+{
+    // configure viewport
+
+    D3D11_VIEWPORT vp;
+    ZeroMemory(&vp, sizeof(vp));
+    vp.Width = static_cast<FLOAT>(width);
+    vp.Height = static_cast<FLOAT>(height);
+    vp.MinDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
+    vp.TopLeftX = 0;
+    vp.TopLeftY = 0;
+    pContext->RSSetViewports(1u, &vp);
+}
+
 
 /****************************************************************************************/
 /*                                   Protected Part                                     */
@@ -359,21 +369,29 @@ void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, Unifor
 {
     if(bufData.bytesize() == 0)
     {
-        LOG("bufData is empty. " <<__FILE__ << "[" << __LINE__  << "]");
+        // LOG("bufData is empty. " <<__FILE__ << "[" << __LINE__  << "]");
         return ;
     }
+    // GFX_THROW_INFO(CreateConstantBuffer(pDevice, bufData.GetAddress(), bufData.bytesize(), &targetBuf));
     if(targetBuf == nullptr)
     {
         GFX_THROW_INFO(CreateConstantBuffer(pDevice, bufData.GetAddress(), bufData.bytesize(), &targetBuf));
     }else
-        pContext->UpdateSubresource(targetBuf.Get(), 0, nullptr, bufData.GetAddress(), 0, 0);
+    {
+        // update constant buffer by map and unmap
+        D3D11_MAPPED_SUBRESOURCE msr;
+        pContext->Map(targetBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+        memcpy_s(msr.pData, bufData.bytesize(), bufData.GetAddress(), bufData.bytesize());
+        pContext->Unmap(targetBuf.Get(), 0);
+        // pContext->UpdateSubresource(targetBuf.Get(), 0, nullptr, bufData.GetAddress(), 0, 0);
+    }
 }
 
 void DirectXGraphics::BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& targetBuf, Graphics::ECBufBindType bindType)
 {
     if(targetBuf == nullptr)
     {
-        LOG("targetBuf is empty." <<__FILE__ << "[" << __LINE__  << "]");
+        // LOG("targetBuf is empty." <<__FILE__ << "[" << __LINE__  << "]");
         return ;
     }
     if(bindType == Graphics::ECBufBindType::ToVS)
