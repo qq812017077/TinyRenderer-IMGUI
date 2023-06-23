@@ -53,6 +53,11 @@ Vector3 Transform::GetScale() const
     return scale;
 }
 
+void Transform::Rotate(const Vector3& axis, float angle)
+{
+    rotation += axis * angle;
+}
+
 Vector3 Transform::forward() const
 {
     return Matrix3x3::Rotation(rotation) * Vector3::Forward();

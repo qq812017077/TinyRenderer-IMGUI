@@ -14,6 +14,8 @@ public:
     void SetRotation(const Vector3& rotation);
     void SetScale(const Vector3& scale);
 
+    void Rotate(const Vector3& axis, float angle);
+
     Vector3 GetPosition() const;
     Vector3 GetRotation() const;
     Vector3 GetScale() const;

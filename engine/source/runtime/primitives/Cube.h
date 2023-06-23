@@ -61,6 +61,14 @@ public:
         { 255, 255, 0 }  // 7
         };
     }
+
+    void OnUpdate(float deltaTime) override
+    {
+        // add random rotation
+        transform.Rotate({ 0.0f, 0.0f, 1.0f }, deltaTime * 15.f);
+        transform.Rotate({ 0.0f, 1.0f, 0.0f }, deltaTime * 15.f);
+        transform.Rotate({ 1.0f, 0.0f, 0.0f }, deltaTime * 15.f);
+    }
 private:
     Vector3 center;
     Vector3 size;

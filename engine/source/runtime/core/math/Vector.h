@@ -11,13 +11,14 @@ struct Vector3
     ~Vector3();
     void operator=(const Vector3 &v);  
     Vector3 operator+(const Vector3 &v);  
-
+    Vector3 operator+=(const Vector3 &v);
     
     Vector3 operator-();//overload operator - , make it possible to use -Vector3
     Vector3 operator-(const Vector3 &v);
     
     Vector3 operator/(const Vector3 &v);  
-    Vector3 operator*(const Vector3 &v);
+    Vector3 operator*(const Vector3 &v)  const;
+    Vector3 operator*(float f) const;
     Vector3 operator+(float f);  
     Vector3 operator-(float f);  
     Vector3 operator/(float f);  

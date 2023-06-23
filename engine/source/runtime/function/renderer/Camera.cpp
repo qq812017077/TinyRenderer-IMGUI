@@ -38,13 +38,13 @@ void Camera::SetFar(float farPlane)
 // 
 void Camera::OnUpdate(float deltaTime)
 {
-    static float curTime = 0.0f;
-    curTime += deltaTime;
-    // // move camera by sin and cos
-    auto position = transform.GetPosition();
-    // position.x = sin(curTime) * 1.0f;
-    position.z = cos(curTime) * 5.0f;
-    transform.SetPosition(position);
+    // static float curTime = 0.0f;
+    // curTime += deltaTime;
+    // // // move camera by sin and cos
+    // auto position = transform.GetPosition();
+    // // position.x = sin(curTime) * 1.0f;
+    // position.z = cos(curTime) * 5.0f;
+    // transform.SetPosition(position);
 }
 
 void Camera::Init()

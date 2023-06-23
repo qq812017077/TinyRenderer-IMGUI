@@ -22,7 +22,7 @@ App::App()
     pGameObjects.emplace_back(std::make_unique<Cube>()); // here will use move constructor;
     auto curCam = std::make_unique<Camera>();
     curCam->SetAspect(1280.0f / 720.0f);
-    curCam->transform.SetPosition({ 0.0f, 0.0f, -3.0f });
+    curCam->transform.SetPosition({ 0.0f, 0.0f, -6.0f });
     curCam->transform.SetRotation({ 0.0f, 0.0f, 0.0f });
     FrameUniformBufferManager::BindCamera(curCam.get());
     pGameObjects.emplace_back(std::move(curCam));
