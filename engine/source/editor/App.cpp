@@ -20,10 +20,14 @@ App::App()
     pWnd = std::make_unique<LinuxWindow>(1280, 720, L"TinyRenderer");
 #endif
     pGameObjects.emplace_back(std::make_unique<Cube>()); // here will use move constructor;
+    pGameObjects.emplace_back(std::make_unique<Cube>()); // here will use move constructor;
+
+    pGameObjects[0]->transform.SetPosition({ 1.5f, 1.5f, 0.0f });
+    pGameObjects[1]->transform.SetPosition({ -1.5f, -1.5f, 0.0f });
     auto curCam = std::make_unique<Camera>();
     curCam->SetAspect(1280.0f / 720.0f);
-    curCam->transform.SetPosition({ 0.0f, 0.0f, -6.0f });
-    curCam->transform.SetRotation({ 0.0f, 0.0f, 0.0f });
+    curCam->transform.SetPosition({ 0.0f, 0.0f, 6.0f });
+    curCam->transform.SetRotation({ 0.0f, 180.0f, 0.0f });
     FrameUniformBufferManager::BindCamera(curCam.get());
     pGameObjects.emplace_back(std::move(curCam));
     

@@ -1,23 +1,25 @@
 #include "Renderer.h"
 #include "GameObject.h"
+#include "MaterialManager.h"
 
-Renderer::Renderer(GameObject& go, Mesh mesh)
-:go(go), mesh(mesh), pMaterial(Material::Load("shaders/DefaultVertexShader.hlsl", "shaders/DefaultPixelShader.hlsl"))
+// Renderer::Renderer():
+//     Renderer(Mesh())
+// {
+// }
+Renderer::Renderer(Mesh mesh)
+:Renderer(mesh, Material::Load("shaders/DefaultVertexShader.hlsl", "shaders/DefaultPixelShader.hlsl"))
 {
 }
-Renderer::Renderer(GameObject& go, Mesh mesh, std::shared_ptr<Material> pMaterial)
-    :go(go), mesh(mesh), pMaterial(pMaterial)
-{
 
-}
-
-Renderer::Renderer(Renderer const& other)
-: go(other.go), mesh(other.mesh), pMaterial(other.pMaterial)
+Renderer::Renderer(Mesh mesh, std::shared_ptr<Material> pMaterial)
+    :mesh(mesh), pMaterial(pMaterial)
 {
+    MaterialManager::AddRenderer(*this);
 }
 
 Renderer::~Renderer()
 {
+    MaterialManager::RemoveRenderer(*this);
     std::cout << "Renderer destructor called" << std::endl;
 }
 // Renderer& Renderer::operator=(Renderer& other) noexcept
@@ -38,6 +40,11 @@ void Renderer::SetMaterial(std::shared_ptr<Material> pMaterial)
     this->pMaterial = pMaterial;
 }
 
+void Renderer::SetMesh(Mesh mesh)
+{
+    this->mesh = mesh;
+}
+
 Mesh& Renderer::GetMesh()
 {
     return mesh;
@@ -55,6 +62,6 @@ void Renderer::ClearObjBuffer()
 
 void Renderer::UpdateObjBuffer()
 {
-    auto worldMatrix = go.transform.GetWorldMatrix();
+    auto worldMatrix = owner->transform.GetWorldMatrix();
     objBuffer.AddData(worldMatrix);
 }

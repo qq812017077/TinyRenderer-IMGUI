@@ -13,6 +13,19 @@ void MaterialManager::AddRenderer(Renderer& renderer)
     auto& renderersByMaterial = MaterialManager::Get().renderersByMaterial;
     renderersByMaterial[pMat].push_back(std::ref(renderer));
 }
+
+void MaterialManager::RemoveRenderer(Renderer& renderer)
+{
+    auto pMat = renderer.GetMaterial();
+    auto& renderersByMaterial = MaterialManager::Get().renderersByMaterial;
+    auto& renderers = renderersByMaterial[pMat];
+    auto it = std::find_if(renderers.begin(), renderers.end(), [&renderer](Renderer& r){return &r == &renderer;});
+    if(it != renderers.end())
+    {
+        renderers.erase(it);
+    }
+}
+
 void MaterialManager::AddMaterial(std::shared_ptr<Material> pMaterial)
 {
     auto& renderersByMaterial = MaterialManager::Get().renderersByMaterial;

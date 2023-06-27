@@ -12,6 +12,9 @@ public:
     ~MaterialManager() = default;
     
     static void AddRenderer(Renderer& renderer);
+    static void RemoveRenderer(Renderer& renderer);
+
+    
     static void AddMaterial(std::shared_ptr<Material> pMaterial);
     static void AddCode(unsigned int code, std::shared_ptr<Material> pMaterial);
     static void RemoveMaterial(unsigned int code);

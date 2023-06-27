@@ -22,23 +22,7 @@ void Primitive::Init()
     mesh.SetVertexPosition(GetVerticesPosition());
     mesh.SetVertexIndices(GetVerticesIndices());
     mesh.SetVertexColor(GetVerticesColor());
-    SetRenderer(std::make_unique<Renderer>(*this, mesh));
+    AddComponent<Renderer>(mesh);
 }
-
-// std::vector<Float3> Primitive::GetVerticesPosition()
-// {
-//     return std::vector<Float3>();
-// }
-
-// std::vector<INDICE_TYPE> Primitive::GetVerticesIndices()
-// {
-//     return std::vector<INDICE_TYPE>();
-// }
-
-// std::vector<ColorRGBA> Primitive::GetVerticesColor()
-// {
-//     return std::vector<ColorRGBA>();
-// }
-
 
 

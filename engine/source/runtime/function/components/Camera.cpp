@@ -49,6 +49,7 @@ void Camera::OnUpdate(float deltaTime)
 
 void Camera::Init()
 {
+    
 }
 
 Matrix4x4 Camera::GetViewMatrix()

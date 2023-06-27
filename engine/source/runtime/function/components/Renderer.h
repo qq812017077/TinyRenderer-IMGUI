@@ -2,31 +2,32 @@
 #include "Material.h"
 #include <iostream>
 #include "Mesh.h"
+#include "Component.h"
 
 class GameObject;
-class Renderer
+class Renderer : public Component
 {
 public:
     friend class Graphics;
-
-    Renderer(GameObject& go, Mesh mesh);
-    Renderer(GameObject& go, Mesh mesh, std::shared_ptr<Material> pMaterial);
+    // Renderer();
+    Renderer(Mesh mesh);
+    Renderer(Mesh mesh, std::shared_ptr<Material> pMaterial);
     ~Renderer();
-    Renderer(Renderer const& other);
+    Renderer(Renderer const& other) = delete;
     Renderer& operator=(Renderer& other) noexcept = delete;
 
-    std::shared_ptr<Material> GetMaterial() const;
     void SetMaterial(std::shared_ptr<Material> pMaterial);
+    std::shared_ptr<Material> GetMaterial() const;
 
+    void SetMesh(Mesh mesh);
     Mesh& GetMesh();
-    UniformBuffer& GetObjBufferData();
-    
+
+    UniformBuffer& GetObjBufferData();    
 protected:
     void ClearObjBuffer();
     void UpdateObjBuffer();
     
     std::shared_ptr<Material> pMaterial;
     Mesh mesh;
-    GameObject& go;
     UniformBuffer objBuffer;
 };

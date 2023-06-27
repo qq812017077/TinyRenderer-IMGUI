@@ -1,4 +1,8 @@
 #include "Mesh.h"
+#ifdef _DEBUG
+#include <iostream>
+#endif
+#include <exception>
 
 #define STREQUAL(a, b) (strcmp(a, b) == 0)
 
@@ -168,5 +172,10 @@ unsigned int Mesh::GetAlignedByteOffset(const char * semanticName, int semanticI
     else if(STREQUAL(semanticName, "Texcoord")) return offsetof(Vertex, texCoord);
     else if(STREQUAL(semanticName, "Tangent")) return offsetof(Vertex, tangent);
     else if(STREQUAL(semanticName, "Binormal")) return offsetof(Vertex, binormal);
-    else return 0;
+    #ifdef _DEBUG
+        std::cout << "unknown semantic name: " << semanticName << " in " << __LINE__ << __FILE__ << std::endl;
+    #endif
+    throw std::exception("Invalid semantic name");
+    return 0;
+
 }

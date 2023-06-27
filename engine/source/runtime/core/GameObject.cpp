@@ -1,5 +1,5 @@
 #include "GameObject.h"
-#include "MaterialManager.h"
+#include "Component.h"
 
 GameObject::GameObject():   
     pRenderer(nullptr),
@@ -24,7 +24,7 @@ GameObject::GameObject(std::string name):
 
 GameObject::~GameObject()
 {
-    RemoveRenderer();
+    RemoveAllComponents();
     //display gameobject address
     std::cout << "GameObject[" << name << "] destroyed at " << this << std::endl;
 }
@@ -34,11 +34,6 @@ void GameObject::Init()
     
 }
 
-// Getters
-// Transform& GameObject::GetTransform()
-// {
-//     return transform;
-// }
 
 std::string GameObject::GetName() const
 {
@@ -46,52 +41,45 @@ std::string GameObject::GetName() const
 }
 
 
-bool GameObject::HasRenderer() const
-{
-    return pRenderer != nullptr;
-}
+// bool GameObject::HasRenderer() const
+// {
+//     return pRenderer != nullptr;
+// }
 
-void GameObject::SetRenderer(Renderer& renderer)
-{
-    if(HasRenderer())
-    {
-        //throw exception
-        throw std::runtime_error("GameObject already has a renderer");
-        return ;
-    }
-    pRenderer = std::make_unique<Renderer>(renderer);
-    MaterialManager::AddRenderer(*pRenderer);
-}
+// void GameObject::SetRenderer(std::unique_ptr<Renderer> pRenderer)
+// {
+//     if(HasRenderer())
+//     {
+//         //throw exception
+//         throw std::runtime_error("GameObject already has a renderer");
+//         return ;
+//     }
+//     this->pRenderer = std::move(pRenderer);
+// }
 
-void GameObject::SetRenderer(std::unique_ptr<Renderer> pRenderer)
-{
-    if(HasRenderer())
-    {
-        //throw exception
-        throw std::runtime_error("GameObject already has a renderer");
-        return ;
-    }
-    this->pRenderer = std::move(pRenderer);
-    MaterialManager::AddRenderer(*this->pRenderer);
-}
+// void GameObject::RemoveRenderer()
+// {
+//     if(!HasRenderer()) return ;
+//     pRenderer = nullptr;
+// }
 
-void GameObject::RemoveRenderer()
-{
-    if(!HasRenderer()) return ;
-    pRenderer = nullptr;
-}
-
-Renderer& GameObject::GetRenderer() const
-{
-    if(!HasRenderer())
-    {
-        //throw exception
-        throw std::runtime_error("GameObject does not have a renderer");
-    }
-    return *pRenderer;
-}
+// Renderer& GameObject::GetRenderer() const
+// {
+//     if(!HasRenderer())
+//     {
+//         //throw exception
+//         throw std::runtime_error("GameObject does not have a renderer");
+//     }
+//     return *pRenderer;
+// }
 
 void GameObject::OnUpdate(float deltaTime)
 {
     
+}
+
+// Components
+void GameObject::RemoveAllComponents()
+{
+    components.clear();
 }
