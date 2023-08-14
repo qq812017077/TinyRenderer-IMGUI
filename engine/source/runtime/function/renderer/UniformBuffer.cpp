@@ -1,5 +1,5 @@
 #include "UniformBuffer.h"
-#include "Camera.h"
+#include "components/Camera.h"
 
 /****************************************************************************************/
 /*                                      UniformBuffer                                    */

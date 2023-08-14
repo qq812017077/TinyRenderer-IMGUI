@@ -1,9 +1,28 @@
 #pragma once
 #include <string>
+#include "settings.h"
+#include <memory>
 
 class Surface
 {
 public:
+	#pragma pack(push,1)
+	enum Format { GRAYSCALE=1, RGB=3, RGBA=4 };
+	struct SurfaceHeader {
+		std::uint8_t  idlength = 0;
+		std::uint8_t  colormaptype = 0;
+		std::uint8_t  datatypecode = 0;
+		std::uint16_t colormaporigin = 0;
+		std::uint16_t colormaplength = 0;
+		std::uint8_t  colormapdepth = 0;
+		std::uint16_t x_origin = 0;
+		std::uint16_t y_origin = 0;
+		std::uint16_t width = 0;
+		std::uint16_t height = 0;
+		std::uint8_t  bitsperpixel = 0;
+		std::uint8_t  imagedescriptor = 0;
+	};
+	#pragma pack(pop)
     struct Color
     {
         unsigned int dword;
@@ -31,11 +50,11 @@ public:
     };
 
     Surface( unsigned int width,unsigned int height );
-	Surface( Surface&& source ) noexcept = default;
+	Surface( Surface&& source ) noexcept;
 	Surface( Surface& ) = delete;
 	Surface& operator=( Surface&& donor ) noexcept = default;
 	Surface& operator=( const Surface& ) = delete;
-	~Surface() = default;
+	~Surface();
 
 	// Pixel operations
 	void Clear( Color fillValue ) noexcept;
@@ -49,11 +68,20 @@ public:
 	Color* GetBufferPtr() noexcept;
 	const Color* GetBufferPtr() const noexcept;
 	const Color* GetBufferPtrConst() const noexcept;
-	void Save( const std::string& filename ) const;
+	
 	bool AlphaLoaded() const noexcept;
+	virtual void Save( const std::string& filename ) const;
+	virtual void Copy( const Surface& src ) noexcept(!IS_DEBUG);
 
-
-	static Surface FromFile( const std::string& name );
+	static Surface LoadFromFile( const std::string& name);
+	static void SaveToFile( const Surface& surface, const std::string& filename);
 private:
+	Surface( unsigned int width,unsigned int height,std::unique_ptr<Color[]> pBufferParam ) noexcept;
 
+
+	std::unique_ptr<Color[]> pBuffer;
+	unsigned int width;
+	unsigned int height;
+	unsigned int pitch;
+	bool alphaLoaded = false;
 };

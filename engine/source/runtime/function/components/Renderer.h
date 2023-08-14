@@ -2,7 +2,7 @@
 #include "Material.h"
 #include <iostream>
 #include "Mesh.h"
-#include "Component.h"
+#include "components/Component.h"
 
 class GameObject;
 class Renderer : public Component

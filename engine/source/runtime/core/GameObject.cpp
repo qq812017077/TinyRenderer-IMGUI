@@ -1,5 +1,5 @@
 #include "GameObject.h"
-#include "Component.h"
+#include "components/Component.h"
 
 GameObject::GameObject():   
     pRenderer(nullptr),

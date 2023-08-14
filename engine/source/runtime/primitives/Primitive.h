@@ -1,5 +1,5 @@
 #pragma once
-#include "GameObject.h"
+#include "core/GameObject.h"
 #include "EngineMath.h"
 
 class Primitive : public GameObject

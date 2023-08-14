@@ -1,7 +1,7 @@
 #pragma once
 #include <unordered_map>
-#include "Singleton.h"
-#include "Renderer.h"
+#include "core/Singleton.h"
+#include "components/Renderer.h"
 
 // TODO: add priority to material(like render queue in unity)
 class MaterialManager : public Singleton<MaterialManager>

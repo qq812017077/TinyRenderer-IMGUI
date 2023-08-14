@@ -1,15 +1,15 @@
 #include "App.h"
 #include <iomanip>
-#include "EngineException.h"
+#include "core/EngineException.h"
 #ifdef _WIN32
 #include "Win32Window.h"
 #elif __linux__
 #endif
 
 #include "Material.h"
-#include "Cube.h"
-#include "Triangle.h"
-#include "Camera.h"
+#include "primitives/Cube.h"
+#include "primitives/Triangle.h"
+#include "components/Camera.h"
 App::App()
 {
 

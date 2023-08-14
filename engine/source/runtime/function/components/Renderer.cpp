@@ -1,5 +1,5 @@
-#include "Renderer.h"
-#include "GameObject.h"
+#include "components/Renderer.h"
+#include "core/GameObject.h"
 #include "MaterialManager.h"
 
 // Renderer::Renderer():

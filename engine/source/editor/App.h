@@ -1,7 +1,7 @@
 #pragma once
 #include "Window.h"
-#include "Timer.h"
-#include "GameObject.h"
+#include "core/Timer.h"
+#include "core/GameObject.h"
 #include <memory>
 class App
 {

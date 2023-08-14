@@ -3,8 +3,8 @@
 #include <unordered_map>
 #include <optional>
 #include "Graphics.h"
-#include "Keyboard.h"
-#include "Mouse.h"
+#include "input/Keyboard.h"
+#include "input/Mouse.h"
 
 class Window
 {

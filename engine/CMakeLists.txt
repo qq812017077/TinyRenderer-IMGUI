@@ -8,10 +8,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(BUILD_SHARED_LIBS OFF)
 
+
+set(ENGINE_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(PROJECT_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 set(CMAKE_INSTALL_PREFIX "${PROJECT_ROOT_DIR}/bin")
 set(BINARY_ROOT_DIR "${CMAKE_INSTALL_PREFIX}/")
-set(ENGINE_ROOT_DIR "${PROJECT_ROOT_DIR}/engine")
 set(THIRD_PARTY_DIR "${ENGINE_ROOT_DIR}/3rdparty")
 set(SHADER_DIR "${ENGINE_ROOT_DIR}/shaders")
 
@@ -28,6 +29,10 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 set(PROJECT_NAME tinyrenderer)
 # specify C++ standard
 set(CMAKE_CXX_STANDARD 17)
+
+
+# add #define
+# add_definitions(-STB_IMAGE_IMPLEMENTATION)
 
 #add subdirectory
 add_subdirectory(3rdparty)

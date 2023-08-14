@@ -1,5 +1,5 @@
 #pragma once
-#include "Primitive.h"
+#include "primitives/Primitive.h"
 
 // ******************
 // 设置立方体顶点
