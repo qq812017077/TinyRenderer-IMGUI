@@ -16,6 +16,10 @@ const char* EngineException::what() const noexcept
     return whatBuffer.c_str();
 }
 
+const char* EngineException::GetType() const noexcept
+{
+    return "Engine Exception";
+}
 int EngineException::GetLine() const noexcept
 {
     return line;

@@ -80,3 +80,8 @@ Matrix4x4 Transform::GetWorldMatrix() const
     Matrix4x4 scale = Matrix4x4::Scale(this->scale);
     return  translation * rotation * scale;
 }
+
+void Transform::Init()
+{
+    // do nothing
+}

@@ -7,12 +7,12 @@
 // {
 // }
 Renderer::Renderer(Mesh mesh)
-:Renderer(mesh, Material::Load("shaders/DefaultVertexShader.hlsl", "shaders/DefaultPixelShader.hlsl"))
+:Renderer(mesh, Material::GetDefaultMaterialPtr())
 {
 }
 
 Renderer::Renderer(Mesh mesh, std::shared_ptr<Material> pMaterial)
-    :mesh(mesh), pMaterial(pMaterial)
+    :mesh(mesh), pSharedMaterial(pMaterial)
 {
     MaterialManager::AddRenderer(*this);
 }
@@ -30,14 +30,35 @@ Renderer::~Renderer()
 //     return *this;
 // }
 
-std::shared_ptr<Material> Renderer::GetMaterial() const
+void Renderer::Init()
 {
-    return pMaterial;
+    // objBuffer.Init();
+    // objBuffer.AddData(owner->transform.GetWorldMatrix());
 }
 
-void Renderer::SetMaterial(std::shared_ptr<Material> pMaterial)
+std::shared_ptr<Material> Renderer::GetSharedMaterial() const
 {
-    this->pMaterial = pMaterial;
+    return pSharedMaterial;
+}
+
+/**
+ * @brief 
+ *  use this function, mean we want to use a material which is not shared by other renderer
+ * 
+ * @return Material* 
+ */
+Material* Renderer::GetMaterial()
+{
+    return pMaterial.get();
+}
+
+void Renderer::SetSharedMaterial(std::shared_ptr<Material> pMaterial)
+{
+    if(this->pSharedMaterial == pMaterial) return;
+    if(this->pSharedMaterial != nullptr) 
+        MaterialManager::RemoveRenderer(*this);
+    this->pSharedMaterial = pMaterial;
+    MaterialManager::AddRenderer(*this);
 }
 
 void Renderer::SetMesh(Mesh mesh)

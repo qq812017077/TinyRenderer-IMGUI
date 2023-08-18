@@ -34,6 +34,7 @@ public:
     //Graphics
     std::unique_ptr<Graphics>& Gfx() { return pGfx; }
     //Window 
+    virtual void ShowMessageBox(const std::string& title, const std::string& message) const noexcept = 0;
     virtual void SetTitle(const std::wstring& title) {}
     virtual std::optional<int> ProcessMessages() noexcept;
     // static std::optional<int> ProcessMessages() noexcept;

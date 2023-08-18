@@ -13,7 +13,7 @@ public:
     GameObject(std::string name);
     GameObject(const GameObject&) = delete;
     //move constructor
-    GameObject(GameObject&& other) noexcept = delete;
+    GameObject(GameObject&& other) noexcept = default;
     virtual ~GameObject();
 
     virtual void Init();
@@ -62,11 +62,9 @@ public:
 
     Transform transform;
 protected:
-    void SetRenderer(std::unique_ptr<Renderer> pRenderer);
     GameObject& operator=(const GameObject&) = delete;
 
 private:
     std::string name = "New GameObject";
-    std::unique_ptr<Renderer> pRenderer;
     std::unordered_map<std::string, std::unique_ptr<Component>> components;
 };

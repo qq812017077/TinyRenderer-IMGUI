@@ -8,8 +8,10 @@ set(SOURCE_DIR ${ENGINE_ROOT_DIR}/source)
 
 # collect shader files
 message(STATUS "Collect shader files")
-file(GLOB_RECURSE SHADER_FILES ${SHADER_DIR}/*.hlsl)
-
+file(GLOB_RECURSE SHADER_FILES ${SHADER_DIR}/*)
+# collect resources files
+file(GLOB_RECURSE RESOURCES_FILES ${RESOURCE_DIR}/*)
+message(STATUS "    ${RESOURCES_FILES}")
 # collect source files
 message(STATUS "Collect source files")
 file(GLOB_RECURSE COMMON_INCLUDE_FILES ${SOURCE_DIR}/editor/*.h ${SOURCE_DIR}/runtime/*.h ${SOURCE_DIR}/common/*.h)
@@ -33,6 +35,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX "Header Files" FILES ${INCL
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX "Source Files" FILES ${SOURCE_FILES})
 # source_group(TREE ${THIRD_PARTY_DIR} PREFIX "3rdparty" FILES ${THIRD_PARTY_FILES})
 source_group(TREE ${SHADER_DIR} PREFIX "shaders" FILES ${SHADER_FILES})
+source_group(TREE ${RESOURCE_DIR} PREFIX "resources" FILES ${RESOURCES_FILES})
 message(STATUS "    set source group...done")
 
 # specify executable
@@ -46,4 +49,14 @@ include(link_dependencies.cmake)
 message(STATUS "Clear dir and copy shader files")
 file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/Debug/shaders)
 file(COPY ${SHADER_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Debug/shaders)
+
+
+# copy resources dir and keep directory structure
+message(STATUS "Clear dir and copy resources files")
+set(DEBUG_RES_DIR ${CMAKE_CURRENT_BINARY_DIR}/Debug/res)
+file(REMOVE_RECURSE ${DEBUG_RES_DIR}) # clear target dir
+file(COPY ${RESOURCE_DIR}/ DESTINATION ${DEBUG_RES_DIR})
+# foreach(file ${FILES})
+#       file(COPY ${RESOURCE_DIR} DESTINATION ${DEBUG_RES_DIR})
+# endforeach()
 message(STATUS "    Configuring engine...done")

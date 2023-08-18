@@ -4,16 +4,28 @@
 #include <string>
 #include "UniformBuffer.h"
 #include "Mesh.h"
-#include "UniformVar.h"
+#include "ShaderDesc.h"
+
 class ShaderBase {
 protected:
 
     ShaderBase() = default;
     ~ShaderBase() = default;
 
-    std::vector<UniformVar> uniformVars;
+    ShaderDesc shaderDescInfo;
 public :
-    virtual std::vector<UniformVar> getUniformVars() const {return uniformVars;};
+    virtual ShaderDesc GetShaderDesc() const ;
+    virtual int GetTexCount() const;
+    
+    virtual CBufInfo GetConstantBufferInfoBySlot(int slot);
+    virtual CBufInfo GetConstantBufferInfoByName(const std::string& name);
+    
+    virtual TextureInfo GetTexInfoByIndex(int index) const;
+    virtual TextureInfo GetTextureInfoBySlot(int slot);
+    virtual TextureInfo GetTextureInfoByName(const std::string& name);
+    
+    virtual SamplerInfo GetSamplerInfoBySlot(int slot);
+    virtual SamplerInfo GetSamplerInfoByName(const std::string& name, int slot);
 };
 
 class VertexShader : public ShaderBase {
@@ -22,8 +34,6 @@ protected:
     ~VertexShader() = default;
 
 public:
-    virtual void updateMaterialUniformBuffer(UniformBuffer uniformBuffer) = 0;
-    virtual void bindToPipeline() = 0;
     virtual void SetInputLayout(Mesh& mesh) = 0;
 };
 
@@ -33,9 +43,6 @@ protected:
     PixelShader() = default;
     ~PixelShader() = default;
     
-    
 public:
-    virtual void updateMaterialUniformBuffer(UniformBuffer uniformBuffer) = 0;
-    virtual void bindToPipeline() = 0;
 };
 

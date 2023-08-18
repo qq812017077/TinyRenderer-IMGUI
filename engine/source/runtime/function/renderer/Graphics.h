@@ -35,13 +35,13 @@ protected:
      *              set sampler to pipeline)
     */
     virtual void LoadMaterial(Material & material);
-
+    
     // Constant Buffer Operation
     // virtual void BindFrameCBuffer() = 0;
     // virtual void UpdateObjectCBuffer(Renderer & renderer) = 0;
     // virtual void BindObjectCBuffer() = 0;
 public:
-    enum class ECBufBindType
+    enum class EBindType
     {
         ToVS,
         ToPS,

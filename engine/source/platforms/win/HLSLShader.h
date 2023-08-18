@@ -4,7 +4,9 @@
 #include <d3d11.h>
 #include <string>
 #include <vector>
+#include <map>
 #include "DirectXGraphics.h"
+
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -12,6 +14,7 @@
 namespace wrl = Microsoft::WRL;
 using string = std::string;
 
+class Texture;
 class HLSLVertexShader : public VertexShader
 {
 public:
@@ -24,8 +27,9 @@ public:
     ID3D11VertexShader* Get() const;
     bool HasConstantBuffer() const;
     wrl::ComPtr<ID3D11Buffer> GetConstantBuffer() const; 
-    void updateMaterialUniformBuffer(UniformBuffer uniformBuffer) override;
-    void bindToPipeline() override;
+    bool CreateTexture2D(Texture * pInputTex, ID3D11Texture2D ** ppOutputTexture2D);
+    bool CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler);
+    
     void SetInputLayout(Mesh & mesh) override;
 
 private:
@@ -36,6 +40,7 @@ private:
     wrl::ComPtr<ID3D11Buffer> pMaterialConstantBuffer = nullptr;
     wrl::ComPtr<ID3D11InputLayout> pInputLayout;
     std::vector<D3D11_INPUT_ELEMENT_DESC> inputLayoutDescs;
+    std::map<std::string, int> textureSlotMap;
 };
 
 class HLSLPixelShader : public PixelShader
@@ -52,13 +57,14 @@ public:
     ID3D11PixelShader* Get() const ;
     bool HasConstantBuffer() const;
     wrl::ComPtr<ID3D11Buffer> GetConstantBuffer() const;
-    void updateMaterialUniformBuffer(UniformBuffer uniformBuffer) override;
-    void bindToPipeline() override;
+    bool CreateTexture2D(Texture * pInputTex, ID3D11Texture2D ** ppOutputTexture2D);
+    bool CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler);
 
 private:
     DirectXGraphics& directXGfx;
     wrl::ComPtr<ID3D11PixelShader> pPixelShader = nullptr;
     wrl::ComPtr<ID3DBlob> pBlob = nullptr;
     wrl::ComPtr<ID3D11Buffer> pMaterialConstantBuffer = nullptr;
+    std::map<std::string, int> textureSlotMap;
     
 };

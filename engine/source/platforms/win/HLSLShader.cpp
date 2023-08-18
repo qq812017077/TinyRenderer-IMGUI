@@ -2,6 +2,10 @@
 #include "Exceptions.h"
 #include "DXUtil.h"
 #include "Mesh.h"
+#include "Texture.h"
+
+static HRESULT CreateTexture(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, Texture* pTex, ID3D11Texture2D ** ppOutputTexture,
+    Texture::EType textureType);
 
 HLSLVertexShader::HLSLVertexShader(DirectXGraphics& gfx, const std::wstring& path):
     HLSLVertexShader(gfx, path, "main", "vs_5_0")
@@ -34,22 +38,14 @@ HLSLVertexShader::HLSLVertexShader(DirectXGraphics& gfx, const std::wstring& pat
     GFX_THROW_INFO(gfx.pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pVertexShader));
 
     // read constant buffer description from shader
-    GFX_THROW_INFO(GetShaderInfo(pBlob->GetBufferPointer(), pBlob->GetBufferSize(),&uniformVars, &inputLayoutDescs));
+    Microsoft::WRL::ComPtr<ID3D11ShaderReflection> pReflection = nullptr;
+    D3D11_SHADER_DESC shaderDesc;
+    GFX_THROW_INFO(GetShaderInfo(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &pReflection, &shaderDesc));
+    GetInputLayoutInfo(pReflection.Get(), shaderDesc, &inputLayoutDescs);
+    LoadShaderDescInfo(pReflection.Get(), shaderDesc, &shaderDescInfo);
+    return ;
 }
 
-//HLSLVertexShader::HLSLVertexShader(HLSLVertexShader&& other) noexcept:
-//    directXGfx(other.directXGfx),
-//    pVertexShader(std::move(other.pVertexShader)),
-//    pBlob(std::move(other.pBlob)),
-//    pMaterialConstantBuffer(std::move(other.pMaterialConstantBuffer)),
-//    pInputLayout(std::move(other.pInputLayout)),
-//    inputLayoutDescs(std::move(other.inputLayoutDescs))
-//{
-//    other.pVertexShader = nullptr;
-//    other.pBlob = nullptr;
-//    other.pMaterialConstantBuffer = nullptr;
-//    other.pInputLayout = nullptr;
-//}
 
 HLSLVertexShader::~HLSLVertexShader()
 {
@@ -74,30 +70,35 @@ wrl::ComPtr<ID3D11Buffer> HLSLVertexShader::GetConstantBuffer() const
     return pMaterialConstantBuffer;
 }
 
-void HLSLVertexShader::updateMaterialUniformBuffer(UniformBuffer uniformBuffer)
+bool HLSLVertexShader::CreateTexture2D(Texture* pInputTex, ID3D11Texture2D ** ppOutputTexture2D)
 {
-    if(uniformBuffer.bytesize() == 0) return ;
-    directXGfx.UpdateCBuffer(pMaterialConstantBuffer, uniformBuffer);
-// #ifndef NDEBUG
-//     auto& infoManager = directXGfx.infoManager;
-// #endif
-//     if(pMaterialConstantBuffer == nullptr)
-//     {
-//         // bind constant buffer to pixel shader
-//         HRESULT hr;
-//         GFX_THROW_INFO(CreateConstantBuffer(directXGfx.pDevice, uniformBuffer.GetAddress(), uniformBuffer.bytesize(), &pMaterialConstantBuffer));
-//     }
-//     else
-//         directXGfx.pContext->UpdateSubresource(pMaterialConstantBuffer.Get(), 0u, nullptr, uniformBuffer.GetAddress(), 0u, 0u);
+    if(pInputTex == nullptr) return false;
+    HRESULT hr;
+#ifndef NDEBUG
+    auto & infoManager = directXGfx.infoManager;
+#endif
+    GFX_THROW_INFO(CreateTexture(directXGfx.pDevice, pInputTex, ppOutputTexture2D, Texture::EType::TEXTURE2D));
+    return true;
 }
 
-void HLSLVertexShader::bindToPipeline()
+bool HLSLVertexShader::CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler)
 {
-    directXGfx.pContext->VSSetShader(pVertexShader.Get(), nullptr, 0u);
-    if(pMaterialConstantBuffer != nullptr)
-    {
-        directXGfx.pContext->VSSetConstantBuffers(DirectXGraphics::MaterialCBufSlot, 1u, pMaterialConstantBuffer.GetAddressOf());
-    }
+    if(pInputTex == nullptr) return false;
+    HRESULT hr;
+#ifndef NDEBUG
+    auto & infoManager = directXGfx.infoManager;
+#endif
+    D3D11_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.Filter = GetTextureFilterMode(pInputTex->GetFilterMode()); 
+    auto wrapmode = GetTextureWrapMode(pInputTex->GetWrapMode());
+    samplerDesc.AddressU = wrapmode; 
+    samplerDesc.AddressV = wrapmode; 
+    samplerDesc.AddressW = wrapmode; 
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    GFX_THROW_INFO(directXGfx.pDevice->CreateSamplerState(&samplerDesc, ppOutputSampler));
+    return true;
 }
 
 void HLSLVertexShader::SetInputLayout(Mesh & mesh)
@@ -116,11 +117,6 @@ void HLSLVertexShader::SetInputLayout(Mesh & mesh)
     directXGfx.pContext->IASetInputLayout(pInputLayout.Get());
 }
 
-// std::shared_ptr<HLSLVertexShader> HLSLVertexShader::Load(DirectXGraphics& gfx, const std::wstring& path, LPCSTR entryPoint, LPCSTR shaderModel)
-// {   
-//     std::shared_ptr<HLSLVertexShader> pShader(new HLSLVertexShader(gfx, path, entryPoint, shaderModel));
-//     return pShader;
-// }
 
 void HLSLVertexShader::SetInputElementDescription(Mesh & mesh)
 {
@@ -172,21 +168,15 @@ HLSLPixelShader::HLSLPixelShader(DirectXGraphics& gfx, const std::wstring& path,
     wrl::ComPtr<ID3DBlob> pBlob;
     GFX_THROW_INFO(CreateShaderFromFile(output, path.c_str(), entryPoint, shaderModel, &pBlob));
     GFX_THROW_INFO(directXGfx.pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pPixelShader));
-
+    
     // read constant buffer description from shader
-    GFX_THROW_INFO(GetShaderInfo(pBlob->GetBufferPointer(), pBlob->GetBufferSize(),&uniformVars, nullptr));
+    Microsoft::WRL::ComPtr<ID3D11ShaderReflection> pReflection = nullptr;
+    D3D11_SHADER_DESC shaderDesc;
+    GFX_THROW_INFO(GetShaderInfo(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &pReflection, &shaderDesc));
+    LoadShaderDescInfo(pReflection.Get(), shaderDesc, &shaderDescInfo);
+    return ;
 }
 
-//HLSLPixelShader::HLSLPixelShader(HLSLPixelShader&& other) noexcept:
-//    directXGfx(other.directXGfx),
-//    pPixelShader(std::move(other.pPixelShader)),
-//    pBlob(std::move(other.pBlob)),
-//    pMaterialConstantBuffer(std::move(other.pMaterialConstantBuffer))
-//{
-//    other.pPixelShader = nullptr;
-//    other.pBlob = nullptr;
-//    other.pMaterialConstantBuffer = nullptr;
-//}
 
 HLSLPixelShader::~HLSLPixelShader()
 {
@@ -208,38 +198,68 @@ wrl::ComPtr<ID3D11Buffer> HLSLPixelShader::GetConstantBuffer() const
     return pMaterialConstantBuffer;
 }
 
-void HLSLPixelShader::updateMaterialUniformBuffer(UniformBuffer uniformBuffer)
+bool HLSLPixelShader::CreateTexture2D(Texture* pInputTex, ID3D11Texture2D ** ppOutputTexture2D)
 {
-    if(uniformBuffer.bytesize() == 0) return ;
-    directXGfx.UpdateCBuffer(pMaterialConstantBuffer, uniformBuffer);
-// #ifndef NDEBUG
-//     auto& infoManager = directXGfx.infoManager;
-// #endif
-//     if(pMaterialConstantBuffer == nullptr)
-//     {
-//         // bind constant buffer to pixel shader
-//         HRESULT hr;
-//         GFX_THROW_INFO(CreateConstantBuffer(directXGfx.pDevice, uniformBuffer.GetAddress(), uniformBuffer.bytesize(), &pMaterialConstantBuffer));
-//     }
-//     else
-//         directXGfx.pContext->UpdateSubresource(pMaterialConstantBuffer.Get(), 0u, nullptr, uniformBuffer.GetAddress(), 0u, 0u);
+    if(pInputTex == nullptr) return false;
+    HRESULT hr;
+#ifndef NDEBUG
+    auto & infoManager = directXGfx.infoManager;
+#endif
+    GFX_THROW_INFO(CreateTexture(directXGfx.pDevice, pInputTex, ppOutputTexture2D, Texture::EType::TEXTURE2D));
+    return true;
 }
 
-void HLSLPixelShader::bindToPipeline()
+
+bool HLSLPixelShader::CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler)
 {
-    directXGfx.pContext->PSSetShader(pPixelShader.Get(), nullptr, 0u);
-    if(pMaterialConstantBuffer != nullptr)
+    if(pInputTex == nullptr) return false;
+    HRESULT hr;
+#ifndef NDEBUG
+    auto & infoManager = directXGfx.infoManager;
+#endif
+    D3D11_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.Filter = GetTextureFilterMode(pInputTex->GetFilterMode()); 
+    auto wrapmode = GetTextureWrapMode(pInputTex->GetWrapMode());
+    samplerDesc.AddressU = wrapmode; 
+    samplerDesc.AddressV = wrapmode; 
+    samplerDesc.AddressW = wrapmode; 
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    GFX_THROW_INFO(directXGfx.pDevice->CreateSamplerState(&samplerDesc, ppOutputSampler));
+    return true;
+}
+static HRESULT CreateTexture(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, Texture* pTex, ID3D11Texture2D ** ppOutputTexture,
+    Texture::EType textureType)
+{
+    HRESULT hr = E_FAIL;
+    if(textureType == Texture::EType::TEXTURE2D)
     {
-        directXGfx.pContext->PSSetConstantBuffers(DirectXGraphics::MaterialCBufSlot, 1u, pMaterialConstantBuffer.GetAddressOf());
+        D3D11_TEXTURE2D_DESC ImageTextureDesc = {};
+    
+        ImageTextureDesc.Width = pTex->GetWidth();
+        ImageTextureDesc.Height = pTex->GetHeight();
+        ImageTextureDesc.MipLevels = pTex->GetMipMapLevels();
+        ImageTextureDesc.ArraySize = 1;
+        
+        ImageTextureDesc.Format = GetTextureFormat(pTex->GetTextureFormat(), pTex->IsLinear());
+        ImageTextureDesc.SampleDesc.Count = 1;
+        ImageTextureDesc.SampleDesc.Quality = 0;
+        ImageTextureDesc.Usage = D3D11_USAGE_IMMUTABLE;
+        ImageTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+        D3D11_SUBRESOURCE_DATA ImageSubresourceData = {};
+        ImageSubresourceData.pSysMem = pTex->GetImageData();
+        ImageSubresourceData.SysMemPitch = pTex->GetPitch();
+        
+        hr = pDevice->CreateTexture2D(&ImageTextureDesc,
+                                        &ImageSubresourceData,
+                                        ppOutputTexture
+                                        );
+        if (FAILED(hr)) return hr;
+    }else
+    {
+        throw std::exception("Not implemented");
     }
+    return hr;
 }
-
-
-// std::shared_ptr<HLSLPixelShader> HLSLPixelShader::Load(DirectXGraphics& gfx, const std::wstring& path, LPCSTR entryPoint, LPCSTR shaderModel)
-// {
-//     std::shared_ptr<HLSLPixelShader> pShader(new HLSLPixelShader(gfx, path, entryPoint, shaderModel));
-//     return pShader;
-// }
-
-
-

@@ -9,7 +9,7 @@ class EngineException : public std::exception
 public:
     EngineException(int line, const char* file, const char* msg) noexcept;
     const char* what() const noexcept override;
-    virtual const char* GetType() const noexcept = 0;
+    virtual const char* GetType() const noexcept;
     int GetLine() const noexcept;
     const std::string& GetFile() const noexcept;
     std::string GetOriginString() const noexcept;

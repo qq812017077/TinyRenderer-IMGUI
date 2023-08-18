@@ -1,4 +1,6 @@
 #include "MaterialManager.h"
+#include <filesystem>
+namespace fs = std::filesystem;
 
 MaterialManager::MaterialManager()
 {
@@ -9,14 +11,15 @@ MaterialManager::MaterialManager()
 
 void MaterialManager::AddRenderer(Renderer& renderer)
 {
-    auto pMat = renderer.GetMaterial();
+    
+    auto pMat = renderer.GetSharedMaterial();
     auto& renderersByMaterial = MaterialManager::Get().renderersByMaterial;
     renderersByMaterial[pMat].push_back(std::ref(renderer));
 }
 
 void MaterialManager::RemoveRenderer(Renderer& renderer)
 {
-    auto pMat = renderer.GetMaterial();
+    auto pMat = renderer.GetSharedMaterial();
     auto& renderersByMaterial = MaterialManager::Get().renderersByMaterial;
     auto& renderers = renderersByMaterial[pMat];
     auto it = std::find_if(renderers.begin(), renderers.end(), [&renderer](Renderer& r){return &r == &renderer;});
@@ -54,13 +57,13 @@ void MaterialManager::RemoveMaterial(unsigned int uniqueCode)
     return;
 }
 
-bool MaterialManager::ExistMaterial(std::string vertexShaderPath, std::string pixelShaderPath)
+bool MaterialManager::HasGenerateMaterial(std::string vertexShaderPath, std::string pixelShaderPath)
 {
     auto code = MaterialManager::UniqueCode(vertexShaderPath, pixelShaderPath);
-    return ExistMaterial(code);
+    return HasGenerateMaterial(code);
 }
 
-bool MaterialManager::ExistMaterial(unsigned int uniqueCode)
+bool MaterialManager::HasGenerateMaterial(unsigned int uniqueCode)
 {
     auto& materialByCode = MaterialManager::Get().materialByUniqueCode;
     
@@ -91,4 +94,15 @@ std::shared_ptr<Material>& MaterialManager::GetMaterialByCode(unsigned int code)
 {
     auto& materialByCode = MaterialManager::Get().materialByUniqueCode;
     return materialByCode[code];
+}
+
+bool MaterialManager::ExistMaterial(std::string vertexShaderPath, std::string pixelShaderPath)
+{
+    // check path is valid
+    if (vertexShaderPath == "" || pixelShaderPath == "")
+        return false;
+    // check file exist
+    if (!fs::exists(vertexShaderPath) || !fs::exists(pixelShaderPath))
+        return false;
+    return true;
 }

@@ -16,9 +16,11 @@ public:
     Renderer(Renderer const& other) = delete;
     Renderer& operator=(Renderer& other) noexcept = delete;
 
-    void SetMaterial(std::shared_ptr<Material> pMaterial);
-    std::shared_ptr<Material> GetMaterial() const;
-
+    void Init() override ;
+    void SetSharedMaterial(std::shared_ptr<Material> pMaterial);
+    // void SetMaterial(Material material);
+    std::shared_ptr<Material> GetSharedMaterial() const;
+    Material * GetMaterial();
     void SetMesh(Mesh mesh);
     Mesh& GetMesh();
 
@@ -27,7 +29,8 @@ protected:
     void ClearObjBuffer();
     void UpdateObjBuffer();
     
-    std::shared_ptr<Material> pMaterial;
+    std::shared_ptr<Material> pSharedMaterial;
+    std::unique_ptr<Material> pMaterial;
     Mesh mesh;
     UniformBuffer objBuffer;
 };

@@ -25,6 +25,7 @@ public:
 
     void OnUpdate(float deltaTime) override;
 
+    static Camera* pActivedCamera;
 private:
     float fov = 60.0f;
     float aspect = 1.0f;

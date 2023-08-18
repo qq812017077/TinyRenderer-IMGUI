@@ -1,19 +1,14 @@
 #pragma once
 #include "core/GameObject.h"
 #include "EngineMath.h"
+#include <memory>
 
-class Primitive : public GameObject
+class Primitive 
 {
-protected:
-    Primitive();
-    Primitive(std::string name);
-    Primitive(const Primitive& other) = delete;
-    ~Primitive();
-
 public:
-    void Primitive::Init() override;
-    virtual std::vector<Float3> GetVerticesPosition() = 0;
-    virtual std::vector<INDICE_TYPE> GetVerticesIndices() = 0;
-    virtual std::vector<ColorRGBA> GetVerticesColor() = 0;
+
+    static std::unique_ptr<GameObject> CreateSimpleCube(std::string name);
+    static std::unique_ptr<GameObject> CreateSkinedCube(std::string name);
+    static std::unique_ptr<GameObject> CreateCube(std::string name);
 
 };

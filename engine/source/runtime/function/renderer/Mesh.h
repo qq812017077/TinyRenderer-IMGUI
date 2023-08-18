@@ -64,11 +64,11 @@ public:
     unsigned int GetIndexCount();
     static VertexDataType GetVertexDataType(const char* semanticName);
     static unsigned int GetAlignedByteOffset(const char* semanticName, int semanticIndex = 0);
-
+    
+    std::vector<Vertex> vertices;
 private:
     VertexDataType availableVertexType = VertexDataType::None;
     // vertex array
-    std::vector<Vertex> vertices;
     // index array
     std::vector<INDICE_TYPE> indices;
 };

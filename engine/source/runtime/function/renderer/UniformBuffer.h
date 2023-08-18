@@ -41,9 +41,6 @@ public:
     static void UpdateFrameBuffer();
     static UniformBuffer& GetFrameBuffer();
     static void ClearFrameBuffer();
-    static void BindCamera(Camera* camera);
-
 private:
     UniformBuffer frameBuffer;
-    Camera* pCurCamera = nullptr;
 };

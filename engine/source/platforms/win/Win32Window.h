@@ -30,7 +30,9 @@ public:
 
     //Graphics
     Graphics& Gfx() { return *pGfx; }
+    
     //Window 
+    void ShowMessageBox(const std::string& title, const std::string& message) const noexcept override;
     void SetTitle(const std::wstring& title);
     std::optional<int> ProcessMessages() noexcept override;
     HWND GetHwnd() const noexcept { return hWnd; }

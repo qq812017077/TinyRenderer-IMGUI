@@ -26,8 +26,6 @@ void Graphics::LoadMaterial(Material& material)
         // update uniform buffer
         material.UpdateUniformBuffer();
     }
-    // bind material info to pipeline
-    material.BindToPipeline();
 }
 
 void Graphics::OnFrameBegin()

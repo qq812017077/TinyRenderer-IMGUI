@@ -1,10 +1,12 @@
 #include "Surface.h"
 #include <cassert>
 #include <fstream>
-
+#include <iostream>
+#include <core/EngineException.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
+#include "Color.h"
+#include <string>
 Surface::Surface( unsigned int width, unsigned int height):
 	width(width),
 	height(height),
@@ -37,7 +39,7 @@ void Surface::PutPixel( unsigned int x,unsigned int y,Color c ) noexcept(!IS_DEB
 	pBuffer[y * width + x] = c;
 }
 
-Surface::Color Surface::GetPixel( unsigned int x,unsigned int y ) const noexcept(!IS_DEBUG)
+Color Surface::GetPixel( unsigned int x,unsigned int y ) const noexcept(!IS_DEBUG)
 {
 	assert( x >= 0 );
 	assert( y >= 0 );
@@ -55,22 +57,36 @@ unsigned int Surface::GetHeight() const noexcept
 {
 	return height;
 }
+unsigned int Surface::GetBytePitch() const noexcept
+{
+	return width * sizeof( Color );
+}
 
-Surface::Color* Surface::GetBufferPtr() noexcept
+// Color* Surface::GetBufferPtr() noexcept
+// {
+// 	return pBuffer.get();
+// }
+
+Color* Surface::GetBufferPtr() const noexcept
 {
 	return pBuffer.get();
 }
 
-const Surface::Color* Surface::GetBufferPtr() const noexcept
+const Color* Surface::GetBufferPtrConst() const noexcept
 {
 	return pBuffer.get();
 }
 
-const Surface::Color* Surface::GetBufferPtrConst() const noexcept
+bool Surface::AlphaLoaded() const noexcept
 {
-	return pBuffer.get();
+	return alphaLoaded;
 }
 
+/**
+ * @brief save surface to target file
+ * 
+ * @param filename 
+ */
 void Surface::Save(const std::string& filename) const
 {
 
@@ -83,43 +99,43 @@ void Surface::Copy( const Surface & src ) noexcept(!IS_DEBUG)
 }
 
 /*  static methods*/
-Surface Surface::LoadFromFile(const std::string& name)
+Surface Surface::LoadFromFile(const std::string& filename)
 {
-	// unsigned char *img = stbi_load(name, &width, &height, &channels, 0);
-	// read file
-	std::ifstream in;
-	in.open(name, std::ios::binary);
-	if (!in.is_open()) {
-		throw std::exception("Can't open file");
-    }
-
-	SurfaceHeader header;
-    in.read(reinterpret_cast<char *>(&header), sizeof(header));
-    if (!in.good()) {
-        throw std::exception("Can't read file header");
-    }
-
-	unsigned int width = header.width;
-	unsigned int height = header.height;
-	unsigned int bpp = header.bitsperpixel>>3;
-	if (width<=0 || height<=0 || (bpp!=GRAYSCALE && bpp!=RGB && bpp!=RGBA))
-	{
-		throw std::exception("Invalid file format");
-	}
-
-	std::unique_ptr<Color[]> pBuffer = std::make_unique<Color[]>(width * height);
-	// for( unsigned int y = 0; y < height; y++ )
-	// {
-	// 	for( unsigned int x = 0; x < width; x++ )
-	// 	{
-	// 		Gdiplus::Color c;
-	// 		bitmap.GetPixel( x,y,&c );
-	// 		pBuffer[y * width + x] = c.GetValue();
-	// 	}
-	// }
-	return Surface(width, height, std::move(pBuffer));
+	return LoadFromFile(filename.c_str());
 }
 
+Surface Surface::LoadFromFile(const char* filename)
+{
+	int width;
+	int height;
+	int channels;
+	unsigned char *image = stbi_load(filename, &width, &height, &channels, STBI_default);
+	if (!image) {
+		// throw std::runtime_error("Failed to load image: " + filename);
+		char error[50] = "Failed to load image: ";
+		strcat_s(error, sizeof(error), filename);
+		throw EngineException(__LINE__, __FILE__, error);
+	}
+	assert(width > 0 && height > 0 && channels > 0);
+	
+	std::unique_ptr<Color[]> pBuffer = std::make_unique<Color[]>(width * height);
+	
+	Color c;
+	for( int y = 0; y < height; y++ )
+	{
+		for( int x = 0; x < width; x++ )
+		{
+			auto r = image[(y * width + x) * channels + 0];
+			auto g = image[(y * width + x) * channels + 1];
+			auto b = image[(y * width + x) * channels + 2];
+			auto a = channels == 4 ? image[(y * width + x) * channels + 3] : 255;
+			// save the pixel to our buffer
+			pBuffer[y * width + x] = Color(r, g, b, a);
+		}
+	}
+	free(image);
+	return Surface(width, height, std::move(pBuffer));
+}
 
 // private methods
 Surface::Surface( unsigned int width,unsigned int height,std::unique_ptr<Color[]> pBufferParam ) noexcept

@@ -1,6 +1,7 @@
 #include "DXUtil.h"
 #include "EngineWin.h"
-// 安全COM组件释放宏
+
+// COM Release
 #define SAFE_RELEASE(p) { if ((p)) { (p)->Release(); (p) = nullptr; } }
 
 
@@ -12,7 +13,7 @@ HRESULT CreateShaderFromFile(const WCHAR * csoFileNameInOut, const WCHAR * hlslF
     
     HRESULT hr = S_OK;
 
-    // 寻找是否有已经编译好的顶点着色器
+    // Find if has existed compiled shader file
     if (csoFileNameInOut && D3DReadFileToBlob(csoFileNameInOut, ppBlobOut) == S_OK)
     {
         return hr;
@@ -21,11 +22,10 @@ HRESULT CreateShaderFromFile(const WCHAR * csoFileNameInOut, const WCHAR * hlslF
     {
         DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
-        // 设置 D3DCOMPILE_DEBUG 标志用于获取着色器调试信息。该标志可以提升调试体验，
-        // 但仍然允许着色器进行优化操作
+        // Set the 'D3DCOMPILE_DEBUG' flag to fetch shader debugging information: can improve the debugging experience,
         dwShaderFlags |= D3DCOMPILE_DEBUG;
 
-        // 在Debug环境下禁用优化以避免出现一些不合理的情况
+        // Disable optimizations in the Debug environment to avoid some unreasonable situations
         dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
         ID3DBlob* errorBlob = nullptr;
@@ -43,7 +43,7 @@ HRESULT CreateShaderFromFile(const WCHAR * csoFileNameInOut, const WCHAR * hlslF
             return hr;
         }
 
-        // 若指定了输出文件名，则将着色器二进制信息输出
+        // If specified output file name, output the shader binary information.
         if (csoFileNameInOut)
         {
             return D3DWriteBlobToFile(*ppBlobOut, csoFileNameInOut, FALSE);
@@ -54,72 +54,152 @@ HRESULT CreateShaderFromFile(const WCHAR * csoFileNameInOut, const WCHAR * hlslF
 }
 
 
-
-HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, std::vector<UniformVar>* pUniformVars)
+HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, ID3D11ShaderReflection** ppReflection, D3D11_SHADER_DESC* pShaderDesc)
 {
-    return GetShaderInfo(shaderBytecode, bytecodeLength, pUniformVars, nullptr);
-}
-
-HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, std::vector<UniformVar>* pUniformVars, std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed)
-{
-    Microsoft::WRL::ComPtr<ID3D11ShaderReflection> pReflection = nullptr;
-    HRESULT hr = D3DReflect(shaderBytecode, bytecodeLength, IID_ID3D11ShaderReflection, &pReflection);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    D3D11_SHADER_DESC shaderDesc;
-    pReflection->GetDesc(&shaderDesc);
-
-    if(pUniformVars != nullptr)
-    {
-        pUniformVars->clear();
-        for (UINT i = 0; i < shaderDesc.ConstantBuffers; ++i)
-        {
-            ID3D11ShaderReflectionConstantBuffer* constantBuffer = pReflection->GetConstantBufferByIndex(i);
-
-            D3D11_SHADER_BUFFER_DESC bufferDesc;
-            constantBuffer->GetDesc(&bufferDesc);
-
-            for (UINT j = 0; j < bufferDesc.Variables; ++j)
-            {
-                ID3D11ShaderReflectionVariable* variable = constantBuffer->GetVariableByIndex(j);
-
-                D3D11_SHADER_VARIABLE_DESC variableDesc;
-                variable->GetDesc(&variableDesc);
-                pUniformVars->push_back(
-                    {variableDesc.Name,
-                    variableDesc.Size}
-                    );
-            }
-        }
-    }
-
-    if(pLed != nullptr)
-    {
-        pLed->clear();
-        for (UINT i = 0; i < shaderDesc.InputParameters; i++)
-        {
-            D3D11_SIGNATURE_PARAMETER_DESC inputParamDesc;
-            pReflection->GetInputParameterDesc(i, &inputParamDesc);
-
-            // 在这里处理 inputParamDesc 中的信息
-            auto len = strlen(inputParamDesc.SemanticName);
-            D3D11_INPUT_ELEMENT_DESC inputElementDesc;
-            inputElementDesc.SemanticName = new char[len + 1];
-            strcpy_s(const_cast<char*>(inputElementDesc.SemanticName), len + 1, inputParamDesc.SemanticName);
-            inputElementDesc.SemanticIndex = inputParamDesc.SemanticIndex;
-            inputElementDesc.Format = GetInputElementFormatByMask(inputParamDesc.Mask, inputParamDesc.ComponentType);
-            inputElementDesc.InputSlot = 0;
-            inputElementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-            inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-            inputElementDesc.InstanceDataStepRate = 0;
-            pLed->push_back(inputElementDesc);
-        }
-    }
+    HRESULT hr = D3DReflect(shaderBytecode, bytecodeLength, IID_ID3D11ShaderReflection, (void**)ppReflection);
+    if (FAILED(hr)) return hr;
+    (*ppReflection)->GetDesc(pShaderDesc);
     return hr;
 }
+void GetInputLayoutInfo(ID3D11ShaderReflection* pReflection, D3D11_SHADER_DESC& shaderDesc, std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed)
+{
+    if(pReflection == nullptr) return ;
+    pLed->clear();
+    for (UINT i = 0; i < shaderDesc.InputParameters; i++)
+    {
+        D3D11_SIGNATURE_PARAMETER_DESC inputParamDesc;
+        pReflection->GetInputParameterDesc(i, &inputParamDesc);
 
+        // 
+        auto len = strlen(inputParamDesc.SemanticName);
+        D3D11_INPUT_ELEMENT_DESC inputElementDesc;
+        inputElementDesc.SemanticName = new char[len + 1];
+        strcpy_s(const_cast<char*>(inputElementDesc.SemanticName), len + 1, inputParamDesc.SemanticName);
+        inputElementDesc.SemanticIndex = inputParamDesc.SemanticIndex;
+        inputElementDesc.Format = GetInputElementFormatByMask(inputParamDesc.Mask, inputParamDesc.ComponentType);
+        inputElementDesc.InputSlot = 0;
+        inputElementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+        inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+        inputElementDesc.InstanceDataStepRate = 0;
+        pLed->push_back(inputElementDesc);
+    }
+}
+void LoadShaderDescInfo(ID3D11ShaderReflection* pReflection, D3D11_SHADER_DESC& shaderDesc, ShaderDesc * pShaderDesc)
+{
+    for(UINT i=0; i < shaderDesc.BoundResources; ++i)
+    {
+        D3D11_SHADER_INPUT_BIND_DESC bindDesc;
+        pReflection->GetResourceBindingDesc(i, &bindDesc);
+        switch (bindDesc.Type)
+        {
+            case D3D_SIT_CBUFFER: // constant buffer
+                {
+                    CBufInfo cbInfo;
+                    cbInfo.slot = bindDesc.BindPoint;
+                    cbInfo.BufName = bindDesc.Name;
+                    ID3D11ShaderReflectionConstantBuffer* constantBuffer = pReflection->GetConstantBufferByName(bindDesc.Name);
+                    D3D11_SHADER_BUFFER_DESC bufferDesc;
+                    constantBuffer->GetDesc(&bufferDesc);
+                    for (UINT j = 0; j < bufferDesc.Variables; ++j)
+                    {
+                        ID3D11ShaderReflectionVariable* variable = constantBuffer->GetVariableByIndex(j);
+                        // get variable slot number
+                        D3D11_SHADER_VARIABLE_DESC variableDesc;
+                        variable->GetDesc(&variableDesc);
+                        cbInfo.vars.push_back({variableDesc.Name,variableDesc.Size});
+                    }
+                    pShaderDesc->AddConstantBufferInfo(cbInfo);
+                }
+                break;
+            case D3D_SIT_TEXTURE: // texture
+                {
+                    TextureInfo textureInfo;
+                    textureInfo.slot = bindDesc.BindPoint;
+                    textureInfo.name = bindDesc.Name;
+                    pShaderDesc->AddTextureInfo(textureInfo);
+                }
+                break;
+            case D3D_SIT_SAMPLER: // sampler
+                {
+                    SamplerInfo samplerInfo;
+                    samplerInfo.slot = bindDesc.BindPoint;
+                    samplerInfo.name = bindDesc.Name;
+                    pShaderDesc->AddSamplerInfo(samplerInfo);
+                }
+                break;
+        }
+    }
+}
+
+// void GetUniformsInfo(ID3D11ShaderReflection* pReflection, D3D11_SHADER_DESC& shaderDesc, std::vector<UniformVar>* pUniformVars)
+// {
+//     if(pReflection == nullptr) return ;
+//     pUniformVars->clear();
+//     for(UINT i=0; i < shaderDesc.BoundResources; ++i)
+//     {
+//         D3D11_SHADER_INPUT_BIND_DESC bindDesc;
+//         pReflection->GetResourceBindingDesc(i, &bindDesc);
+//         if(bindDesc.Type == D3D_SIT_CBUFFER)
+//         {
+//             //Get Buffer_desc by name
+//             ID3D11ShaderReflectionConstantBuffer* constantBuffer = pReflection->GetConstantBufferByName(bindDesc.Name);
+//             D3D11_SHADER_BUFFER_DESC bufferDesc;
+//             constantBuffer->GetDesc(&bufferDesc);
+//             // constant buffer slots
+//             // get constantBuffer slot number
+//             for (UINT j = 0; j < bufferDesc.Variables; ++j)
+//             {
+//                 ID3D11ShaderReflectionVariable* variable = constantBuffer->GetVariableByIndex(j);
+//                 // get variable slot number
+//                 D3D11_SHADER_VARIABLE_DESC variableDesc;
+//                 variable->GetDesc(&variableDesc);
+//                 pUniformVars->push_back(
+//                     {variableDesc.Name,
+//                     variableDesc.Size}
+//                     );
+//             }
+//         }
+//     }
+// }
+
+
+// void GetTextureInfo(ID3D11ShaderReflection* pReflection, D3D11_SHADER_DESC& shaderDesc, std::map<std::string, int> * pTextureSlotMap)
+// {
+//     if(pReflection == nullptr) return ;
+//     pTextureSlotMap->clear();
+//     // collect all texture slots and names
+//     for (UINT i = 0; i < shaderDesc.BoundResources; ++i)
+//     {
+//         D3D11_SHADER_INPUT_BIND_DESC bindDesc;
+//         pReflection->GetResourceBindingDesc(i, &bindDesc);
+//         if (bindDesc.Type == D3D_SIT_TEXTURE)
+//         {
+//             // texture slots
+//             pTextureSlotMap->insert({ bindDesc.Name, bindDesc.BindPoint });
+//         }
+//         else if (bindDesc.Type == D3D_SIT_SAMPLER)
+//         {
+//             // sampler slots
+//         }
+//     }
+// }
+
+// HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, std::vector<UniformVar>* pUniformVars, 
+// std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed, std::map<std::string, int> * pTextureSlotMap)
+// {
+//     Microsoft::WRL::ComPtr<ID3D11ShaderReflection> pReflection = nullptr;
+//     D3D11_SHADER_DESC shaderDesc;
+//     HRESULT hr = GetShaderInfo(shaderBytecode, bytecodeLength, &pReflection, &shaderDesc);
+//     if (FAILED(hr)) return hr;
+//     if(pUniformVars != nullptr) GetUniformsInfo(pReflection.Get(), shaderDesc, pUniformVars);
+//     if(pLed != nullptr) GetInputLayoutInfo(pReflection.Get(), shaderDesc, pLed);
+//     if(pTextureSlotMap != nullptr) GetTextureInfo(pReflection.Get(), shaderDesc, pTextureSlotMap);
+//     return hr;
+// }
+
+//--------------------------------------------------------------------------------------
+// 
+//--------------------------------------------------------------------------------------
 static HRESULT CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, D3D11_BIND_FLAG bind_flag, void* pData, UINT bufByteSize, UINT stride, ID3D11Buffer **ppOutputBuffer)
 {
     D3D11_BUFFER_DESC cbd = {};
@@ -160,6 +240,8 @@ HRESULT CreateIndexBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, void* p
 {
     return CreateBuffer(pDevice, D3D11_BIND_INDEX_BUFFER, pData, bufByteSize, stride, ppOutputBuffer);
 }
+
+
 
 DXGI_FORMAT GetInputElementFormatByMask(BYTE inputParamMask, D3D_REGISTER_COMPONENT_TYPE componentType)
 {
@@ -239,4 +321,50 @@ DXGI_FORMAT GetIndexDataFormat(unsigned int indexStride)
     else if (indexStride == 2)
         return DXGI_FORMAT_R16_UINT;
     return DXGI_FORMAT_R16_UINT;
+}
+
+DXGI_FORMAT GetTextureFormat(ETextureFormat textureFormat, bool islinear)
+{
+    if(textureFormat == ETextureFormat::ARGB32)
+        return islinear? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    else if(textureFormat == ETextureFormat::ARGB4444)
+    {
+        return DXGI_FORMAT_B4G4R4A4_UNORM;
+    }
+
+    return islinear? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+}
+
+D3D11_FILTER GetTextureFilterMode(EFilterMode filterMode)
+{
+    switch (filterMode)
+    {
+        case EFilterMode::Point:
+            return D3D11_FILTER_MIN_MAG_MIP_POINT;
+        case EFilterMode::Bilinear:
+        case EFilterMode::Trilinear:
+            return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+            // return D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+            // return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        case EFilterMode::Anisotropic:
+            return D3D11_FILTER_ANISOTROPIC;
+    }
+    return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+}
+D3D11_TEXTURE_ADDRESS_MODE GetTextureWrapMode(EWrapMode wrapMode)
+{
+    switch (wrapMode)
+    {
+        case EWrapMode::Repeat:
+            return D3D11_TEXTURE_ADDRESS_WRAP;
+        case EWrapMode::Clamp:
+            return D3D11_TEXTURE_ADDRESS_CLAMP;
+        case EWrapMode::Mirror:
+            return D3D11_TEXTURE_ADDRESS_MIRROR;
+        case EWrapMode::MirrorOnce:
+            return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
+        case EWrapMode::Border:
+            return D3D11_TEXTURE_ADDRESS_BORDER;
+    }
+    return D3D11_TEXTURE_ADDRESS_WRAP;
 }

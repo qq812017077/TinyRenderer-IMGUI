@@ -11,6 +11,9 @@ public:
     
     GameObject& GetOwner() const;
 protected:
+    virtual void Init() = 0;
     void SetOwner(GameObject* owner);
+    virtual void OnUpdate(float deltaTime) {};
     GameObject* owner = nullptr;
+private:
 };

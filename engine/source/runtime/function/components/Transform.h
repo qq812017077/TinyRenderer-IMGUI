@@ -1,14 +1,19 @@
 #pragma once
 #include "EngineMath.h"
+#include "Component.h"
 
-class Transform
+class GameObject;
+class Transform : public Component
 {
+    friend class GameObject;
+
 public:
     Transform();
     Transform(const Vector3& position, const Vector3& rotation, const Vector3& scale);
     ~Transform() = default;
     Transform(Transform const& other) = delete;
     Transform& operator=(Transform& other) noexcept;
+
 
     void SetPosition(const Vector3& position);
     void SetRotation(const Vector3& rotation);
@@ -25,6 +30,8 @@ public:
     Vector3 up() const;
     
     Matrix4x4 GetWorldMatrix() const;
+protected:
+    void Init() override;
 private:
     Vector3 position;
     Vector3 rotation;

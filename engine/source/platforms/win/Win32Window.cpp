@@ -52,6 +52,10 @@ void Win32Window::CloseWindow() noexcept
     ::DestroyWindow(hWnd);
 }
 
+void Win32Window::ShowMessageBox(const std::string& title, const std::string& message) const noexcept
+{
+    ::MessageBox(hWnd, title.c_str(), message.c_str(), MB_OK | MB_ICONEXCLAMATION);
+}
 void Win32Window::SetTitle(const std::wstring& title)
 {
     if(!::SetWindowTextW(hWnd, title.c_str()))

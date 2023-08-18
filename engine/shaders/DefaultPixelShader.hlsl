@@ -1,15 +1,6 @@
-cbuffer FrameCBuf : register(b0)
-{
-	matrix g_View;
-	matrix g_Proj;
-};
+#include "Basic.hlsli"
 
-cbuffer MaterialCBuf : register(b1)
+float4 main(VS_OUTPUT ps_in) : SV_Target
 {
-	float3 diffuse;
-};
-
-float4 main(float3 color :Color) : SV_Target
-{
-    return float4(color, 1.0);
+    return float4(ps_in.color, 1.0);
 }

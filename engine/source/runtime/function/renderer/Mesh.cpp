@@ -2,9 +2,8 @@
 #ifdef _DEBUG
 #include <iostream>
 #endif
-#include <exception>
-
-#define STREQUAL(a, b) (strcmp(a, b) == 0)
+#include "core/EngineException.h"
+#define STREQUAL(a, b) (_stricmp(a, b) == 0)
 
 inline VertexDataType operator|(VertexDataType lhs, VertexDataType rhs)
 {
@@ -175,7 +174,7 @@ unsigned int Mesh::GetAlignedByteOffset(const char * semanticName, int semanticI
     #ifdef _DEBUG
         std::cout << "unknown semantic name: " << semanticName << " in " << __LINE__ << __FILE__ << std::endl;
     #endif
-    throw std::exception("Invalid semantic name");
+    throw EngineException(__LINE__, __FILE__, ("unknown semantic name:" + std::string(semanticName)).c_str());
     return 0;
 
 }

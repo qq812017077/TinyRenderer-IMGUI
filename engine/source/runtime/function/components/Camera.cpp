@@ -1,6 +1,7 @@
 #include "Camera.h"
 #include <DirectXMath.h>
 
+Camera* Camera::pActivedCamera = nullptr;
 Camera::Camera():
     Camera("Camera")
 {
@@ -13,6 +14,7 @@ Camera::Camera(std::string name):
     nearPlane(0.1f),
     farPlane(1000.0f)
 {
+    if(pActivedCamera == nullptr) pActivedCamera = this;
 }
 
 void Camera::SetFOV(float fov)

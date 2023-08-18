@@ -15,6 +15,8 @@ set(CMAKE_INSTALL_PREFIX "${PROJECT_ROOT_DIR}/bin")
 set(BINARY_ROOT_DIR "${CMAKE_INSTALL_PREFIX}/")
 set(THIRD_PARTY_DIR "${ENGINE_ROOT_DIR}/3rdparty")
 set(SHADER_DIR "${ENGINE_ROOT_DIR}/shaders")
+set(RESOURCE_DIR "${ENGINE_ROOT_DIR}/res")
+
 
 message(STATUS "Configuring project...")
 message(STATUS "CMAKE_VERSION: ${CMAKE_VERSION}")

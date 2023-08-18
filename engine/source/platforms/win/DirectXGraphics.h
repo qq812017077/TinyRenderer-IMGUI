@@ -11,8 +11,9 @@
 #include "EngineWin.h"
 #include <memory>
 #include "UniformBuffer.h"
-namespace wrl = Microsoft::WRL;
 
+namespace wrl = Microsoft::WRL;
+class Texture;
 class DirectXGraphics : public Graphics
 {
 friend class HLSLVertexShader;
@@ -42,10 +43,16 @@ protected:
     std::shared_ptr<VertexShader> CreateVertexShader(const std::string& path) override;
     std::shared_ptr<PixelShader> CreatePixelShader(const std::string& path) override;
     
+    // Material Operation
+    void LoadMaterial(Material & material) override;
+
     // Constant Buffer Operation
     void UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, UniformBuffer& bufData);
-    void BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& targetBuf, ECBufBindType bindType = Graphics::ECBufBindType::ToAll);
+    void BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& targetBuf, EBindType bindType = Graphics::EBindType::ToAll);
 
+    // Texture Operation
+    void UpdateTexture(wrl::ComPtr<ID3D11ShaderResourceView>& pTextureView, const Texture& texture);
+    void BindTexture(unsigned int slot, wrl::ComPtr<ID3D11ShaderResourceView>& pTextureView, EBindType bindType = Graphics::EBindType::ToAll);
 private:
     wrl::ComPtr<ID3D11Device> pDevice= nullptr;
     wrl::ComPtr<ID3D11DeviceContext> pContext = nullptr;

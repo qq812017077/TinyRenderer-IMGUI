@@ -9,24 +9,39 @@
 #include <d3d11shader.h>
 #include <vector>
 #include <wrl.h>
+#include <map>
 #include "Mesh.h"
-#include "UniformVar.h"
-
+#include "ShaderDesc.h"
+#include "TextureFormat.h"
+#include "SampleMode.h"
 // ------------------------------
-// CreateShaderFromFile函数
-// ------------------------------
+// Shader函数
+// CreateShaderFromFile函数:
 // [In]csoFileNameInOut 编译好的着色器二进制文件(.cso)，若有指定则优先寻找该文件并读取
-// [In]hlslFileName     着色器代码，若未找到着色器二进制文件则编译着色器代码
-// [In]entryPoint       入口点(指定开始的函数)
-// [In]shaderModel      着色器模型，格式为"*s_5_0"，*可以为c,d,g,h,p,v之一
-// [Out]ppBlobOut       输出着色器二进制信息
+// [In]hlslFileName 未编译的着色器源文件(.hlsl)，若csoFileNameInOut为空则使用该文件编译
+// [In]entryPoint 着色器入口点
+// [In]shaderModel 着色器模型, 如"vs_5_0", "ps_5_0"等
+// [Out]ppBlobOut 编译好的着色器二进制文件(.cso)
+// ------------------------------
 HRESULT CreateShaderFromFile(const WCHAR * csoFileNameInOut, const WCHAR * hlslFileName,
     LPCSTR entryPoint, LPCSTR shaderModel, ID3DBlob ** ppBlobOut);
 
 DXGI_FORMAT GetInputElementFormatByMask(BYTE inputParamMask, D3D_REGISTER_COMPONENT_TYPE componentType);
 
-HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, std::vector<UniformVar>* pUniformVars, std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed);
 
+// ------------------------------
+// ShaderInfo函数
+// ------------------------------
+HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength,
+    ID3D11ShaderReflection** ppReflection, D3D11_SHADER_DESC* shaderDesc);
+// HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, std::vector<UniformVar>* pUniformVars, 
+// std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed, std::map<std::string, int> * pTextureSlotMap);
+void GetInputLayoutInfo(ID3D11ShaderReflection* pReflection, D3D11_SHADER_DESC& shaderDesc, std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed);
+void LoadShaderDescInfo(ID3D11ShaderReflection* pReflection, D3D11_SHADER_DESC& shaderDesc, ShaderDesc * pShaderDesc);
+
+// ------------------------------
+// Buffer函数
+// ------------------------------
 static HRESULT 
 CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, D3D11_BIND_FLAG bind_flag, void* pData, 
     UINT bufByteSize, UINT stride, ID3D11Buffer **ppOutputBuffer);
@@ -38,3 +53,10 @@ HRESULT CreateIndexBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, void* p
 
 DXGI_FORMAT GetVertexDataFormat(VertexDataType vertexType);
 DXGI_FORMAT GetIndexDataFormat(unsigned int indexStride);
+
+// ------------------------------
+// Texture函数
+// ------------------------------
+DXGI_FORMAT GetTextureFormat(ETextureFormat textureFormat, bool islinear=false);
+D3D11_FILTER GetTextureFilterMode(EFilterMode filterMode);
+D3D11_TEXTURE_ADDRESS_MODE GetTextureWrapMode(EWrapMode wrapMode);

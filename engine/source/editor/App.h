@@ -10,6 +10,7 @@ public:
 
     int Run();
 private:
+    void LoadGOs();
     void DoFrame();
 
     void UpdateGameObject(float deltaTime);

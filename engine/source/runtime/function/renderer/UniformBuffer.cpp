@@ -76,12 +76,13 @@ UniformBuffer& UniformBuffer::operator=(UniformBuffer& other) noexcept
 void FrameUniformBufferManager::UpdateFrameBuffer()
 {
     auto &manager = FrameUniformBufferManager::Get();
-    if(manager.pCurCamera == nullptr)
+    auto pCamera = Camera::pActivedCamera;
+    if(pCamera == nullptr)
     {
-        throw std::exception("No camera is binded to FrameUniformBufferManager");
+        throw std::exception("No camera is actived!");
     }
-    manager.frameBuffer.AddData(manager.pCurCamera->GetViewMatrix());
-    manager.frameBuffer.AddData(manager.pCurCamera->GetProjectionMatrix());
+    manager.frameBuffer.AddData(pCamera->GetViewMatrix());
+    manager.frameBuffer.AddData(pCamera->GetProjectionMatrix());
 }
 
 UniformBuffer& FrameUniformBufferManager::GetFrameBuffer()
@@ -92,9 +93,4 @@ UniformBuffer& FrameUniformBufferManager::GetFrameBuffer()
 void FrameUniformBufferManager::ClearFrameBuffer()
 {
     FrameUniformBufferManager::Get().frameBuffer.Clear();
-}
-
-void FrameUniformBufferManager::BindCamera(Camera* camera)
-{
-    FrameUniformBufferManager::Get().pCurCamera = camera;
 }
