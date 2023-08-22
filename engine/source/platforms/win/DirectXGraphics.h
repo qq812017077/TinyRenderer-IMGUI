@@ -27,11 +27,16 @@ public:
     DirectXGraphics(const DirectXGraphics&) = delete;
     DirectXGraphics& operator=(const DirectXGraphics&) = delete;
     ~DirectXGraphics();
+
+    void BindImgui() override;
     void EndFrame() override;
     void ClearBuffer(float red, float green, float blue) noexcept override;
+
     void DrawTestTriangle(float angle=0.0f) override;
     void DrawAll() override;
 
+    ID3D11Device* GetDevice() const noexcept { return pDevice.Get(); }
+    ID3D11DeviceContext* GetContext() const noexcept { return pContext.Get(); }
     //Events
     void OnResize(int width, int height) override;
 protected:
@@ -58,6 +63,7 @@ private:
     wrl::ComPtr<ID3D11DeviceContext> pContext = nullptr;
     wrl::ComPtr<IDXGISwapChain> pSwap = nullptr;
     wrl::ComPtr<ID3D11RenderTargetView> pTarget = nullptr;
+    wrl::ComPtr<ID3D11DepthStencilView> pDepthStencilView = nullptr;
     wrl::ComPtr<ID3D11Buffer> pFrameConstantBuffer = nullptr;
     wrl::ComPtr<ID3D11Buffer> pObjectConstantBuffer = nullptr;
     wrl::ComPtr<ID3D11Buffer> pVertexBuffer = nullptr;
@@ -68,4 +74,5 @@ private:
     DxgiInfoManager infoManager;
 #endif
     HWND hWnd;
+    bool bindedImgui = false;
 };

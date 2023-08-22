@@ -15,7 +15,7 @@ message(STATUS "    ${RESOURCES_FILES}")
 # collect source files
 message(STATUS "Collect source files")
 file(GLOB_RECURSE COMMON_INCLUDE_FILES ${SOURCE_DIR}/editor/*.h ${SOURCE_DIR}/runtime/*.h ${SOURCE_DIR}/common/*.h)
-file(GLOB_RECURSE COMMON_SOURCE_FILES ${SOURCE_DIR}/editor/*.cpp ${SOURCE_DIR}/runtime/*.cpp)
+file(GLOB_RECURSE COMMON_SOURCE_FILES ${SOURCE_DIR}/editor/*.cpp ${SOURCE_DIR}/runtime/*.cpp ${SOURCE_DIR}/common/*.cpp)
 if(WIN32)
         file(GLOB_RECURSE PLATFORM_INCLUDE_FILES ${SOURCE_DIR}/platforms/win/*.h)
         file(GLOB_RECURSE PLATFORM_SOURCE_FILES ${SOURCE_DIR}/platforms/win/*.cpp)

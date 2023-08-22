@@ -1,6 +1,7 @@
 #pragma once
 #include <queue>
 #include <bitset>
+#include "KeyCode.h"
 enum class KeyState
 {
     KEY_PRESSED,
@@ -35,9 +36,20 @@ public:
     Keyboard& operator=(const Keyboard&) = delete;
     ~Keyboard() {}
 
+    void Update() noexcept { m_keyStatesPrev = m_keyStates; }
     //key events 
-    bool KeyPressed(unsigned char keycode) const { return m_keyStates[keycode];}
-    bool KeyReleased(unsigned char keycode) const { return !m_keyStates[keycode];}
+    bool GetKey(Input::KeyCode keycode) const { return m_keyStates[static_cast<unsigned char>(keycode)]; }
+    bool GetKey(unsigned char keycode) const { return m_keyStates[keycode]; }
+    bool GetKeyDown(Input::KeyCode keycode) const
+    {
+        return !m_keyStatesPrev[static_cast<unsigned char>(keycode)] && m_keyStates[static_cast<unsigned char>(keycode)]; 
+    }
+    bool GetKeyDown(unsigned char keycode) const
+    {
+        return !m_keyStatesPrev[keycode] && m_keyStates[keycode]; 
+    }
+    bool GetKeyUp(Input::KeyCode keycode) const { return m_keyStatesPrev[static_cast<unsigned char>(keycode)] && !m_keyStates[static_cast<unsigned char>(keycode)]; }
+    bool GetKeyUp(unsigned char keycode) const { return m_keyStatesPrev[keycode] && !m_keyStates[keycode]; }
     //read
     KeyEvent ReadKey() { if (m_keyBuffer.size() > 0) { KeyEvent e = m_keyBuffer.front(); m_keyBuffer.pop(); return e; } else { return KeyEvent(); } }
     char ReadChar() { if (m_charBuffer.size() > 0) { unsigned char e = m_charBuffer.front(); m_charBuffer.pop(); return e; } else { return 0; } }
@@ -53,8 +65,17 @@ public:
     void EnableRepeat() { m_allowRepeat = true; }
     void DisableRepeat() { m_allowRepeat = false; }
 private:
-    void OnKeyPressed(unsigned char keycode) noexcept { m_keyStates[keycode] = true; m_keyBuffer.push(KeyEvent(KeyState::KEY_PRESSED, keycode));  TrimBuffer(m_keyBuffer);}
-    void OnKeyReleased(unsigned char keycode) noexcept { m_keyStates[keycode] = false; m_keyBuffer.push(KeyEvent(KeyState::KEY_RELEASED, keycode)); TrimBuffer(m_keyBuffer);}
+    void OnKeyPressed(unsigned char keycode) noexcept 
+    {
+        m_keyStates[keycode] = true; 
+        m_keyBuffer.push(KeyEvent(KeyState::KEY_PRESSED, keycode));  
+        TrimBuffer(m_keyBuffer);
+    }
+    void OnKeyReleased(unsigned char keycode) noexcept { 
+        m_keyStates[keycode] = false; 
+        m_keyBuffer.push(KeyEvent(KeyState::KEY_RELEASED, keycode)); 
+        TrimBuffer(m_keyBuffer);
+    }
     void OnChar(unsigned char character) noexcept { m_charBuffer.push(character); TrimBuffer(m_charBuffer);}
     void ClearState() noexcept{ m_keyStates.reset();}
     
@@ -70,6 +91,7 @@ private:
     static constexpr unsigned int bufferSize = 16u;
 
     std::bitset<keyNum> m_keyStates{};
+    std::bitset<keyNum> m_keyStatesPrev{};
     std::queue<KeyEvent> m_keyBuffer{};
     std::queue<unsigned char> m_charBuffer{};
     bool m_allowRepeat = false;

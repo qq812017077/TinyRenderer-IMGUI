@@ -3,8 +3,9 @@
 #include <iostream>
 #include "DXUtil.h"
 #include "HLSLShader.h"
-#include "MaterialManager.h"
+#include "managers/RenderQueueManager.h"
 #include "Texture.h"
+#include "imgui/backends/imgui_impl_dx11.h"
 #define LOG(X) std::cout << X << std::endl;
 // add ComPtr
 namespace wrl = Microsoft::WRL;
@@ -20,13 +21,23 @@ DirectXGraphics::DirectXGraphics(HWND &hwnd):
     LOG("Directx Graphics  constructor begin")
     CreateDevice();
     CreateRenderTarget();
+
     OnResize(1280, 720);
     LOG("   Directx Graphics  constructor end")
 }
 
+void DirectXGraphics::BindImgui()
+{
+    ImGui_ImplDX11_Init(pDevice.Get(), pContext.Get());
+    bindedImgui = true;
+}
+
 DirectXGraphics::~DirectXGraphics()
 {
+    if(bindedImgui)
+        ImGui_ImplDX11_Shutdown();
     ClearupDevice();
+    ClearupRenderTarget();
 }
 
 void DirectXGraphics::EndFrame()
@@ -52,7 +63,9 @@ void DirectXGraphics::ClearBuffer(float red, float green, float blue) noexcept
 {
     const float color[] = { red, green, blue, 1.0f };
     pContext->ClearRenderTargetView(pTarget.Get(), color);
+    pContext->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
 }
+
 
 void DirectXGraphics::DrawTestTriangle(float angle)
 {
@@ -228,20 +241,19 @@ void DirectXGraphics::DrawAll()
     BindCBuffer(FrameCBufSlot, pFrameConstantBuffer);
 
     //2. update per material constant buffer
-    for(auto & pair : MaterialManager::GetMatRendererPair())
+    for(auto & pair : RenderQueueManager::GetRenderQueue())
     {
-        auto mat = pair.first;
-        auto& renderers = pair.second;
+        auto& mat = pair.first;
+        auto& pRenderers = pair.second;
         LoadMaterial(*mat);
 
-        for (auto& rendererwapper : renderers)
+        for (auto& pRenderer : pRenderers)
         {
-            auto& renderer = rendererwapper.get();
-            UpdateCBuffer(pObjectConstantBuffer, renderer.GetObjBufferData());
+            UpdateCBuffer(pObjectConstantBuffer, pRenderer->GetObjBufferData());
             BindCBuffer(ObjectCBufSlot, pObjectConstantBuffer);
 
             // bind vertex buffer and index buffer
-            auto & mesh = renderer.GetMesh();
+            auto & mesh = pRenderer->GetMesh();
             // bind input layout
             mat->GetVertexShader()->SetInputLayout(mesh);
 
@@ -283,6 +295,26 @@ void DirectXGraphics::OnResize(int width, int height)
     vp.TopLeftX = 0;
     vp.TopLeftY = 0;
     pContext->RSSetViewports(1u, &vp);
+
+    // pDepthStencilView
+    D3D11_TEXTURE2D_DESC depthStencilDesc = {};
+    depthStencilDesc.Width = width;
+    depthStencilDesc.Height = height;
+    depthStencilDesc.MipLevels = 1u;
+    depthStencilDesc.ArraySize = 1u;
+    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthStencilDesc.SampleDesc.Count = 1u;
+    depthStencilDesc.SampleDesc.Quality = 0u;
+    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
+    GFX_THROW_INFO(pDevice->CreateTexture2D(&depthStencilDesc, nullptr, &pDepthStencil));
+    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
+    depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    depthStencilViewDesc.Flags = 0u;
+    depthStencilViewDesc.Texture2D.MipSlice = 0u;
+    GFX_THROW_INFO(pDevice->CreateDepthStencilView(pDepthStencil.Get(), &depthStencilViewDesc, &pDepthStencilView));
 }
 
 

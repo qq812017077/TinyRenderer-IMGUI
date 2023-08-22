@@ -17,14 +17,21 @@ App::App()
 // if win32 , use win32 window
 #ifdef _WIN32
     pWnd = std::make_unique<Win32Window>(1280, 720, L"TinyRenderer");
+    imgui.Init(dynamic_cast<Win32Window *>(pWnd.get()));
 #elif __linux__
     pWnd = std::make_unique<LinuxWindow>(1280, 720, L"TinyRenderer");
 #endif
 }
 
+App::~App()
+{
+    //clear all the game objects
+    pGameObjects.clear();
+}
+
 void App::LoadGOs()
 {
-    // pGameObjects.emplace_back(Primitive::CreateSimpleCube("cube1")); // here will use move constructor;
+    pGameObjects.emplace_back(Primitive::CreateSimpleCube("cube1")); // here will use move constructor;
     pGameObjects.emplace_back(Primitive::CreateSkinedCube("cube1")); // here will use move constructor;
     pGameObjects.emplace_back(Primitive::CreateCube("cube2")); // here will use move constructor;
     
@@ -51,7 +58,7 @@ void App::LoadGOs()
     // auto pTexture = Texture::LoadFrom("res/images/cube.png");
     auto pCubTex = Texture::LoadFrom("res/images/cube.png");
     auto pBrickwallTex = Texture::LoadFrom("res/images/brickwall.jpg");
-    pRenderer2->GetSharedMaterial()->SetTexture("_MainTex", pBrickwallTex);
+    pRenderer2->GetMaterial()->SetTexture("_MainTex", pBrickwallTex);
     pRenderer1->GetSharedMaterial()->SetTexture("_MainTex", pCubTex);
 }
 
@@ -59,9 +66,11 @@ int App::Run()
 {
     try
     {
+        // return 0;
         LoadGOs();
         while (true)
         {
+            pWnd->Update();
             if (const auto ecode = pWnd->ProcessMessages())
             {
                 return *ecode;
@@ -91,12 +100,16 @@ int App::Run()
 
 void App::DoFrame()
 {
+    auto deltaTime = timer.Mark();
     OnFrameUpdateBegin();
     
-    // delta time
-    auto deltaTime = timer.Mark();
-    UpdateGameObject(deltaTime);
+    if(pWnd->GetKeyDown(Input::KeyCode::Escape))
+    {
+        imgui.SetEnable(!imgui.IsEnabled());
+    }
 
+    for (auto& pGo : pGameObjects) pGo->OnUpdate(deltaTime);
+    pWnd->Gfx()->OnFrameUpdate();
     OnFrameUpdateEnd();
 }
 
@@ -112,9 +125,26 @@ void App::OnFrameUpdateBegin()
 {
     // set PerFrameUniformBuffer
     pWnd->Gfx()->OnFrameBegin();
+    for (auto& pGo : pGameObjects) 
+        pGo->OnPreUpdate();
 }
 
 void App::OnFrameUpdateEnd()
 {
+    // imgui
+    if( imgui.IsEnabled())
+    {
+        imgui.NewFrame();
+        // static bool show_demo_window = true;
+        // ImGui::ShowDemoWindow(&show_demo_window);
+
+        if(ImGui::Begin("FPS"))
+        {
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 
+                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        }
+        ImGui::End();
+        imgui.Render();
+    }
     pWnd->Gfx()->OnFrameEnd();
 }

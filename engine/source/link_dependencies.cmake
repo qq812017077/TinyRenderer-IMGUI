@@ -23,7 +23,12 @@
 # )
 # message(STATUS "    Collect third party files...done")
 
-target_link_libraries(${PROJECT_NAME} PRIVATE stb)
+# find_package(imgui CONFIG REQUIRED)
+
+# find_package(stb CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui  stb)
+# target_link_libraries(${PROJECT_NAME} PRIVATE stb)
+
 if(WIN32)
         target_link_libraries(${PROJECT_NAME}
         PUBLIC

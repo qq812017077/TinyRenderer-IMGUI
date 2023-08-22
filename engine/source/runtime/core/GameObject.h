@@ -4,7 +4,7 @@
 #include "components/Transform.h"
 #include <string>
 #include <memory>
-
+#include <unordered_map>
 
 class GameObject
 {
@@ -25,7 +25,9 @@ public:
     // bool HasRenderer() const;
     // void RemoveRenderer();
     // Renderer& GetRenderer() const;
+    virtual void OnPreUpdate();
     virtual void OnUpdate(float deltaTime);
+    virtual void OnLateUpdate(float deltaTime);
 
     // Components
     void RemoveAllComponents();
@@ -49,7 +51,11 @@ public:
     {
         auto compName = std::string(typeid(T).name());
         if(GetComponent<T>() == nullptr) return ;
-        components.erase(compName);
+        // if components has this component, remove it
+        if(components.find(compName) != components.end())
+        {
+            components.erase(compName);
+        }
     }
 
     template <typename T>

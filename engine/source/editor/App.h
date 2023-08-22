@@ -3,11 +3,12 @@
 #include "core/Timer.h"
 #include "core/GameObject.h"
 #include <memory>
+#include "ImguiManager.h"
 class App
 {
 public:
     App();
-
+    ~App();
     int Run();
 private:
     void LoadGOs();
@@ -21,6 +22,6 @@ private:
     // wnd pointer
     std::unique_ptr<Window> pWnd;
     Timer timer;
-    
+    ImguiManager imgui;
     std::vector<std::unique_ptr<GameObject>> pGameObjects;
 };

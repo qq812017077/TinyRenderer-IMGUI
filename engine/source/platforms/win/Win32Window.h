@@ -12,25 +12,8 @@ public:
     Win32Window(const Win32Window&) = delete;
     Win32Window& operator=(const Win32Window&) = delete;
     
-    //Keyboard events
-    Keyboard::KeyEvent ReadKeyEvent() { return kbd.ReadKey(); }
-    bool IsKeyPressed(unsigned char keycode) const noexcept { return kbd.KeyPressed(keycode); }
-    bool IsKeyReleased(unsigned char keycode) const noexcept { return kbd.KeyReleased(keycode); }
-    
-    //Mouse events
-    Mouse::MouseEvent ReadMouseEvent() { return mouse.Read();}
-    Mouse& GetMouse() { return mouse;}
-    bool IsLeftPressed() const noexcept { return mouse.LeftPressed(); }
-    bool IsRightPressed() const noexcept { return mouse.RightPressed(); }
-    bool IsMiddlePressed() const noexcept { return mouse.WheelPressed(); }
-    bool IsLeftReleased() const noexcept { return mouse.LeftReleased(); }
-    bool IsRightReleased() const noexcept { return mouse.RightReleased(); }
-    bool IsMiddleReleased() const noexcept { return mouse.WheelReleased(); }
-    std::pair<int, int> GetMousePos() const noexcept { return mouse.GetPos(); }
+    void BindImgui() override;
 
-    //Graphics
-    Graphics& Gfx() { return *pGfx; }
-    
     //Window 
     void ShowMessageBox(const std::string& title, const std::string& message) const noexcept override;
     void SetTitle(const std::wstring& title);
@@ -41,6 +24,7 @@ protected:
 private:
     LRESULT HandleMsg(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
     HWND hWnd;
+    bool bindedImgui = false;
 };
 
 class WindowClass

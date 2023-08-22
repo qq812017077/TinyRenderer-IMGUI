@@ -51,8 +51,9 @@ public:
     Graphics& operator=(const Graphics&) = delete;
     ~Graphics();
     virtual void ClearBuffer(float red, float green, float blue) noexcept = 0;
-    
+    virtual void BindImgui() = 0;
     virtual void OnFrameBegin();
+    virtual void OnFrameUpdate();
     virtual void OnFrameEnd();
     virtual void DrawTestTriangle(float angle=0.0f) = 0;
     

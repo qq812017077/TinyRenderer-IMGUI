@@ -1,10 +1,12 @@
 #pragma once
-#include "Material.h"
 #include <iostream>
 #include "Mesh.h"
 #include "components/Component.h"
+#include "UniformBuffer.h"
 
 class GameObject;
+class Material;
+
 class Renderer : public Component
 {
 public:
@@ -17,10 +19,13 @@ public:
     Renderer& operator=(Renderer& other) noexcept = delete;
 
     void Init() override ;
-    void SetSharedMaterial(std::shared_ptr<Material> pMaterial);
-    // void SetMaterial(Material material);
-    std::shared_ptr<Material> GetSharedMaterial() const;
+    void OnPreUpdate() override;
+    void OnUpdate(float deltaTime) override;
+    bool IsVisible() const;
     Material * GetMaterial();
+    std::shared_ptr<Material> GetSharedMaterial();
+    void SetMaterial(std::shared_ptr<Material> pMaterial);
+    void SetSharedMaterial(std::shared_ptr<Material> pMaterial);
     void SetMesh(Mesh mesh);
     Mesh& GetMesh();
 
@@ -29,8 +34,8 @@ protected:
     void ClearObjBuffer();
     void UpdateObjBuffer();
     
-    std::shared_ptr<Material> pSharedMaterial;
-    std::unique_ptr<Material> pMaterial;
+    bool sharedMaterial = true;
+    std::shared_ptr<Material> pMaterial;
     Mesh mesh;
     UniformBuffer objBuffer;
 };

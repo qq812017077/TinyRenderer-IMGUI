@@ -2,10 +2,11 @@
 #include <iostream>
 #include "Exceptions.h"
 #include "DirectXGraphics.h"
-
+#include "imgui/backends/imgui_impl_win32.h"
 WindowClass WindowClass::wndClass;
 
 // error exception macro
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #define LOG(X) std::cout << X << std::endl;
 #define BIT_IS_ZERO(val, bit) (((val) & (1 << (bit))) == 0)
@@ -37,12 +38,19 @@ Win32Window::Win32Window(int width, int height, const wchar_t * name): Window(wi
     
     ::ShowWindow(hWnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hWnd);
-    
     LOG("construct Window..  done");
+}
+
+void Win32Window::BindImgui()
+{
+    ImGui_ImplWin32_Init(hWnd);
+    bindedImgui = true;
 }
 
 Win32Window::~Win32Window()
 {
+    if(bindedImgui)
+        ImGui_ImplWin32_Shutdown();
     ::DestroyWindow(hWnd);
 }
 
@@ -66,6 +74,11 @@ void Win32Window::SetTitle(const std::wstring& title)
 
 LRESULT Win32Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
+    if(ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+    {
+        return true;
+    }
+    const auto imio = ImGui::GetIO();
     switch (msg)
     {
     case WM_SIZE:
@@ -76,7 +89,7 @@ LRESULT Win32Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
         break;
     case WM_QUIT:
     case WM_CLOSE:
-        PostQuitMessage(64);
+        PostQuitMessage(0);
         return 0;
     // Window resize
     case WM_SIZING:
@@ -93,6 +106,8 @@ LRESULT Win32Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
         break;
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN: // we hope to catch ALT key
+        if(imio.WantCaptureKeyboard)
+            break;
         if(BIT_IS_ZERO(lParam,30) || kbd.AllowRepeat()) // 30 is zero means, it not repeat.
         {
             OnKeyPressed(static_cast<unsigned char>(wParam));
@@ -110,6 +125,8 @@ LRESULT Win32Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
     //event of mouse move out of window
     case WM_MOUSEMOVE:
         {
+            if(imio.WantCaptureMouse)
+                break;
             int x = LOWORD(lParam);
             int y = HIWORD(lParam); 
             

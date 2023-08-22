@@ -1,8 +1,7 @@
 #include "Graphics.h"
 #include <iostream>
-#include "MaterialManager.h"
+#include "managers/RenderQueueManager.h"
 #include "Material.h"
-
 #define LOG(X) std::cout << X << std::endl;
 Graphics::Graphics()
 {
@@ -31,32 +30,25 @@ void Graphics::LoadMaterial(Material& material)
 void Graphics::OnFrameBegin()
 {
     FrameUniformBufferManager::ClearFrameBuffer();
-    for(auto& pair : MaterialManager::GetMatRendererPair())
-    {
-        auto& mat = pair.first;
-        auto& renderers = pair.second;
-        mat->ClearUniformBuffer();
-
-        for (auto& renderer : renderers)
-            renderer.get().ClearObjBuffer();
-    }
+    RenderQueueManager::Clear();
     ClearBuffer(0.0f, 0.0f, 0.0f);
 }
 
-void Graphics::OnFrameEnd()
+void Graphics::OnFrameUpdate()
 {
     FrameUniformBufferManager::UpdateFrameBuffer();
-    for(auto & pair : MaterialManager::GetMatRendererPair())
+    for(auto & pair : RenderQueueManager::GetRenderQueue())
     {
         auto & mat = pair.first;
-        auto & renderers = pair.second;
         mat->UpdateUniformBuffer();
-
-        for (auto& renderer : renderers)
-            renderer.get().UpdateObjBuffer();
+        for(auto & renderer : pair.second)
+        {
+            renderer->UpdateObjBuffer();
+        }
     }
-
     DrawAll();
-    // DrawTestTriangle();
+}
+void Graphics::OnFrameEnd()
+{
     EndFrame();
 }

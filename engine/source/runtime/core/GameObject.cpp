@@ -39,13 +39,35 @@ std::string GameObject::GetName() const
 }
 
 
-
+void GameObject::OnPreUpdate()
+{
+    // update all components
+    for(auto& comp : components)
+    {
+        if(comp.second == nullptr)
+            continue;
+        comp.second->OnPreUpdate();
+    }
+}
 void GameObject::OnUpdate(float deltaTime)
 {
     // update all components
     for(auto& comp : components)
     {
+        if(comp.second == nullptr)
+            continue;
         comp.second->OnUpdate(deltaTime);
+    }
+}
+
+void GameObject::OnLateUpdate(float deltaTime)
+{
+    // update all components
+    for(auto& comp : components)
+    {
+        if(comp.second == nullptr)
+            continue;
+        comp.second->OnLateUpdate(deltaTime);
     }
 }
 

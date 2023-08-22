@@ -5,8 +5,7 @@
 #include "Graphics.h"
 #include "input/Keyboard.h"
 #include "input/Mouse.h"
-
-class Window
+class   Window
 {
 protected:
     Window(int width, int height, const wchar_t* name);
@@ -15,11 +14,14 @@ public:
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
 
+    virtual void BindImgui() = 0;
+    virtual void Update();
     //Keyboard events
     Keyboard::KeyEvent ReadKeyEvent() { return kbd.ReadKey(); }
-    bool IsKeyPressed(unsigned char keycode) const noexcept { return kbd.KeyPressed(keycode); }
-    bool IsKeyReleased(unsigned char keycode) const noexcept { return kbd.KeyReleased(keycode); }
-    
+    bool GetKey(Input::KeyCode keycode) const noexcept { return kbd.GetKey(keycode); }
+    bool GetKeyDown(Input::KeyCode keycode) const noexcept { return kbd.GetKeyDown(keycode); }
+    bool GetKeyUp(Input::KeyCode keycode) const noexcept { return kbd.GetKeyUp(keycode); }
+
     //Mouse events
     Mouse::MouseEvent ReadMouseEvent() { return mouse.Read();}
     Mouse& GetMouse() { return mouse;}
@@ -40,22 +42,22 @@ public:
     // static std::optional<int> ProcessMessages() noexcept;
 
 protected:
-    void ClearKeyboard() noexcept { kbd.ClearState(); }
-    void OnKeyPressed(unsigned char keycode) noexcept { kbd.OnKeyPressed(keycode); }
-    void OnKeyReleased(unsigned char keycode) noexcept { kbd.OnKeyReleased(keycode); }
-    void OnChar(unsigned char character) noexcept { kbd.OnChar(character); }
-    void OnMouseMove(int x, int y) noexcept { mouse.OnMouseMove(x, y); }
-    void OnMouseLeave() noexcept { mouse.OnMouseLeave(); }
-    void OnMouseEnter() noexcept { mouse.OnMouseEnter(); }
-    void OnMouseLeftPressed() noexcept { mouse.OnLeftPressed(); }
-    void OnMouseLeftReleased() noexcept { mouse.OnLeftReleased(); }
-    void OnMouseRightPressed() noexcept { mouse.OnRightPressed(); }
-    void OnMouseRightReleased() noexcept { mouse.OnRightReleased(); }
-    void OnMouseWheelPressed() noexcept { mouse.OnWheelPressed(); }
-    void OnMouseWheelReleased() noexcept { mouse.OnWheelReleased(); }
-    void OnMouseWheelUp() noexcept { mouse.OnWheelUp(); }
-    void OnMouseWheelDown() noexcept { mouse.OnWheelDown(); }
-    void OnMouseWheelDelta(int delta) noexcept { mouse.OnWheelDelta(delta); }
+    void ClearKeyboard() noexcept;
+    void OnKeyPressed(unsigned char keycode) noexcept;
+    void OnKeyReleased(unsigned char keycode) noexcept;
+    void OnChar(unsigned char character) noexcept;
+    void OnMouseMove(int x, int y) noexcept;
+    void OnMouseLeave() noexcept;
+    void OnMouseEnter() noexcept;
+    void OnMouseLeftPressed() noexcept;
+    void OnMouseLeftReleased() noexcept;
+    void OnMouseRightPressed() noexcept;
+    void OnMouseRightReleased() noexcept;
+    void OnMouseWheelPressed() noexcept;
+    void OnMouseWheelReleased() noexcept;
+    void OnMouseWheelUp() noexcept;
+    void OnMouseWheelDown() noexcept;
+    void OnMouseWheelDelta(int delta) noexcept;
 
     virtual void CloseWindow() noexcept {};
     int width;

@@ -13,7 +13,9 @@ public:
 protected:
     virtual void Init() = 0;
     void SetOwner(GameObject* owner);
+    virtual void OnPreUpdate() {};
     virtual void OnUpdate(float deltaTime) {};
+    virtual void OnLateUpdate(float deltaTime) {};
     GameObject* owner = nullptr;
 private:
 };

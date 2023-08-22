@@ -8,10 +8,11 @@
 class Graphics;
 class VertexShader;
 class PixelShader;
-
+class Renderer;
 class Material
 {
     friend class Graphics;
+    friend class RenderQueueManager;
 private:
     struct TextureInfo
     {
@@ -20,10 +21,11 @@ private:
     };
 
     Material() = delete;
-    Material(std::string vertexShaderPath, std::string pixelShaderPath);
+    Material(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName);
 public:
     ~Material();
     
+    int GetUniqueCode() const;
     std::string GetVertexShaderPath() const;
     std::string GetPixelShaderPath() const;
     
@@ -32,6 +34,9 @@ public:
     std::shared_ptr<VertexShader> GetVertexShader() const;
     std::shared_ptr<PixelShader> GetPixelShader() const;
 
+    // Renderer 
+    void Bind(Renderer * pRenderer);
+    void UnBind(Renderer * pRenderer);
     // uniform buffer operation
     UniformBuffer GetVertexUniformBuffer() const;
     UniformBuffer GetPixelUniformBuffer() const;
@@ -47,6 +52,8 @@ public:
     Texture* GetTexturePtr(std::string& name);
     
     std::string GetSamplerNameByTexName(std::string& texName) const;
+    static int GetRefCount(std::shared_ptr<Material> pMaterial);
+    static std::shared_ptr<Material> CreateInstance(std::shared_ptr<Material> pMaterial);
     static std::shared_ptr<Material> Load(std::string vertexShaderPath, std::string pixelShaderPath);
     static std::shared_ptr<Material> GetDefaultMaterialPtr();
 private:
@@ -58,6 +65,7 @@ private:
     void ClearUniformBuffer();
     void UpdateUniformBuffer();
 
+    std::string materialName;
     std::shared_ptr<VertexShader> pVertexShader;
     std::shared_ptr<PixelShader> pPixelShader;
     std::string vertexShaderPath;
@@ -69,6 +77,7 @@ private:
     std::map<std::string, int> integerMap;
     std::map<std::string, float> floatMap;
     std::map<std::string, float*> matrixMap;
+    std::unordered_map<Renderer*, bool> rendererRefCountMap;
     unsigned int uniqueCode;
     static std::shared_ptr<Material> pDefaultMaterial;
 };
