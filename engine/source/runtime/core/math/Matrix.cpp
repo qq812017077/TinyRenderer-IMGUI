@@ -1,8 +1,8 @@
 #include "Matrix.h"
 #include <cmath>
 #include <iostream>
-
-#include <DirectXMath.h>
+#include "EngineMath.h"
+#include "Quaternion.h"
 /**************************************************************************************************/
 /*                                        Matrix4x4 Part                                          */
 /**************************************************************************************************/
@@ -90,6 +90,10 @@ Vector4 Matrix4x4::operator*(Vector4& other) const
 float* Matrix4x4::operator[](int index)
 {
     return data[index];
+}
+float* Matrix4x4::operator[](int index) const
+{
+    return (float*)data[index];
 }
 
 void Matrix4x4::SetData(float* data)
@@ -227,6 +231,32 @@ Matrix4x4 Matrix4x4::Rotation(const Vector3& eulerAngle)
     return result;
 }
 
+Matrix4x4 Matrix4x4::Rotation(const Quaternion& rotation)
+{
+    Matrix4x4 result;
+    float x = rotation.x;
+    float y = rotation.y;
+    float z = rotation.z;
+    float w = rotation.w;
+    result.data[0][0]=1-2*y*y-2*z*z;
+    result.data[0][1]=2*x*y-2*z*w;
+    result.data[0][2]=2*x*z+2*y*w;
+    result.data[0][3]=0;
+    result.data[1][0]=2*x*y+2*z*w;
+    result.data[1][1]=1-2*x*x-2*z*z;
+    result.data[1][2]=2*y*z-2*x*w;
+    result.data[1][3]=0;
+    result.data[2][0]=2*x*z-2*y*w;
+    result.data[2][1]=2*y*z+2*x*w;
+    result.data[2][2]=1-2*x*x-2*y*y;
+    result.data[2][3]=0;
+    result.data[3][0]=0;
+    result.data[3][1]=0;
+    result.data[3][2]=0;
+    result.data[3][3]=1;
+    return result;
+}
+
 Matrix4x4 Matrix4x4::Scale(const Vector3& scale)
 {
     Matrix4x4 result = Identity();
@@ -245,11 +275,6 @@ Matrix4x4 Matrix4x4::Scale(const Vector3& scale)
  */
 
 
-Matrix4x4 Matrix4x4::LookAt(const Vector3& eye, const Vector3& target, const Vector3& up)
-{
-    throw "Not implemented";
-    return Matrix4x4::Identity();
-}
 
 Matrix4x4 Matrix4x4::Perspective(float fov, float aspect, float near, float far)
 {
@@ -268,7 +293,7 @@ Matrix4x4 Matrix4x4::Perspective(float fov, float aspect, float near, float far)
     };
     
     auto projMatrix = orth * Matrix4x4(pers2orth);
-    auto test = DirectX::XMMatrixPerspectiveLH( 1.0f, 1 / aspect ,near, far );
+    // auto test = DirectX::XMMatrixPerspectiveLH( 1.0f, 1 / aspect ,near, far );
     return projMatrix;
 }
 
@@ -410,7 +435,10 @@ float* Matrix3x3::operator[](int index)
 {
     return data[index];
 }
-
+float* Matrix3x3::operator[](int index) const
+{
+    return (float*)data[index];
+}
 void Matrix3x3::SetData(float* data)
 {
     for(int i = 0; i < 9; i++)
@@ -507,9 +535,9 @@ Matrix3x3 Matrix3x3::Rotation(const Vector3& eulerAngle)
     // calculate the rotation matrix from euler angle
     Matrix3x3 result;
     // angle to radian
-    auto xradian = eulerAngle.x * 3.1415926f / 180.0f;
-    auto yradian = eulerAngle.y * 3.1415926f / 180.0f;
-    auto zradian = eulerAngle.z * 3.1415926f / 180.0f;
+    auto xradian = eulerAngle.x * kDeg2Rad;
+    auto yradian = eulerAngle.y * kDeg2Rad;
+    auto zradian = eulerAngle.z * kDeg2Rad;
 
     float cosX = std::cos(xradian);
     float sinX = std::sin(xradian);
@@ -526,6 +554,26 @@ Matrix3x3 Matrix3x3::Rotation(const Vector3& eulerAngle)
     result.data[2][0]=-cosX*sinY*cosZ+sinX*sinZ;
     result.data[2][1]=cosX*sinY*sinZ+sinX*cosZ;
     result.data[2][2]=cosX*cosY;
+
+    return result;
+}
+
+Matrix3x3 Matrix3x3::Rotation(const Quaternion& rotation)
+{
+    Matrix3x3 result;
+    float x = rotation.x;
+    float y = rotation.y;
+    float z = rotation.z;
+    float w = rotation.w;
+    result.data[0][0]=1-2*y*y-2*z*z;
+    result.data[0][1]=2*x*y-2*z*w;
+    result.data[0][2]=2*x*z+2*y*w;
+    result.data[1][0]=2*x*y+2*z*w;
+    result.data[1][1]=1-2*x*x-2*z*z;
+    result.data[1][2]=2*y*z-2*x*w;
+    result.data[2][0]=2*x*z-2*y*w;
+    result.data[2][1]=2*y*z+2*x*w;
+    result.data[2][2]=1-2*x*x-2*y*y;
     return result;
 }
 

@@ -1,31 +1,27 @@
 #pragma once
-#include "core/GameObject.h"
-
-class Camera : public GameObject
+#include "Component.h"
+struct Matrix4x4;
+class Camera : public Component
 {
 public:
-    Camera() ;
-    Camera(std::string name) ;
+    Camera();
     Camera(const Camera&) = delete;
-    ~Camera() = default;
-
+    ~Camera();
 
     void SetFOV(float fov);
     void SetAspect(float aspect);
     void SetNear(float _near);
     void SetFar(float _far);
-
-    void Init() override;
-
+    
     // View Matrix
     Matrix4x4 GetViewMatrix();
-
     // Projection Matrix
     Matrix4x4 GetProjectionMatrix();
-
-    void OnUpdate(float deltaTime) override;
-
+    
     static Camera* pActivedCamera;
+protected:
+    void Init() override;
+    void OnUpdate(float deltaTime) override;
 private:
     float fov = 60.0f;
     float aspect = 1.0f;

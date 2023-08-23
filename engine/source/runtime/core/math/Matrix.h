@@ -1,6 +1,6 @@
 #pragma once
 #include "Vector.h"
-
+struct Quaternion;
 struct Matrix4x4
 {
 private:
@@ -18,7 +18,7 @@ public:
     Matrix4x4 operator*(Matrix4x4& other) const;
     Vector4 operator*(Vector4& other) const;
     float* operator[](int index);
-
+    float* operator[](int row_index) const;
     void SetData(float* data);
     void SetData(float data[4][4]);
     float* GetData();
@@ -35,9 +35,9 @@ public:
     static Matrix4x4 Identity();
     static Matrix4x4 Translation(const Vector3& translation);
     static Matrix4x4 Rotation(const Vector3& rotation);
+    static Matrix4x4 Rotation(const Quaternion& rotation);
     static Matrix4x4 Scale(const Vector3& scale);
 
-    static Matrix4x4 LookAt(const Vector3& eye, const Vector3& target, const Vector3& up);
     static Matrix4x4 Perspective(float fov, float aspect, float near, float far);
     static Matrix4x4 Orthographic(float left, float right, float bottom, float top, float near, float far);
 };
@@ -60,7 +60,8 @@ public:
     Matrix3x3 operator*(float val) const;
     Matrix3x3 operator*(Matrix3x3& other) const;
     Vector3 operator*(Vector3& other) const;
-    float* operator[](int index);
+    float* operator[](int row_index);
+    float* operator[](int row_index) const;
 
     void SetData(float* data);
     void SetData(float data[3][3]);
@@ -84,6 +85,8 @@ public:
      * @return Matrix3x3
      */
     static Matrix3x3 Rotation(const Vector3& eulerAngle);
+    static Matrix3x3 Rotation(const Quaternion& rotation);
     static Matrix3x3 RotateByAxis(float angle, const Vector3& axis);
     static Matrix3x3 VectorProduct(const Vector3& vec1, const Vector3& vec2);
+    static Matrix3x3 LookAt(const Vector3& eye, const Vector3& target, const Vector3& up);
 };

@@ -1,9 +1,10 @@
 #include "Window.h"
-
+#include "input/Input.h"
 Window::Window(int width, int height, const wchar_t *name)
     : width(width),
       height(height)
 {
+    Input::InputSystem::RegisterInput(kbd, mouse);
 }
 
 Window::~Window()
@@ -18,6 +19,7 @@ std::optional<int> Window::ProcessMessages() noexcept
 void Window::Update()
 {
     kbd.Update();
+    mouse.Update();
 }
 
 void Window::ClearKeyboard() noexcept

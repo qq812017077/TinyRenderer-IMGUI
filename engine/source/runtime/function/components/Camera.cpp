@@ -1,14 +1,9 @@
 #include "Camera.h"
-#include <DirectXMath.h>
+#include "core/math/Matrix.h"
+#include "components/Transform.h"
 
 Camera* Camera::pActivedCamera = nullptr;
 Camera::Camera():
-    Camera("Camera")
-{
-}
-
-Camera::Camera(std::string name):
-    GameObject(name),
     fov(60.0f),
     aspect(1280.0f / 720.0f),
     nearPlane(0.1f),
@@ -17,6 +12,10 @@ Camera::Camera(std::string name):
     if(pActivedCamera == nullptr) pActivedCamera = this;
 }
 
+Camera::~Camera()
+{
+    
+}
 void Camera::SetFOV(float fov)
 {
     this->fov = fov;
@@ -40,13 +39,7 @@ void Camera::SetFar(float farPlane)
 // 
 void Camera::OnUpdate(float deltaTime)
 {
-    // static float curTime = 0.0f;
-    // curTime += deltaTime;
-    // // // move camera by sin and cos
-    // auto position = transform.GetPosition();
-    // // position.x = sin(curTime) * 1.0f;
-    // position.z = cos(curTime) * 5.0f;
-    // transform.SetPosition(position);
+    
 }
 
 void Camera::Init()
@@ -56,8 +49,8 @@ void Camera::Init()
 
 Matrix4x4 Camera::GetViewMatrix()
 {
-    auto position = transform.GetPosition();
-    auto rotation = transform.GetRotation();
+    auto position = transform->GetPosition();
+    auto rotation = transform->GetRotation();
 
     Matrix4x4 translation = Matrix4x4::Translation(-position);
     Matrix4x4 Rotation = Matrix4x4::Rotation(rotation).Transpose(); // we want inverse, and for orth matrix : transpose = inverse

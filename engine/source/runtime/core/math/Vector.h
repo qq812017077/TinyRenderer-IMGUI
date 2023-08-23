@@ -10,30 +10,49 @@ struct Vector3
     Vector3(const Vector3 &v);  
     ~Vector3();
     void operator=(const Vector3 &v);  
-    Vector3 operator+(const Vector3 &v);  
-    Vector3 operator+=(const Vector3 &v);
-    
+
+    Vector3 operator+(const Vector3& v) const { return Vector3(x + v.x, y + v.y, z + v.z); }
+    Vector3 operator+(const Vector3 &v) { return Vector3(x+v.x, y+v.y, z+v.z); }
+    Vector3 operator+=(const Vector3 &v) { x+=v.x; y+=v.y; z+=v.z; return *this; }
+    Vector3 operator+(float f) {return Vector3(x+f, y+f, z+f);}
+    Vector3& operator+=(float f) {x+=f; y+=f; z+=f; return *this;}
+
     Vector3 operator-();//overload operator - , make it possible to use -Vector3
     Vector3 operator-(const Vector3 &v);
+    Vector3 operator-(const Vector3 &v) const { return Vector3(x - v.x, y - v.y, z - v.z); }
+    Vector3 operator-(float f);
+    Vector3& operator-=(float f);
     
-    Vector3 operator/(const Vector3 &v);  
     Vector3 operator*(const Vector3 &v)  const;
     Vector3 operator*(float f) const;
-    Vector3 operator+(float f);  
-    Vector3 operator-(float f);  
-    Vector3 operator/(float f);  
+    Vector3& operator*=(float f);
     Vector3 operator*(float f);
+
+    Vector3 operator/(const Vector3 &v);
+    Vector3 operator/(float f);  
+    Vector3& operator/=(float f);
+
     float& operator[](int index);
     float dot(const Vector3 &v);  
     float length();
     void normalize();
-    Vector3 crossProduct(const Vector3 &v);  
+    Vector3 normalized() const;
+    Vector3 crossProduct(const Vector3 &v);
+    Vector3 crossProduct(const Vector3 &v) const;
     void printVec3();  
 
-    static Vector3 Zero() { return Vector3(0.0f, 0.0f, 0.0f); }
-    static Vector3 Forward() { return Vector3(0.0f, 0.0f, 1.0f); }
-    static Vector3 Up() { return Vector3(0.0f, 1.0f, 0.0f); }
-    static Vector3 Right() { return Vector3(1.0f, 0.0f, 0.0f); }
+    static const Vector3 zero;
+    static const Vector3 one;
+    static const Vector3 up;
+    static const Vector3 right;
+    static const Vector3 forward;
+    static Vector3 Normalize(const Vector3& v);
+    static Vector3 Cross(const Vector3& v1, const Vector3& v2);
+    static inline Vector3 Zero() { return zero; }
+    static inline Vector3 Forward() { return forward; }
+    static inline Vector3 Up() { return up; }
+    static inline Vector3 Right() { return right; }
+    static bool Vector3::Approximately(const Vector3& v1, const Vector3& v2);
 };
 
 struct Vector4

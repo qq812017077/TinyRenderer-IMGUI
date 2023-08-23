@@ -9,8 +9,9 @@
 #include "Material.h"
 #include "Texture.h"
 #include "components/Camera.h"
-#include "components/Rotater.h"
 #include "primitives/Primitive.h"
+#include "behaviours/Rotater.h"
+#include "behaviours/CamController.h"
 App::App()
 {
 
@@ -31,21 +32,21 @@ App::~App()
 
 void App::LoadGOs()
 {
-    pGameObjects.emplace_back(Primitive::CreateSimpleCube("cube1")); // here will use move constructor;
     pGameObjects.emplace_back(Primitive::CreateSkinedCube("cube1")); // here will use move constructor;
     pGameObjects.emplace_back(Primitive::CreateCube("cube2")); // here will use move constructor;
     
-    auto curCam = std::make_unique<Camera>();
-    curCam->SetAspect(1280.0f / 720.0f);
-    curCam->transform.SetPosition({ 0.0f, 0.0f, 6.0f });
-    curCam->transform.SetRotation({ 0.0f, 180.0f, 0.0f });
-    pGameObjects.emplace_back(std::move(curCam));
+    auto camGO = std::make_unique<GameObject>("Cam");
+    auto cam = camGO->AddComponent<Camera>();
+    camGO->AddComponent<CamController>();
+    cam->SetAspect(1280.0f / 720.0f);
+    camGO->transform.SetPosition({ 0.0f, 0.0f, 6.0f });
+    camGO->transform.SetEulerAngle({ 0.0f, 180.0f, 0.0f });
+    pGameObjects.emplace_back(std::move(camGO));
     
     for (auto& pGo : pGameObjects)
     {
         pGo->Init();
     }
-
     pGameObjects[0]->transform.SetPosition({ 1.5f, 1.5f, 0.0f });
     pGameObjects[1]->transform.SetPosition({ -1.5f, -1.5f, 0.0f });
     pGameObjects[0]->AddComponent<Rotater>();
@@ -102,23 +103,19 @@ void App::DoFrame()
 {
     auto deltaTime = timer.Mark();
     OnFrameUpdateBegin();
-    
-    if(pWnd->GetKeyDown(Input::KeyCode::Escape))
-    {
-        imgui.SetEnable(!imgui.IsEnabled());
-    }
 
-    for (auto& pGo : pGameObjects) pGo->OnUpdate(deltaTime);
+    UpdateGameObject(deltaTime);
+    
     pWnd->Gfx()->OnFrameUpdate();
     OnFrameUpdateEnd();
 }
 
 void App::UpdateGameObject(float deltaTime)
 {
-    for (auto& pGo : pGameObjects)
-    {
+    for (auto& pGo : pGameObjects) 
         pGo->OnUpdate(deltaTime);
-    }
+    for (auto& pGo : pGameObjects)
+        pGo->OnLateUpdate(deltaTime);
 }
 
 void App::OnFrameUpdateBegin()
@@ -131,12 +128,15 @@ void App::OnFrameUpdateBegin()
 
 void App::OnFrameUpdateEnd()
 {
+    
     // imgui
     if( imgui.IsEnabled())
     {
         imgui.NewFrame();
         // static bool show_demo_window = true;
         // ImGui::ShowDemoWindow(&show_demo_window);
+
+        for (auto& pGo : pGameObjects) pGo->OnGUI();
 
         if(ImGui::Begin("FPS"))
         {

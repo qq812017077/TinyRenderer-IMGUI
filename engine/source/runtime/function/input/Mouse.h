@@ -23,6 +23,12 @@ class Mouse
 friend class Window;
 
 public:
+    enum MouseButton : unsigned char
+    {
+        Left = 0,
+        Right = 1,
+        Middle = 2
+    };
     class MouseEvent
     {
     public:
@@ -56,28 +62,30 @@ public:
     ~Mouse() {}
 
     bool IsEmpty() const { return m_mouseBuffer.empty(); }
+    void Update() noexcept { m_MouseStatePrev = m_MouseState; m_last_x = m_x; m_last_y = m_y; }
     //mouse events
-    bool LeftPressed() const { return m_leftIsPressed; }
-    bool LeftReleased() const { return !m_leftIsPressed; }
-    bool RightPressed() const { return m_rightIsPressed; }
-    bool RightReleased() const { return !m_rightIsPressed; }
-    bool WheelPressed() const { return m_wheelIsPressed; }
-    bool WheelReleased() const { return !m_wheelIsPressed; }
+    bool GetMouseButton(MouseButton button) const { return m_MouseState[button]; }
+    bool GetMouseButtonDown(MouseButton button) const { return !m_MouseStatePrev[button] && m_MouseState[button]; }
+    bool GetMouseButtonUp(MouseButton button) const { return m_MouseStatePrev[button] && !m_MouseState[button]; }
+
     bool IsInWindow() const { return m_isInWindow; }
     std::pair<int,int> GetPos() const { return { m_x, m_y }; }
     int GetPosX() const { return m_x; }
     int GetPosY() const { return m_y; }
+    float GetMouseAxisX() const { return float(m_x - m_last_x) * mouseSensitivity; }
+    float GetMouseAxisY() const { return float(m_last_y - m_y) * mouseSensitivity; }
+
     //read
     MouseEvent Read() { if (m_mouseBuffer.size() > 0) { MouseEvent e = m_mouseBuffer.front(); m_mouseBuffer.pop(); return e; } else { return MouseEvent(); } }
     //flush
     void Flush() { m_mouseBuffer = std::queue<MouseEvent>(); }
 private:
-    void OnLeftPressed() noexcept { m_leftIsPressed = true; m_mouseBuffer.push(MouseEvent(MouseState::LEFT_PRESSED, *this)); TrimBuffer(); }
-    void OnLeftReleased() noexcept { m_leftIsPressed = false; m_mouseBuffer.push(MouseEvent(MouseState::LEFT_RELEASED, *this)); TrimBuffer(); }
-    void OnRightPressed() noexcept { m_rightIsPressed = true; m_mouseBuffer.push(MouseEvent(MouseState::RIGHT_PRESSED, *this)); TrimBuffer(); }
-    void OnRightReleased() noexcept { m_rightIsPressed = false; m_mouseBuffer.push(MouseEvent(MouseState::RIGHT_RELEASED, *this)); TrimBuffer(); }
-    void OnWheelPressed() noexcept { m_wheelIsPressed = true; m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_PRESSED, *this)); TrimBuffer(); }
-    void OnWheelReleased() noexcept { m_wheelIsPressed = false; m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_RELEASED, *this)); TrimBuffer(); }
+    void OnLeftPressed() noexcept { m_MouseState[MouseButton::Left] = true; m_mouseBuffer.push(MouseEvent(MouseState::LEFT_PRESSED, *this)); TrimBuffer(); }
+    void OnLeftReleased() noexcept { m_MouseState[MouseButton::Left] = false; m_mouseBuffer.push(MouseEvent(MouseState::LEFT_RELEASED, *this)); TrimBuffer(); }
+    void OnRightPressed() noexcept { m_MouseState[MouseButton::Right] = true; m_mouseBuffer.push(MouseEvent(MouseState::RIGHT_PRESSED, *this)); TrimBuffer(); }
+    void OnRightReleased() noexcept { m_MouseState[MouseButton::Right] = false; m_mouseBuffer.push(MouseEvent(MouseState::RIGHT_RELEASED, *this)); TrimBuffer(); }
+    void OnWheelPressed() noexcept { m_MouseState[MouseButton::Middle] = true; m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_PRESSED, *this)); TrimBuffer(); }
+    void OnWheelReleased() noexcept { m_MouseState[MouseButton::Middle] = false; m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_RELEASED, *this)); TrimBuffer(); }
     
     void OnWheelUp() noexcept { m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_UP, *this)); TrimBuffer(); }
     void OnWheelDown() noexcept { m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_DOWN, *this)); TrimBuffer(); }
@@ -109,15 +117,17 @@ private:
 
 
     std::queue<MouseEvent> m_mouseBuffer;
-    bool m_leftIsPressed = false;
-    bool m_rightIsPressed = false;
-    
-    bool m_wheelIsPressed = false;
+    std::bitset<3> m_MouseState;
+    std::bitset<3> m_MouseStatePrev;
+
     int m_wheelDeltaCarry = 0;
 
     bool m_isInWindow = false;
     int m_x = 0;
     int m_y = 0;
+    int m_last_x = 0;
+    int m_last_y = 0;
+    float mouseSensitivity = 0.1f;
 
     static constexpr unsigned int bufferSize = 16u;
 };

@@ -2,7 +2,7 @@
 
 namespace Input
 {
-    enum KeyCode
+    enum KeyCode : unsigned char
 {
     //
     // 摘要:

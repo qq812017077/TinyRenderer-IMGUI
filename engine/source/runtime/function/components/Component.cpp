@@ -23,5 +23,6 @@ GameObject& Component::GetOwner() const
 void Component::SetOwner(GameObject* owner)
 {
     this->owner = owner;
+    this->transform = &owner->transform;
 }
 

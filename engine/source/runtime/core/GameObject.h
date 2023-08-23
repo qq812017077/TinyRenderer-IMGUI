@@ -2,6 +2,7 @@
 #include <iostream>
 #include "components/Renderer.h"
 #include "components/Transform.h"
+#include "components/Component.h"
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -28,7 +29,7 @@ public:
     virtual void OnPreUpdate();
     virtual void OnUpdate(float deltaTime);
     virtual void OnLateUpdate(float deltaTime);
-
+    virtual void OnGUI();
     // Components
     void RemoveAllComponents();
     template <typename T, typename... Args>

@@ -2,6 +2,12 @@
 
 #include "Vector.h"
 #include "Matrix.h"
+#include "Quaternion.h"
+const float PI = 3.14159265358979323846f;
+const static float kEpsilon = 1E-06f;
+const static float kRad2Deg = 57.29578f;
+const static float kDeg2Rad = 0.01745329f;
+
 struct Float2
 {
     float x;

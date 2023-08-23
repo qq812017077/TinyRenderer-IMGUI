@@ -25,12 +25,9 @@ public:
     //Mouse events
     Mouse::MouseEvent ReadMouseEvent() { return mouse.Read();}
     Mouse& GetMouse() { return mouse;}
-    bool IsLeftPressed() const noexcept { return mouse.LeftPressed(); }
-    bool IsRightPressed() const noexcept { return mouse.RightPressed(); }
-    bool IsMiddlePressed() const noexcept { return mouse.WheelPressed(); }
-    bool IsLeftReleased() const noexcept { return mouse.LeftReleased(); }
-    bool IsRightReleased() const noexcept { return mouse.RightReleased(); }
-    bool IsMiddleReleased() const noexcept { return mouse.WheelReleased(); }
+    bool GetMouseButton(Mouse::MouseButton button) const noexcept { return mouse.GetMouseButton(button); }
+    bool GetMouseButtonDown(Mouse::MouseButton button) const noexcept { return mouse.GetMouseButtonDown(button); }
+    bool GetMouseButtonUp(Mouse::MouseButton button) const noexcept { return mouse.GetMouseButtonUp(button); }
     std::pair<int, int> GetMousePos() const noexcept { return mouse.GetPos(); }
 
     //Graphics

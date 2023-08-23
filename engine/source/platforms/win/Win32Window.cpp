@@ -141,7 +141,6 @@ LRESULT Win32Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
                 }
             }else // if mouse is out of window, send leave event
             {
-                // if(mouse.LeftPressed() || mouse.RightPressed() || mouse.WheelPressed())
                 //equals to
                 if( wParam & (MK_LBUTTON | MK_RBUTTON | MK_MBUTTON))
                 {

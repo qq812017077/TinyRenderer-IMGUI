@@ -71,6 +71,17 @@ void GameObject::OnLateUpdate(float deltaTime)
     }
 }
 
+void GameObject::OnGUI()
+{
+    // update all components
+    for(auto& comp : components)
+    {
+        if(comp.second == nullptr)
+            continue;
+        comp.second->OnGUI();
+    }
+}
+
 // Components
 void GameObject::RemoveAllComponents()
 {

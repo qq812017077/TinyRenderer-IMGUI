@@ -1,6 +1,17 @@
 #pragma once
 #include "EngineMath.h"
 #include "Component.h"
+enum Space
+{
+    //
+    // 摘要:
+    //     Applies transformation relative to the world coordinate system.
+    World,
+    //
+    // 摘要:
+    //     Applies transformation relative to the local coordinate system.
+    Self
+};
 
 class GameObject;
 class Transform : public Component
@@ -16,24 +27,32 @@ public:
 
 
     void SetPosition(const Vector3& position);
-    void SetRotation(const Vector3& rotation);
+    void SetEulerAngle(const Vector3& eulerAngle);
+    void SetRotation(const Quaternion& rotation);
     void SetScale(const Vector3& scale);
 
-    void Rotate(const Vector3& axis, float angle);
-
+    Vector3 TransformDirection(Vector3 direction) const;
     Vector3 GetPosition() const;
-    Vector3 GetRotation() const;
+    Quaternion GetRotation() const;
+    Vector3 GetEulerAngle() const;
     Vector3 GetScale() const;
 
     Vector3 forward() const;
     Vector3 right() const;
     Vector3 up() const;
     
+    void Rotate(Vector3 eularAngle, Space relativeTo = Space::Self);
+    void Rotate(Vector3 axis, float angle, Space relativeTo = Space::Self);
+    void RotateAround(Vector3 axis, float angle);
+    void RotateAroundLocal(Vector3 axis, float angle);
+    void Translate(Vector3 translation, Space relativeTo = Space::Self);
+    void LookAt(const Vector3& target, const Vector3& up = Vector3::Up());
     Matrix4x4 GetWorldMatrix() const;
 protected:
     void Init() override;
 private:
     Vector3 position;
-    Vector3 rotation;
+    // Vector3 rotation;
+    Quaternion rotation;
     Vector3 scale;
 };

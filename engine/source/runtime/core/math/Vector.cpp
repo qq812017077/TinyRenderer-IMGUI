@@ -4,7 +4,11 @@
 #include<iostream>
   
 const double uZero = 1e-6;  
-
+const Vector3 Vector3::zero = Vector3(0.0f, 0.0f, 0.0f);
+const Vector3 Vector3::one = Vector3(1.0f, 1.0f, 1.0f);
+const Vector3 Vector3::up = Vector3(0.0f, 1.0f, 0.0f);
+const Vector3 Vector3::right = Vector3(1.0f, 0.0f, 0.0f);
+const Vector3 Vector3::forward = Vector3(0.0f, 0.0f, 1.0f);
 /****************************************************************************************/
 //Vector3.cpp
 /****************************************************************************************/
@@ -23,19 +27,6 @@ void Vector3::operator=(const Vector3 &v)
     y = v.y;  
     z = v.z;  
 }  
-  
-Vector3 Vector3::operator+(const Vector3 &v)  
-{  
-    return Vector3(x+v.x, y+v.y, z+v.z);  
-}
-
-Vector3 Vector3::operator+=(const Vector3 &v)
-{
-    x += v.x;
-    y += v.y;
-    z += v.z;
-    return *this;
-}
 
 Vector3 Vector3::operator-()  
 {  
@@ -66,18 +57,27 @@ Vector3 Vector3::operator*(float f) const
 {
     return Vector3(x*f, y*f, z*f);
 }
+Vector3&  Vector3::operator*=(float f)
+{
+    x *= f;
+    y *= f;
+    z *= f;
+    return *this;
+}
 
-
-Vector3 Vector3::operator+(float f)  
-{  
-    return Vector3(x+f, y+f, z+f);  
-}  
   
 Vector3 Vector3::operator-(float f)  
 {  
     return Vector3(x-f, y-f, z-f);  
-}  
-  
+}
+Vector3& Vector3::operator-=(float f)
+{
+    x -= f;
+    y -= f;
+    z -= f;
+    return *this;
+}
+
 Vector3 Vector3::operator/(float f)  
 {  
     if (fabsf(f) < uZero)  
@@ -87,7 +87,19 @@ Vector3 Vector3::operator/(float f)
     }  
     return Vector3(x/f, y/f, z/f);  
 }  
-  
+Vector3& Vector3::operator/=(float f)
+{
+    if (fabsf(f) < uZero)  
+    {  
+        std::cerr<<"Over flow!\n";  
+        return *this;  
+    }  
+    x /= f;
+    y /= f;
+    z /= f;
+    return *this;
+}
+
 Vector3 Vector3::operator*(float f)  
 {  
     return Vector3(x*f, y*f, z*f);  
@@ -117,7 +129,14 @@ void Vector3::normalize()
     x *= len;  
     y *= len;  
     z *= len;  
-}  
+}
+
+Vector3 Vector3::normalized() const
+{
+    Vector3 result = *this;
+    result.normalize();
+    return result;
+}
   
 /* 
 Cross Product叉乘公式 
@@ -131,12 +150,33 @@ Vector3 Vector3::crossProduct(const Vector3 &v)
                 z * v.x - x * v.z,  
                 x * v.y - y * v.x);  
 }  
-  
+Vector3 Vector3::crossProduct(const Vector3 &v) const
+{
+    return Vector3(y * v.z - z * v.y,
+                z * v.x - x * v.z,
+                x * v.y - y * v.x);
+}
 void Vector3::printVec3()  
 {  
     std::cout<<"("<<x<<", "<<y<<", "<<z<<")"<<std::endl;  
-}  
+}
 
+Vector3 Vector3::Normalize(const Vector3& v)
+{
+    Vector3 result = v;
+    result.normalize();
+    return result;
+}
+
+Vector3 Vector3::Cross(const Vector3& v1, const Vector3& v2)
+{
+    return v1.crossProduct(v2);
+}
+
+bool Vector3::Approximately(const Vector3& v1, const Vector3& v2)
+{
+    return fabsf(v1.x - v2.x) < uZero && fabsf(v1.y - v2.y) < uZero && fabsf(v1.z - v2.z) < uZero;
+}
 
 /****************************************************************************************/
 //Vector4.cpp
@@ -255,3 +295,4 @@ void Vector4::printVec4()
 {
     std::cout<<"("<<x<<", "<<y<<", "<<z<<", "<<w<<")"<<std::endl;
 }
+
