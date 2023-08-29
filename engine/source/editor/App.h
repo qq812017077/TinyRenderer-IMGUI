@@ -11,6 +11,7 @@ public:
     ~App();
     int Run();
 private:
+    GameObject* AddGO(std::unique_ptr<GameObject> pGo);
     void LoadGOs();
     void DoFrame();
 

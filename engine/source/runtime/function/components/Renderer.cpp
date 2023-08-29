@@ -4,7 +4,7 @@
 #include "managers/RenderQueueManager.h"
 #include "renderer/Graphics.h"
 #include "Material.h"
-
+#include "Shader.h"
 Renderer::Renderer(Mesh mesh)
 :Renderer(mesh, Material::GetDefaultMaterialPtr())
 {
@@ -35,12 +35,17 @@ void Renderer::OnPreUpdate()
 
 void Renderer::OnUpdate(float deltaTime)
 {
-    UpdateObjBuffer();
+    // UpdateObjBuffer();
 }
 
 bool Renderer::IsVisible() const
 {
     return true;
+}
+
+Material * Renderer::GetMaterialPtr()
+{
+    return pMaterial.get();
 }
 /**
  * @brief 
@@ -97,10 +102,21 @@ void Renderer::SetSharedMaterial(std::shared_ptr<Material> pMaterial)
     if(this->pMaterial == nullptr) this->pMaterial = Material::GetDefaultMaterialPtr();
     
     sharedMaterial = true;
-    if(this->pMaterial.get() == pMaterial.get())  return ;
-    this->pMaterial->UnBind(this);   //unbind old material
-    this->pMaterial = pMaterial;
-    this->pMaterial->Bind(this);      //bind new material
+    int refCount = Material::GetRefCount(pMaterial);
+    if(this->pMaterial.get() == pMaterial.get())
+    {
+        if(refCount == 1) return;
+        // UnBind and CreateInstance
+        this->pMaterial->UnBind(this);
+        this->pMaterial = Material::CreateInstance(pMaterial);
+        this->pMaterial->Bind(this);
+    }else
+    {
+        this->pMaterial->UnBind(this);   //unbind old material
+        this->pMaterial = refCount == 0? pMaterial : Material::CreateInstance(pMaterial);
+        this->pMaterial->Bind(this);      //bind new material
+    }
+    
 }
 
 void Renderer::SetMesh(Mesh mesh)
@@ -113,18 +129,19 @@ Mesh& Renderer::GetMesh()
     return mesh;
 }
 
-UniformBuffer& Renderer::GetObjBufferData()
-{
-    return objBuffer;
-}
+// UniformBuffer& Renderer::GetObjBufferData()
+// {
+//     return objBuffer;
+// }
 
 void Renderer::ClearObjBuffer()
 {
-    objBuffer.Clear();
+    // objBuffer.Clear();
 }
 
-void Renderer::UpdateObjBuffer()
+void Renderer::UpdateObjBuffer(IShaderHelper & shaderHelper)
 {
     auto worldMatrix = owner->transform.GetWorldMatrix();
-    objBuffer.AddData(worldMatrix);
+    shaderHelper.SetGlobalMatrix("g_World", worldMatrix);
+    shaderHelper.SetGlobalMatrix("g_WorldInv", worldMatrix.Inverse());
 }

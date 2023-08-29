@@ -33,6 +33,7 @@ public:
 
 
     static Matrix4x4 Identity();
+    static Matrix4x4 Zero() { return Matrix4x4(); }
     static Matrix4x4 Translation(const Vector3& translation);
     static Matrix4x4 Rotation(const Vector3& rotation);
     static Matrix4x4 Rotation(const Quaternion& rotation);
@@ -77,6 +78,7 @@ public:
 
 
     static Matrix3x3 Identity();
+    static Matrix3x3 Zero() { return Matrix3x3(); }
     /**
      * @brief Rotation Matrix: rotate by an angle around an axis(Rodrigues' rotation formula)
      * 

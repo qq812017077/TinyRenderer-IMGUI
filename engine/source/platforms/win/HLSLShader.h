@@ -25,22 +25,22 @@ public:
     ~HLSLVertexShader() ;
 
     ID3D11VertexShader* Get() const;
-    bool HasConstantBuffer() const;
-    wrl::ComPtr<ID3D11Buffer> GetConstantBuffer() const; 
     bool CreateTexture2D(Texture * pInputTex, ID3D11Texture2D ** ppOutputTexture2D);
     bool CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler);
-    
-    void SetInputLayout(Mesh & mesh) override;
+    void SetInputLayout() override;
 
+    void UpdateConstantBuffer() override;
+    void UpdateTexture();
 private:
-    void SetInputElementDescription(Mesh & mesh);
     DirectXGraphics& directXGfx;
     wrl::ComPtr<ID3D11VertexShader> pVertexShader = nullptr;
     wrl::ComPtr<ID3DBlob> pBlob = nullptr;
-    wrl::ComPtr<ID3D11Buffer> pMaterialConstantBuffer = nullptr;
+    std::unordered_map<int, wrl::ComPtr<ID3D11Buffer>> pConstantBuffersBySlot;
+    std::unordered_map<int, wrl::ComPtr<ID3D11ShaderResourceView>> pTextureViewBySlot;
+    std::unordered_map<int, wrl::ComPtr<ID3D11SamplerState>> pSamplerStateBySlot;
+
     wrl::ComPtr<ID3D11InputLayout> pInputLayout;
     std::vector<D3D11_INPUT_ELEMENT_DESC> inputLayoutDescs;
-    std::map<std::string, int> textureSlotMap;
 };
 
 class HLSLPixelShader : public PixelShader
@@ -55,16 +55,16 @@ public:
     ~HLSLPixelShader() ;
     
     ID3D11PixelShader* Get() const ;
-    bool HasConstantBuffer() const;
-    wrl::ComPtr<ID3D11Buffer> GetConstantBuffer() const;
     bool CreateTexture2D(Texture * pInputTex, ID3D11Texture2D ** ppOutputTexture2D);
     bool CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler);
-
+    
+    void UpdateConstantBuffer() override;
+    void UpdateTexture();
 private:
     DirectXGraphics& directXGfx;
     wrl::ComPtr<ID3D11PixelShader> pPixelShader = nullptr;
     wrl::ComPtr<ID3DBlob> pBlob = nullptr;
-    wrl::ComPtr<ID3D11Buffer> pMaterialConstantBuffer = nullptr;
-    std::map<std::string, int> textureSlotMap;
-    
+    std::unordered_map<int, wrl::ComPtr<ID3D11Buffer>> pConstantBuffersBySlot;
+    std::unordered_map<int, wrl::ComPtr<ID3D11ShaderResourceView>> pTextureViewBySlot;
+    std::unordered_map<int, wrl::ComPtr<ID3D11SamplerState>> pSamplerStateBySlot;
 };

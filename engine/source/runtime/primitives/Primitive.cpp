@@ -111,72 +111,250 @@ std::unique_ptr<GameObject> Primitive::CreateCube(std::string name)
 {
     constexpr float side = 1.0f;
     std::vector<Float3> position = {
-            { -side,-side,-side },// 0 near side
-            { side,-side,-side },// 1
-            { -side,side,-side },// 2
-            { side,side,-side },// 3
-            { -side,-side,side },// 4 far side
-            { side,-side,side },// 5
-            { -side,side,side },// 6
-            { side,side,side },// 7
-            { -side,-side,-side },// 8 left side
-            { -side,side,-side },// 9
-            { -side,-side,side },// 10
-            { -side,side,side },// 11
-            { side,-side,-side },// 12 right side
-            { side,side,-side },// 13
-            { side,-side,side },// 14
-            { side,side,side },// 15
-            { -side,-side,-side },// 16 bottom side
-            { side,-side,-side },// 17
-            { -side,-side,side },// 18
-            { side,-side,side },// 19
-            { -side,side,-side },// 20 top side
-            { side,side,-side },// 21
-            { -side,side,side },// 22
-            { side,side,side }// 23
+            { side, -side, side }, // 0
+            { -side, -side, side}, // 1
+            { side, side , side},  // 2
+
+            { -side, side, side},   // 3
+            { side,  side, -side },
+            { -side, side, -side},
+
+            { side, -side, -side},
+            { -side, -side, -side},
+            { side, side, side},
+
+            { -side, side, side},
+            { side, side, -side},
+            { -side, side, -side},
+
+            { side, -side, -side}, // 12
+            { side, -side, side},
+            { -side, -side, side},
+            
+            { -side, -side, -side}, // 15
+            { -side, -side , side},
+            { -side, side , side},
+
+            { -side, side , -side}, //18
+            { -side, -side , -side},
+            { side, -side , -side},
+
+            { side, side , -side}, //21
+            { side, side , side},
+            { side, -side , side},
         };
     std::vector<INDICE_TYPE> indices = {
-                0,2, 1,    2,3,1,
-				4,5, 7,    4,7,6,
-				8,10, 9,  10,11,9,
-				12,13,15, 12,15,14,
-				16,17,18, 18,17,19,
-				20,23,21, 20,22,23
+                0,2, 3,    0,3,1,
+				8,4, 5,    8,5,9,
+				10,6, 7,  10,7,11,
+				12,13,14, 12,14,15,
+				16,17,18, 16,18,19,
+				20,21,22, 20,22,23
         };
         
     std::vector<Float2> uvs = {
-        { 0.0f,0.0f },
+        { 0.0f,0.0f },  //0
         { 1.0f,0.0f },
+        { 0.0f,1.0f },
+
+        { 1.0f,1.0f },  //3
         { 0.0f,1.0f },
         { 1.0f,1.0f },
-        { 0.0f,0.0f },
-        { 1.0f,0.0f },
-        { 0.0f,1.0f },
+        
+        { 0.0f,1.0f },  //6
         { 1.0f,1.0f },
         { 0.0f,0.0f },
-        { 1.0f,0.0f },
-        { 0.0f,1.0f },
-        { 1.0f,1.0f },
+        
+        { 1.0f,0.0f },  //9
         { 0.0f,0.0f },
         { 1.0f,0.0f },
+        
+        { 0.0f,0.0f },  //12
         { 0.0f,1.0f },
         { 1.0f,1.0f },
+        
+        { 1.0f,0.0f },  //15
         { 0.0f,0.0f },
-        { 1.0f,0.0f },
         { 0.0f,1.0f },
+        
+        { 1.0f,1.0f },  //18
+        { 1.0f,0.0f },
+        { 0.0f,0.0f },
+        
+        { 0.0f,1.0f },  //21
         { 1.0f,1.0f },
-        { 0.0f,0.0f },
-        { 1.0f,0.0f },
-        { 0.0f,1.0f },
-        { 1.0f,1.0f }
+        { 1.0f,0.0f }
     };
-    
+    // normals for every vertex: 6 faces, 4 vertices per face
+    std::vector<Float3> normals =
+    {
+        { 0.0f,0.0f, 1.0f },// 0 near
+        { 0.0f,0.0f, 1.0f },
+        { 0.0f,0.0f, 1.0f },
+
+        { 0.0f,0.0f, 1.0f },
+        { 0.0f,1.0f,0.0f },// 4 far
+        { 0.0f,1.0f,0.0f },
+        
+        { 0.0f,0.0f,-1.0f },
+        { 0.0f,0.0f,-1.0f },
+        { 0.0f,1.0f,0.0f },// 8 left
+
+        { 0.0f,1.0f,0.0f },
+        { 0.0f,0.0f,-1.0f },
+        { 0.0f,0.0f,-1.0f },
+
+        { 0.0f,-1.0f,0.0f },// 12 right
+        { 0.0f,-1.0f,0.0f },
+        { 0.0f,-1.0f,0.0f },
+
+        { 0.0f,-1.0f,0.0f },
+        { -1.0f,0.0f,0.0f },// 16 bottom
+        { -1.0f,0.0f,0.0f },
+
+        { -1.0f,0.0f,0.0f },
+        { -1.0f,0.0f,0.0f },
+        { 1.0f,0.0f,0.0f },// 20 top
+
+        { 1.0f,0.0f,0.0f },
+        { 1.0f,0.0f,0.0f },
+        { 1.0f,0.0f,0.0f } 
+    };
     Mesh mesh;
     mesh.SetVertexPosition(position);
     mesh.SetVertexIndices(indices);
     mesh.SetVertexTexCoord(uvs);
+    mesh.SetVertexNormal(normals);
 
+    std::unique_ptr<GameObject> pGO = std::make_unique<GameObject>(name);
+    pGO->AddComponent<Renderer>(mesh);
+    return pGO;
+}
+
+std::unique_ptr<GameObject> Primitive::CreatePlane(std::string name)
+{
+    float size = 10.f;
+    std::vector<Float3> position = {
+        { -size, 0.0f, -size }, // 0
+        { -size, 0.0f, size }, // 1
+        { size, 0.0f, size }, // 2
+        { size, 0.0f, -size } // 3
+    };
+
+    std::vector<Float3> normals = {
+        { 0.0f, 1.0f, 0.0f }, // 0
+        { 0.0f, 1.0f, 0.0f }, // 1
+        { 0.0f, 1.0f, 0.0f }, // 2
+        { 0.0f, 1.0f, 0.0f } // 3
+    };
+
+    std::vector<Float2> uvs = {
+        { 0.0f, 0.0f }, // 0
+        { 0.0f, 1.0f }, // 1
+        { 1.0f, 1.0f }, // 2
+        { 1.0f, 0.0f } // 3
+    };
+
+    std::vector<INDICE_TYPE> indices = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+    Mesh mesh;
+    mesh.SetVertexPosition(position);
+    mesh.SetVertexIndices(indices);
+    mesh.SetVertexTexCoord(uvs);
+    mesh.SetVertexNormal(normals);
+
+    std::unique_ptr<GameObject> pGO = std::make_unique<GameObject>(name);
+    pGO->AddComponent<Renderer>(mesh);
+    return pGO;
+}
+std::unique_ptr<GameObject> Primitive::CreateBox(std::string name, float width, float height, float depth)
+{
+    float halfWidth = width / 2.0f, halfHeight = height / 2.0f, halfDepth = depth / 2.0f;
+    Mesh mesh;
+    mesh.vertices.resize(24);   
+    mesh.vertices[0].position = {halfWidth, -halfHeight, -halfDepth}; // +x
+    mesh.vertices[1].position = {halfWidth, halfHeight, -halfDepth};
+    mesh.vertices[2].position = {halfWidth, halfHeight, halfDepth};
+    mesh.vertices[3].position = {halfWidth, -halfHeight, halfDepth};
+
+    mesh.vertices[4].position = {-halfWidth, -halfHeight, -halfDepth}; // -x
+    mesh.vertices[5].position = {-halfWidth, halfHeight, -halfDepth};
+    mesh.vertices[6].position = {-halfWidth, halfHeight, halfDepth};
+    mesh.vertices[7].position = {-halfWidth, -halfHeight, halfDepth};
+    
+    mesh.vertices[8].position = {-halfWidth, halfHeight, halfDepth}; // +y
+    mesh.vertices[9].position = {halfWidth, halfHeight, halfDepth};
+    mesh.vertices[10].position = {halfWidth, halfHeight, -halfDepth};
+    mesh.vertices[11].position = {-halfWidth, halfHeight, -halfDepth};
+
+    mesh.vertices[12].position = {-halfWidth, -halfHeight, halfDepth}; // -y
+    mesh.vertices[13].position = {halfWidth, -halfHeight, halfDepth};
+    mesh.vertices[14].position = {halfWidth, -halfHeight, -halfDepth};
+    mesh.vertices[15].position = {-halfWidth, -halfHeight, -halfDepth};
+
+    mesh.vertices[16].position = {-halfWidth, -halfHeight, halfDepth}; // +z
+    mesh.vertices[17].position = {-halfWidth, halfHeight, halfDepth};
+    mesh.vertices[18].position = {halfWidth, halfHeight, halfDepth};
+    mesh.vertices[19].position = {halfWidth, -halfHeight, halfDepth};
+
+    mesh.vertices[20].position = {-halfWidth, -halfHeight, -halfDepth}; // -z
+    mesh.vertices[21].position = {-halfWidth, halfHeight, -halfDepth};
+    mesh.vertices[22].position = {halfWidth, halfHeight, -halfDepth};
+    mesh.vertices[23].position = {halfWidth, -halfHeight, -halfDepth};
+
+    for (int i = 0; i < 4; ++i)
+    {
+        // +x
+        mesh.vertices[i].normal = { 1.0f, 0.0f, 0.0f };
+        mesh.vertices[i].tangent = { 0.0f, 0.0f, 1.0f};
+
+        // -x
+        mesh.vertices[i + 4].normal = { -1.0f, 0.0f, 0.0f };
+        mesh.vertices[i + 4].tangent = { 0.0f, 0.0f, -1.0f };
+
+        // +y
+        mesh.vertices[i + 8].normal = { 0.0f, 1.0f, 0.0f };
+        mesh.vertices[i + 8].tangent = { 1.0f, 0.0f, 0.0f };
+
+        // -y
+        mesh.vertices[i + 12].normal = { 0.0f, -1.0f, 0.0f };
+        mesh.vertices[i + 12].tangent = { -1.0f, 0.0f, 0.0f };
+
+        // +z
+        mesh.vertices[i + 16].normal = { 0.0f, 0.0f, 1.0f };
+        mesh.vertices[i + 16].tangent = { 1.0f, 0.0f, 0.0f };
+
+        // -z
+        mesh.vertices[i + 20].normal = { 0.0f, 0.0f, -1.0f };
+        mesh.vertices[i + 20].tangent = { -1.0f, 0.0f, 0.0f };
+    }
+
+    for (int i = 0; i < 6; ++i)
+    {
+        mesh.vertices[i * 4].texCoord = { 0.0f, 0.0f };
+        mesh.vertices[i * 4 + 1].texCoord = { 1.0f, 0.0f };
+        mesh.vertices[i * 4 + 2].texCoord = { 1.0f, 1.0f };
+        mesh.vertices[i * 4 + 3].texCoord = { 0.0f, 1.0f };
+    }
+
+    std::vector<INDICE_TYPE> indices = {
+        0, 1, 2,
+        2, 3, 0, // +x
+        4, 5, 6,
+        6, 7, 4, // -x
+        8, 9, 10,
+        10, 11, 8, // +y
+        12, 13, 14,
+        14, 15, 12, // -y
+        16, 17, 18,
+        18, 19, 16, // +z
+        20, 21, 22,
+        22, 23, 20 // -z
+    };
+    mesh.SetVertexIndices(indices);
     std::unique_ptr<GameObject> pGO = std::make_unique<GameObject>(name);
     pGO->AddComponent<Renderer>(mesh);
     return pGO;

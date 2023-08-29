@@ -2,7 +2,7 @@
 struct Matrix3x3;
 extern const double uZero;  
   
-struct Vector3  
+struct alignas(4) Vector3  
 {  
     float x, y, z; 
     Vector3():x(0), y(0), z(0){}  
@@ -17,6 +17,7 @@ struct Vector3
     Vector3 operator+(float f) {return Vector3(x+f, y+f, z+f);}
     Vector3& operator+=(float f) {x+=f; y+=f; z+=f; return *this;}
 
+    Vector3 operator-() const;
     Vector3 operator-();//overload operator - , make it possible to use -Vector3
     Vector3 operator-(const Vector3 &v);
     Vector3 operator-(const Vector3 &v) const { return Vector3(x - v.x, y - v.y, z - v.z); }
@@ -55,7 +56,7 @@ struct Vector3
     static bool Vector3::Approximately(const Vector3& v1, const Vector3& v2);
 };
 
-struct Vector4
+struct alignas(4) Vector4
 {
     float x, y, z, w;
     Vector4():x(0), y(0), z(0), w(0){}

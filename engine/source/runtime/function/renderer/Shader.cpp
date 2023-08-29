@@ -1,77 +1,86 @@
 #include "Shader.h"
-
+#include "Color.h"
 int ShaderBase::GetTexCount() const
 {
     return static_cast<int>(shaderDescInfo.textures.size());
 }
 
-ShaderDesc ShaderBase::GetShaderDesc() const 
+ShaderDesc& ShaderBase::GetShaderDesc() 
 {
     return shaderDescInfo;
 }
+static float colordata[4];
 
-CBufInfo ShaderBase::GetConstantBufferInfoBySlot(int slot)
+bool ShaderBase::SetBool(const char * name, bool value)
 {
-    auto &constantBufs = shaderDescInfo.constantBufs;
-    auto &cBufIndexBySlot = shaderDescInfo.cBufIndexBySlot;
-    if (cBufIndexBySlot.find(slot) == cBufIndexBySlot.end())
-    {
-        return constantBufs[0];
-    }
-    return constantBufs[cBufIndexBySlot[slot]];
+    if(shaderDescInfo.variables.find(name) == shaderDescInfo.variables.end()) return false;
+    auto & variable = shaderDescInfo.variables[name];
+    variable->SetBool(value);
+    return true;
 }
-CBufInfo ShaderBase::GetConstantBufferInfoByName(const std::string& name)
+bool ShaderBase::SetInteger(const char * name, int value)
 {
-    auto &constantBufs = shaderDescInfo.constantBufs;
-    auto &cBufIndexByName = shaderDescInfo.cBufIndexByName;
-    if (cBufIndexByName.find(name) == cBufIndexByName.end())
-    {
-        return constantBufs[0];
-    }
-    return constantBufs[cBufIndexByName[name]];
+    if(shaderDescInfo.variables.find(name) == shaderDescInfo.variables.end()) return false;
+    auto & variable = shaderDescInfo.variables[name];
+    variable->SetInt(value);
+    return true;
 }
 
-
-TextureInfo ShaderBase::GetTexInfoByIndex(int index) const
+bool ShaderBase::SetFloat(const char * name, float value)
 {
-    return shaderDescInfo.textures[index];
-}
-TextureInfo ShaderBase::GetTextureInfoBySlot(int slot)
-{
-    auto &textures = shaderDescInfo.textures;
-    auto &texIndexBufBySlot = shaderDescInfo.texIndexBufBySlot;
-    if (texIndexBufBySlot.find(slot) == texIndexBufBySlot.end())
-    {
-        return textures[0];
-    }
-    return textures[texIndexBufBySlot[slot]];
+    if(shaderDescInfo.variables.find(name) == shaderDescInfo.variables.end()) return false;
+    auto & variable = shaderDescInfo.variables[name];
+    variable->SetFloat(value);
+    return true;
 }
 
-
-TextureInfo ShaderBase::GetTextureInfoByName(const std::string& name)
+bool ShaderBase::SetVariable(const char * name, void * data, unsigned int bytesize)
 {
-    auto &textures = shaderDescInfo.textures;
-    auto &texIndexBufByName = shaderDescInfo.texIndexBufByName;
-    if(texIndexBufByName.find(name) == texIndexBufByName.end())
-    {
-        return textures[0];
-    }
-    return textures[texIndexBufByName[name]];
+    if(shaderDescInfo.variables.find(name) == shaderDescInfo.variables.end()) return false;
+    auto & variable = shaderDescInfo.variables[name];
+    variable->SetRaw(data, 0, bytesize);
+    return true;
+}
+
+bool ShaderBase::SetColor(const char * name, Color& color)
+{
+    colordata[0] = color.GetR() / 255.0f;
+    colordata[1] = color.GetG() / 255.0f;
+    colordata[2] = color.GetB() / 255.0f;
+    colordata[3] = color.GetA() / 255.0f;
+    if(shaderDescInfo.variables.find(name) == shaderDescInfo.variables.end()) return false;
+    auto & variable = shaderDescInfo.variables[name];
+    variable->SetFloatVector(4, colordata);
+    return true;
+}
+
+bool ShaderBase::SetMatrix(const char * name, Matrix4x4& matrix)
+{
+    if(shaderDescInfo.variables.find(name) == shaderDescInfo.variables.end()) return false;
+    auto & variable = shaderDescInfo.variables[name];
+    variable->SetFloatMatrix(4, 4, matrix.GetData());
+    return true;
+}
+
+bool ShaderBase::SetVector(const char * name, Vector4& vec)
+{
+    if(shaderDescInfo.variables.find(name) == shaderDescInfo.variables.end()) return false;
+    auto & variable = shaderDescInfo.variables[name];
+    variable->SetFloatVector(4, reinterpret_cast<float*>(&vec));
+    return true;
+}
+
+bool ShaderBase::SetVector(const char * name, Vector3& vec)
+{
+    if(shaderDescInfo.variables.find(name) == shaderDescInfo.variables.end()) return false;
+    auto & variable = shaderDescInfo.variables[name];
+    variable->SetFloatVector(3, reinterpret_cast<float*>(&vec));
+    return true;
 }
 
 
-SamplerInfo ShaderBase::GetSamplerInfoBySlot(int slot)
-{
-    auto &samplers = shaderDescInfo.samplers;
-    auto &samplerIndexBufBySlot = shaderDescInfo.samplerIndexBufBySlot;
-    if (samplerIndexBufBySlot.find(slot) == samplerIndexBufBySlot.end())
-    {
-        return samplers[0];
-    }
-    return samplers[samplerIndexBufBySlot[slot]];
-}
 
-SamplerInfo ShaderBase::GetSamplerInfoByName(const std::string& name, int slot)
+SamplerInfo ShaderBase::GetSamplerInfoByName(const char * name, int slot)
 {
     auto &samplers = shaderDescInfo.samplers;
     auto &samplerIndexBufByName = shaderDescInfo.samplerIndexBufByName;
@@ -86,4 +95,46 @@ SamplerInfo ShaderBase::GetSamplerInfoByName(const std::string& name, int slot)
         return samplers[samplerIndexBufBySlot[slot]];
     }
     return samplers[samplerIndexBufByName[name]];
+}
+
+std::shared_ptr<ICBufferVariable> ShaderBase::GetVariableByName(const char * name)
+{
+    if(shaderDescInfo.variables.find(name) == shaderDescInfo.variables.end())
+    {
+        return nullptr;
+    }
+    return shaderDescInfo.variables[name];
+}
+
+std::shared_ptr<ICBufferVariable> ShaderBase::GetVariableBySlot(int slot)
+{
+    for(auto &var : shaderDescInfo.variables)
+    {
+        if(var.second->GetSlot() == slot)
+        {
+            return var.second;
+        }
+    }
+    return nullptr;
+}
+
+std::shared_ptr<ITextureVariable> ShaderBase::GetTextureByName(const char * name)
+{
+    if(shaderDescInfo.textures.find(name) == shaderDescInfo.textures.end())
+    {
+        return nullptr;
+    }
+    return shaderDescInfo.textures[name];
+}
+
+std::shared_ptr<ITextureVariable> ShaderBase::GetTextureBySlot(int slot)
+{
+    for(auto &tex : shaderDescInfo.textures)
+    {
+        if(tex.second->GetSlot() == slot)
+        {
+            return tex.second;
+        }
+    }
+    return nullptr;
 }

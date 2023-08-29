@@ -21,6 +21,13 @@ struct Color
     static Color Yellow() noexcept { return Color( 255,255,0 ); }
     static Color Cyan() noexcept { return Color( 0,255,255 ); }
     static Color Magenta() noexcept { return Color( 255,0,255 ); }
+    static Color Gray() noexcept { return Color( 128,128,128 ); }
+    static Color LightGray() noexcept { return Color( 192,192,192 ); }
+    static Color DarkGray() noexcept { return Color( 64,64,64 ); }
+    static Color Orange() noexcept { return Color( 255,165,0 ); }
+    static Color Brown() noexcept { return Color( 128,42,42 ); }
+    static Color Pink() noexcept { return Color( 255,192,203 ); }
+    static Color Transparent() noexcept { return Color( 0,0,0,0 ); }
 
     unsigned int dword;
     constexpr Color() noexcept : dword() {}

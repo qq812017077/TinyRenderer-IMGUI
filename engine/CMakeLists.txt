@@ -1,8 +1,11 @@
 # specify CMAKE version
 cmake_minimum_required(VERSION 3.10)
 
-
 project(TinyRenderer_IMGUI VERSION 0.1.0)
+
+if(MSVC)
+    add_compile_options("/source-charset:utf-8")
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -32,7 +35,8 @@ set(PROJECT_NAME tinyrenderer)
 # specify C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
-
+# add #define DEBUG
+add_definitions(-DDEBUG)
 # add #define
 # add_definitions(-STB_IMAGE_IMPLEMENTATION)
 

@@ -68,10 +68,14 @@ public:
     }
 
     Transform transform;
+
+    static GameObject* Find(const char* name);
 protected:
     GameObject& operator=(const GameObject&) = delete;
 
 private:
     std::string name = "New GameObject";
     std::unordered_map<std::string, std::unique_ptr<Component>> components;
+
+    static std::unordered_map<std::string, std::vector<GameObject*>> gameObjectsByName;
 };

@@ -6,6 +6,7 @@
 #include "Tools.h"
 #include <filesystem>
 #include "components/Renderer.h"
+#include "core/math/Matrix.h"
 namespace fs = std::filesystem;
 
 std::shared_ptr<Material> Material::pDefaultMaterial = nullptr;
@@ -25,8 +26,9 @@ Material::Material(std::string vertexShaderPath, std::string pixelShaderPath, st
     this->vertexShaderPath = vertexShaderPath;
     this->pixelShaderPath = pixelShaderPath;
     // set name is vertexShaderPath + pixelShaderPath
-    this->materialName = "Material-" + materialName;
+    this->materialName = materialName;
     uniqueCode = Tools::UniqueCode(this->materialName);
+    Graphics::AddMaterial(this);
 }
 
 Material::~Material()
@@ -102,76 +104,154 @@ void Material::UnBind(Renderer * pRenderer)
 /*********************************************************/
 /*                  uniform buffer operation             */
 /*********************************************************/
-void Material::ClearUniformBuffer()
-{
-    vertexUniformBuffer.Clear();
-    pixelUniformBuffer.Clear();
-}
 
-UniformBuffer Material::GetVertexUniformBuffer() const
+void Material::UpdateBuffer()
 {
-    return vertexUniformBuffer;
-}
+    if(pPixelShader== nullptr || pVertexShader== nullptr) return ;
+    for(auto & pair: integerMap)
+    {
+        pPixelShader->SetInteger(pair.first.c_str(), pair.second);
+        pVertexShader->SetInteger(pair.first.c_str(), pair.second);
+    }
 
-UniformBuffer Material::GetPixelUniformBuffer() const
-{
-    return pixelUniformBuffer;
-}
-void Material::UpdateUniformBuffer()
-{
-    // if(pVertexShader != nullptr) pVertexShader->updateMaterialUniformBuffer(vertexUniformBuffer);
-    // if (pPixelShader != nullptr) pPixelShader->updateMaterialUniformBuffer(pixelUniformBuffer);
+    for(auto & pair: floatMap)
+    {
+        pPixelShader->SetFloat(pair.first.c_str(), pair.second);
+        pVertexShader->SetFloat(pair.first.c_str(), pair.second);
+    }
+
+    for(auto & pair: colorMap)
+    {
+        pPixelShader->SetColor(pair.first.c_str(), pair.second);
+        pVertexShader->SetColor(pair.first.c_str(), pair.second);
+    }
+    for(auto & pair: matrixMap)
+    {
+        pPixelShader->SetMatrix(pair.first.c_str(), pair.second);
+        pVertexShader->SetMatrix(pair.first.c_str(), pair.second);
+    }
+
+    for(auto & pair: textureMap)
+    {
+        auto pTex = pPixelShader->GetTextureByName(pair.first.c_str());
+        if(pTex != nullptr)
+            pTex->Set(pair.first, pair.second.pTexture, pair.second.samplerName);
+
+        pTex = pVertexShader->GetTextureByName(pair.first.c_str());
+        if(pTex != nullptr)
+            pTex->Set(pair.first, pair.second.pTexture, pair.second.samplerName);
+    }
+    
+    integerMap.clear();
+    floatMap.clear();
+    matrixMap.clear();
+    textureMap.clear();
+    colorMap.clear();
 }
 
 /*********************************************************/
 /*                set/get operation                      */
 /*********************************************************/
-void Material::SetInteger(std::string& name, int value)
+void Material::SetInteger(const char * name, int value)
 {
     integerMap[name] = value;
 }
 
-void Material::SetFloat(std::string& name, float value)
+void Material::SetFloat(const char * name, float value)
 {
     floatMap[name] = value;
 }
-
-void Material::SetMatrix(std::string& name, float* value)
+void Material::SetColor(const char * name, Color value)
+{
+    colorMap[name] = value;
+}
+void Material::SetMatrix(const char * name, Matrix4x4& value)
 {
     matrixMap[name] = value;
 }
 
-void Material::SetTexture(std::string name, std::shared_ptr<Texture> pTexture, std::string samplerName)
+void Material::SetTexture(const char * name, std::shared_ptr<Texture> pTexture, const char * samplerName)
 {
     TextureInfo info;
     info.pTexture = pTexture;
-    if(samplerName == "")
-        info.samplerName = "sampler" + name;
+    if(samplerName == nullptr)
+        info.samplerName = "sampler" + std::string(name);
     else
         info.samplerName = samplerName;
     textureMap[name] = info;
 }
 
-int Material::GetInteger(std::string& name)
+bool Material::GetInteger(const char * name, int* result)
 {
-    return integerMap[name];
+    if(pPixelShader != nullptr)
+    {
+        auto & pVar = pPixelShader->GetVariableByName(name);
+        if(pVar != nullptr)
+            return pVar->GetRaw(result, 0, sizeof(int));
+    }
+    if(pVertexShader != nullptr)
+    {
+        auto & pVar = pVertexShader->GetVariableByName(name);
+        if(pVar != nullptr)
+            return pVar->GetRaw(result, 0, sizeof(int));
+    }
+    return false;
 }
 
-float Material::GetFloat(std::string& name)
+bool Material::GetFloat(const char * name, float* result)
 {
-    return floatMap[name];
+    if(pPixelShader != nullptr)
+    {
+        auto & pVar = pPixelShader->GetVariableByName(name);
+        if(pVar != nullptr)
+            return pVar->GetRaw(result, 0, sizeof(float));
+    }
+    
+    if(pVertexShader != nullptr)
+    {
+        auto & pVar = pVertexShader->GetVariableByName(name);
+        if(pVar != nullptr)
+            return pVar->GetRaw(result, 0, sizeof(float));
+    }
+    return false;
 }
 
-float* Material::GetMatrix(std::string& name)
+bool Material::GetMatrix4x4(const char * name, float* result, int size)
 {
-    return matrixMap[name];
+    if(pPixelShader != nullptr)
+    {
+        auto & pVar = pPixelShader->GetVariableByName(name);
+        if(pVar != nullptr)
+            return pVar->GetRaw(&result, 0, size);
+    }
+    if(pVertexShader != nullptr)
+    {
+        auto & pVar = pVertexShader->GetVariableByName(name);
+        if(pVar != nullptr)
+            return pVar->GetRaw(&result, 0, size);
+    }
+    return false;
 }
 
-Texture* Material::GetTexturePtr(std::string& name)
+Texture* Material::GetTexturePtr(const char * name)
 {
     if (textureMap.find(name) == textureMap.end())
         return Texture::GetDefaultTexturePtr();
     return textureMap[name].pTexture.get();
+
+    if(pPixelShader != nullptr)
+    {
+        auto & pTex = pPixelShader->GetTextureByName(name);
+        if(pTex != nullptr)
+            return pTex->GetTexturePtr();
+    }
+    if(pVertexShader != nullptr)
+    {
+        auto & pTex = pVertexShader->GetTextureByName(name);
+        if(pTex != nullptr)
+            return pTex->GetTexturePtr();
+    }
+    return nullptr;
 }
 
 std::string Material::GetSamplerNameByTexName(std::string& texName) const
@@ -197,7 +277,7 @@ std::shared_ptr<Material> Material::GetDefaultMaterialPtr()
         vertexShaderFileName = vertexShaderFileName.substr(0, vertexShaderFileName.find_last_of("."));
         pixelShaderFileName = pixelShaderFileName.substr(0, pixelShaderFileName.find_last_of("."));
 
-        auto materialName = "VS[" + vertexShaderFileName + "]-PS[" + pixelShaderFileName + "]";
+        auto materialName = "Material-VS[" + vertexShaderFileName + "]-PS[" + pixelShaderFileName + "]";
         pDefaultMaterial = std::shared_ptr<Material>(new Material(vertexShaderPath, pixelShaderPath, materialName));
         MaterialManager::AddMaterial(pDefaultMaterial);
     }
@@ -214,7 +294,7 @@ std::shared_ptr<Material> Material::Load(std::string vertexShaderPath, std::stri
     vertexShaderFileName = vertexShaderFileName.substr(0, vertexShaderFileName.find_last_of("."));
     pixelShaderFileName = pixelShaderFileName.substr(0, pixelShaderFileName.find_last_of("."));
 
-    auto materialName = "VS[" + vertexShaderFileName + "]-PS[" + pixelShaderFileName + "]";
+    auto materialName = "Material-VS[" + vertexShaderFileName + "]-PS[" + pixelShaderFileName + "]";
     std::shared_ptr<Material> pMaterial(new Material(vertexShaderPath, pixelShaderPath, materialName));
     MaterialManager::AddMaterial(pMaterial);
     return pMaterial;

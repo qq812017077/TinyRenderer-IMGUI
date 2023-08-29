@@ -8,10 +8,11 @@
 
 #include "Material.h"
 #include "Texture.h"
-#include "components/Camera.h"
 #include "primitives/Primitive.h"
 #include "behaviours/Rotater.h"
 #include "behaviours/CamController.h"
+#include "behaviours/LightController.h"
+#include "components/Light.h"
 App::App()
 {
 
@@ -30,37 +31,54 @@ App::~App()
     pGameObjects.clear();
 }
 
+GameObject* App::AddGO(std::unique_ptr<GameObject> pGo)
+{
+    pGameObjects.emplace_back(std::move(pGo));
+    return pGameObjects.back().get();
+}
 void App::LoadGOs()
 {
-    pGameObjects.emplace_back(Primitive::CreateSkinedCube("cube1")); // here will use move constructor;
-    pGameObjects.emplace_back(Primitive::CreateCube("cube2")); // here will use move constructor;
-    
-    auto camGO = std::make_unique<GameObject>("Cam");
+    auto cube2 = AddGO(Primitive::CreateCube("cube2"));// here will use move constructor;
+    auto plane = AddGO(Primitive::CreatePlane("plane"));
+    auto camGO = AddGO(std::make_unique<GameObject>("Cam"));
+    auto lightController = AddGO(std::make_unique<GameObject>("LightController"));
+    // auto light = AddGO(Light::CreateDirectionalLight("light"));
+    auto pointLight = AddGO(Light::CreatePointLight("pointLight"));
+    auto whiteLittleCube = AddGO(Primitive::CreateCube("white littleCube"));
+    auto redLittleCube = AddGO(Primitive::CreateCube("red littleCube"));
+    // load resource
+    auto pMat = Material::Load("shaders/DefaultVertexShader.hlsl", "shaders/PhongPS.hlsl");
+    auto pCubTex = Texture::LoadFrom("res/images/cube.png");
+    auto pBrickwallTex = Texture::LoadFrom("res/images/brickwall.jpg");
+
+    // set camera
     auto cam = camGO->AddComponent<Camera>();
     camGO->AddComponent<CamController>();
     cam->SetAspect(1280.0f / 720.0f);
     camGO->transform.SetPosition({ 0.0f, 0.0f, 6.0f });
     camGO->transform.SetEulerAngle({ 0.0f, 180.0f, 0.0f });
-    pGameObjects.emplace_back(std::move(camGO));
+    // set plane
+    plane->transform.SetPosition({ 0.0f, -2.0f, 0.0f });
+    plane->transform.SetScale({ 2.0f, 1.0f, 2.0f });
+    plane->GetComponent<Renderer>()->SetMaterial(pMat);
+    // set cubes
+    cube2->transform.SetPosition({ -1.5f, -1.5f, 0.0f });
+    whiteLittleCube->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
+    whiteLittleCube->transform.SetScale({ 0.1f, 0.1f, 0.1f });
+    cube2->AddComponent<Rotater>();
+    auto pRenderer2 = cube2->GetComponent<Renderer>();
+    pRenderer2->SetSharedMaterial(pMat);
+    pRenderer2->GetMaterial()->SetTexture("_MainTex", pBrickwallTex);
+    whiteLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::White());
+    redLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::Red());
     
+    // light 
+    // light->AddComponent<LightController>();
+    lightController->AddComponent<LightController>();
     for (auto& pGo : pGameObjects)
     {
         pGo->Init();
     }
-    pGameObjects[0]->transform.SetPosition({ 1.5f, 1.5f, 0.0f });
-    pGameObjects[1]->transform.SetPosition({ -1.5f, -1.5f, 0.0f });
-    pGameObjects[0]->AddComponent<Rotater>();
-    pGameObjects[1]->AddComponent<Rotater>();
-    auto pMat = Material::Load("shaders/DefaultVertexShader.hlsl", "shaders/TexPixelShader.hlsl");
-    auto pRenderer1 = pGameObjects[0]->GetComponent<Renderer>();
-    auto pRenderer2 = pGameObjects[1]->GetComponent<Renderer>();
-    pRenderer1->SetSharedMaterial(pMat);
-    pRenderer2->SetSharedMaterial(pMat);
-    // auto pTexture = Texture::LoadFrom("res/images/cube.png");
-    auto pCubTex = Texture::LoadFrom("res/images/cube.png");
-    auto pBrickwallTex = Texture::LoadFrom("res/images/brickwall.jpg");
-    pRenderer2->GetMaterial()->SetTexture("_MainTex", pBrickwallTex);
-    pRenderer1->GetSharedMaterial()->SetTexture("_MainTex", pCubTex);
 }
 
 int App::Run()

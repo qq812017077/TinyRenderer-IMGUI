@@ -1,5 +1,6 @@
 #pragma once
 #include "Component.h"
+class IShaderHelper;
 struct Matrix4x4;
 class Camera : public Component
 {
@@ -18,6 +19,7 @@ public:
     // Projection Matrix
     Matrix4x4 GetProjectionMatrix();
     
+    static void UpdateCameraBuffer(IShaderHelper& shaderHelper);
     static Camera* pActivedCamera;
 protected:
     void Init() override;

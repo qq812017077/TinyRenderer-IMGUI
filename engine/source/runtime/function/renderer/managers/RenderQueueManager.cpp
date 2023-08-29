@@ -17,6 +17,8 @@ std::map<Material *, std::vector<Renderer*>> RenderQueueManager::GetRenderQueue(
 void RenderQueueManager::AddMaterial(Material* pMaterial)
 {
     auto& manager = RenderQueueManager::Get();
+    if(manager.renderQueue.find(pMaterial) != manager.renderQueue.end()) return;
+    manager.renderQueue.emplace(pMaterial, std::vector<Renderer*>());
     for(auto& pair : pMaterial->rendererRefCountMap)
         manager.renderQueue[pMaterial].emplace_back(pair.first);
 }

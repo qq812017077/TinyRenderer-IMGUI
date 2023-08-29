@@ -34,6 +34,14 @@ void Transform::SetPosition(const Vector3& position)
 
 void Transform::SetEulerAngle(const Vector3& eulerAngle)
 {
+    // auto curEuler = this->rotation.EulerAngles();
+    // auto & newRot = Quaternion::Euler(eulerAngle);
+    // auto newEuler = newRot.EulerAngles();
+    // // curEuler is near (x,y,z), but far from newEuler, we think newEuler it not valid
+    // if((curEuler.x - eulerAngle.x) < 10.f && (newEuler.x - eulerAngle.x) > 10.f)
+    // {   
+    //     return ;
+    // }
     this->rotation = Quaternion::Euler(eulerAngle);
 }
 
@@ -81,7 +89,6 @@ Vector3 Transform::up() const
 {
     return Matrix3x3::Rotation(rotation) * Vector3::Up();
 }
-
 
 
 void Transform::Rotate(Vector3 eularAngle, Space relativeTo)

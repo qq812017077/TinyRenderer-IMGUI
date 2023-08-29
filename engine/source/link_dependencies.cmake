@@ -26,13 +26,13 @@
 # find_package(imgui CONFIG REQUIRED)
 
 # find_package(stb CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE imgui  stb)
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui stb eigen)
 # target_link_libraries(${PROJECT_NAME} PRIVATE stb)
 
 if(WIN32)
         target_link_libraries(${PROJECT_NAME}
         PUBLIC
-                d3d12.lib
+                d3d11.lib
                 dxgi.lib
                 dxguid.lib
                 d3dcompiler.lib

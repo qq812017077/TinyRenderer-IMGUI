@@ -1,8 +1,8 @@
 #include "GameObject.h"
 #include "components/Component.h"
-
+std::unordered_map<std::string, std::vector<GameObject*>> GameObject::gameObjectsByName;
 GameObject::GameObject():
-    transform()
+    GameObject("GameObject")
 {
 }
 
@@ -10,6 +10,8 @@ GameObject::GameObject(std::string name):
     name(name),
     transform()
 {
+    // add go to gameobjects
+    gameObjectsByName[name].emplace_back(this);
 }
 
 
@@ -17,6 +19,10 @@ GameObject::GameObject(std::string name):
 GameObject::~GameObject()
 {
     RemoveAllComponents();
+    // remove go from gameobjects
+    auto & goVec = gameObjectsByName[name];
+    //remove from vector
+    goVec.erase(std::remove(goVec.begin(), goVec.end(), this), goVec.end());
     //display gameobject address
     std::cout << "GameObject[" << name << "] destroyed at " << this << std::endl;
 }
@@ -86,4 +92,12 @@ void GameObject::OnGUI()
 void GameObject::RemoveAllComponents()
 {
     components.clear();
+}
+
+GameObject* GameObject::Find(const char* name)
+{
+    auto & gos = gameObjectsByName[name];
+    if(gos.size() > 0)
+        return gos[0];
+    return nullptr;
 }

@@ -32,12 +32,11 @@ DXGI_FORMAT GetInputElementFormatByMask(BYTE inputParamMask, D3D_REGISTER_COMPON
 // ------------------------------
 // ShaderInfo函数
 // ------------------------------
-HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength,
-    ID3D11ShaderReflection** ppReflection, D3D11_SHADER_DESC* shaderDesc);
+HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength,ID3D11ShaderReflection** ppReflection);
 // HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, std::vector<UniformVar>* pUniformVars, 
 // std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed, std::map<std::string, int> * pTextureSlotMap);
-void GetInputLayoutInfo(ID3D11ShaderReflection* pReflection, D3D11_SHADER_DESC& shaderDesc, std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed);
-void LoadShaderDescInfo(ID3D11ShaderReflection* pReflection, D3D11_SHADER_DESC& shaderDesc, ShaderDesc * pShaderDesc);
+void GetInputLayoutInfo(ID3D11ShaderReflection* pReflection, std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed);
+void LoadShaderDescInfo(ID3D11ShaderReflection* pReflection, ShaderDesc * pShaderDesc);
 
 // ------------------------------
 // Buffer函数

@@ -11,7 +11,7 @@ public:
     virtual ~Component();
     
     GameObject& GetOwner() const;
-    Transform* transform = nullptr;
+    Transform* pTransform = nullptr;
 protected:
     virtual void Init() = 0;
     void SetOwner(GameObject* owner);

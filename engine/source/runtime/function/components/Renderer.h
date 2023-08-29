@@ -2,11 +2,10 @@
 #include <iostream>
 #include "Mesh.h"
 #include "components/Component.h"
-#include "UniformBuffer.h"
 
 class GameObject;
 class Material;
-
+class IShaderHelper;
 class Renderer : public Component
 {
 public:
@@ -22,6 +21,8 @@ public:
     void OnPreUpdate() override;
     void OnUpdate(float deltaTime) override;
     bool IsVisible() const;
+    bool IsSharedMaterial() const { return sharedMaterial;}
+    Material * GetMaterialPtr();
     Material * GetMaterial();
     std::shared_ptr<Material> GetSharedMaterial();
     void SetMaterial(std::shared_ptr<Material> pMaterial);
@@ -29,13 +30,12 @@ public:
     void SetMesh(Mesh mesh);
     Mesh& GetMesh();
 
-    UniformBuffer& GetObjBufferData();    
+    void UpdateObjBuffer(IShaderHelper& shaderHelper);
 protected:
     void ClearObjBuffer();
-    void UpdateObjBuffer();
     
     bool sharedMaterial = true;
     std::shared_ptr<Material> pMaterial;
     Mesh mesh;
-    UniformBuffer objBuffer;
+    
 };

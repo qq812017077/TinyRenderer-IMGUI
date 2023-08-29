@@ -128,7 +128,7 @@ Texture * Texture::GetDefaultTexturePtr()
     if (pDefaultTexture == nullptr)
     {
         pDefaultTexture = std::make_shared<Texture>(512, 512);
-        pDefaultTexture->Clear(Color::White());
+        pDefaultTexture->Clear(Color::DarkGray());
     }
     return pDefaultTexture.get();
 }

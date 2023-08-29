@@ -3,12 +3,12 @@
 #include <string>
 #include <map>
 #include <memory>
-#include "UniformBuffer.h"
 #include "Texture.h"
 class Graphics;
 class VertexShader;
 class PixelShader;
 class Renderer;
+struct Matrix4x4;
 class Material
 {
     friend class Graphics;
@@ -38,18 +38,16 @@ public:
     void Bind(Renderer * pRenderer);
     void UnBind(Renderer * pRenderer);
     // uniform buffer operation
-    UniformBuffer GetVertexUniformBuffer() const;
-    UniformBuffer GetPixelUniformBuffer() const;
-
-    void SetInteger(std::string& name, int value);
-    void SetFloat(std::string& name, float value);
-    void SetMatrix(std::string& name, float* value);
-    void SetTexture(std::string name, std::shared_ptr<Texture> pTexture, std::string samplerName="");
-
-    int GetInteger(std::string& name);
-    float GetFloat(std::string& name);
-    float* GetMatrix(std::string& name);
-    Texture* GetTexturePtr(std::string& name);
+    void SetInteger(const char * name, int value);
+    void SetFloat(const char * name, float value);
+    void SetColor(const char * name, Color value);
+    void SetMatrix(const char * name, Matrix4x4& value);
+    void SetTexture(const char * name, std::shared_ptr<Texture> pTexture, const char * samplerName = nullptr);
+    bool GetInteger(const char * name, int* result);
+    bool GetFloat(const char * name, float* result);
+    bool Material::GetMatrix4x4(const char * name, float* result, int size);
+    
+    Texture* GetTexturePtr(const char * name);
     
     std::string GetSamplerNameByTexName(std::string& texName) const;
     static int GetRefCount(std::shared_ptr<Material> pMaterial);
@@ -62,23 +60,20 @@ private:
     void LoadShader(Graphics& gfx);
 
     // uniform buffer operation
-    void ClearUniformBuffer();
-    void UpdateUniformBuffer();
+    void UpdateBuffer();
 
     std::string materialName;
     std::shared_ptr<VertexShader> pVertexShader;
     std::shared_ptr<PixelShader> pPixelShader;
     std::string vertexShaderPath;
     std::string pixelShaderPath;
-    UniformBuffer vertexUniformBuffer;
-    UniformBuffer pixelUniformBuffer;
     
     std::map<std::string, TextureInfo> textureMap;
     std::map<std::string, int> integerMap;
     std::map<std::string, float> floatMap;
-    std::map<std::string, float*> matrixMap;
+    std::map<std::string, Color> colorMap;
+    std::map<std::string, Matrix4x4> matrixMap;
     std::unordered_map<Renderer*, bool> rendererRefCountMap;
     unsigned int uniqueCode;
     static std::shared_ptr<Material> pDefaultMaterial;
 };
-

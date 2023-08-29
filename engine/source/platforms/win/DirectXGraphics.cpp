@@ -3,6 +3,7 @@
 #include <iostream>
 #include "DXUtil.h"
 #include "HLSLShader.h"
+#include "HLSLShaderHelper.h"
 #include "managers/RenderQueueManager.h"
 #include "Texture.h"
 #include "imgui/backends/imgui_impl_dx11.h"
@@ -23,6 +24,7 @@ DirectXGraphics::DirectXGraphics(HWND &hwnd):
     CreateRenderTarget();
 
     OnResize(1280, 720);
+    m_pShaderHelper = HLSLShaderHelper::GetPtr();
     LOG("   Directx Graphics  constructor end")
 }
 
@@ -64,6 +66,7 @@ void DirectXGraphics::ClearBuffer(float red, float green, float blue) noexcept
     const float color[] = { red, green, blue, 1.0f };
     pContext->ClearRenderTargetView(pTarget.Get(), color);
     pContext->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
+    
 }
 
 
@@ -237,8 +240,10 @@ void DirectXGraphics::DrawTestTriangle(float angle)
 void DirectXGraphics::DrawAll()
 {
     //1. update per frame constant buffer
-    UpdateCBuffer(pFrameConstantBuffer, FrameUniformBufferManager::GetFrameBuffer());
-    BindCBuffer(FrameCBufSlot, pFrameConstantBuffer);
+    auto & helper = HLSLShaderHelper::Get();
+    UpdateCBuffer(pFrameConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerFrameCBufSlot));
+    
+    UpdateCBuffer(pLightingConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
 
     //2. update per material constant buffer
     for(auto & pair : RenderQueueManager::GetRenderQueue())
@@ -249,13 +254,11 @@ void DirectXGraphics::DrawAll()
 
         for (auto& pRenderer : pRenderers)
         {
-            UpdateCBuffer(pObjectConstantBuffer, pRenderer->GetObjBufferData());
-            BindCBuffer(ObjectCBufSlot, pObjectConstantBuffer);
+            pRenderer->UpdateObjBuffer(helper);
+            UpdateCBuffer(pObjectConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerDrawCBufSlot));
 
             // bind vertex buffer and index buffer
             auto & mesh = pRenderer->GetMesh();
-            // bind input layout
-            mat->GetVertexShader()->SetInputLayout(mesh);
 
             // BindMesh();
             const UINT stride = mesh.GetVertexStride();
@@ -272,6 +275,8 @@ void DirectXGraphics::DrawAll()
             
             // bind render target
             pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr);
+            // enable depth stencil
+            // pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), pDepthStencilView.Get());
 
             // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
             GFX_THROW_INFO_ONLY(pContext->DrawIndexed(mesh.GetIndexCount(), 0u, 0u));
@@ -315,6 +320,7 @@ void DirectXGraphics::OnResize(int width, int height)
     depthStencilViewDesc.Flags = 0u;
     depthStencilViewDesc.Texture2D.MipSlice = 0u;
     GFX_THROW_INFO(pDevice->CreateDepthStencilView(pDepthStencil.Get(), &depthStencilViewDesc, &pDepthStencilView));
+
 }
 
 
@@ -414,91 +420,54 @@ void DirectXGraphics::LoadMaterial(Material & material)
     HLSLPixelShader* pPixelShader = dynamic_cast<HLSLPixelShader*>(material.GetPixelShader().get());
     pContext->VSSetShader(pVertexShader->Get(), nullptr, 0u);
     pContext->PSSetShader(pPixelShader->Get(), nullptr, 0u);
-
-
-    auto vsConstantBuffer = pVertexShader->GetConstantBuffer();
-    auto psConstantBuffer = pPixelShader->GetConstantBuffer();
-
-    auto vsUniformBuffer = material.GetVertexUniformBuffer();
-    auto psUniformBuffer = material.GetPixelUniformBuffer();
-    if(vsUniformBuffer.bytesize() != 0)
-    {
-        UpdateCBuffer(vsConstantBuffer, vsUniformBuffer);
-        BindCBuffer(MaterialCBufSlot, vsConstantBuffer, Graphics::EBindType::ToVS);
-    }
-    if(psUniformBuffer.bytesize() != 0) 
-    {
-        UpdateCBuffer(psConstantBuffer, psUniformBuffer);
-        BindCBuffer(MaterialCBufSlot, psConstantBuffer, Graphics::EBindType::ToPS);
-    }
     
-    // TODO: bind texture to shader
-    for(int i = 0, imax = pVertexShader->GetTexCount(); i < imax; i++)
-    {
-        TextureInfo texInfo = pVertexShader->GetTexInfoByIndex(i);
-        auto pTex = material.GetTexturePtr(texInfo.name);
-        
-        Microsoft::WRL::ComPtr<ID3D11Texture2D> pTexture2D;
-        bool success = pVertexShader->CreateTexture2D(pTex, &pTexture2D);
-        if(!success) continue;
-
-        SamplerInfo samplerInfo = pVertexShader->GetSamplerInfoByName(material.GetSamplerNameByTexName(texInfo.name), (int)texInfo.slot);
-        
-        Microsoft::WRL::ComPtr<ID3D11SamplerState> pSamplerState;
-        success = pVertexShader->CreateSampler(pTex, &pSamplerState);
-        if(!success) continue;
-        
-        Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pShaderResourceView;
-        pDevice->CreateShaderResourceView(pTexture2D.Get(), nullptr, &pShaderResourceView );
-        pContext->VSSetShaderResources((UINT)(texInfo.slot), 1u, pShaderResourceView.GetAddressOf());
-        pContext->PSSetSamplers((UINT)(samplerInfo.slot), 1u, pSamplerState.GetAddressOf());
-    }
-
-    // // Create ID3D11 Texture to shader
-    for(int i = 0, imax = pPixelShader->GetTexCount(); i < imax; i++)
-    {
-        TextureInfo texInfo = pPixelShader->GetTexInfoByIndex(i);
-        auto pTex = material.GetTexturePtr(texInfo.name);
-        
-        Microsoft::WRL::ComPtr<ID3D11Texture2D> pTexture2D;
-        bool success = pPixelShader->CreateTexture2D(pTex, &pTexture2D);
-        if(!success) continue;
-        
-        SamplerInfo samplerInfo = pPixelShader->GetSamplerInfoByName(material.GetSamplerNameByTexName(texInfo.name), (int)texInfo.slot);
-        Microsoft::WRL::ComPtr<ID3D11SamplerState> pSamplerState;
-        success = pPixelShader->CreateSampler(pTex, &pSamplerState);
-        if(!success) continue;
-
-        Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pShaderResourceView;
-        pDevice->CreateShaderResourceView(pTexture2D.Get(), nullptr, &pShaderResourceView );
-        pContext->PSSetShaderResources((UINT)(texInfo.slot), 1u, pShaderResourceView.GetAddressOf());
-        pContext->PSSetSamplers((UINT)(samplerInfo.slot), 1u, pSamplerState.GetAddressOf());
-    }
+    // bind input layout
+    pVertexShader->SetInputLayout();
+    // update Constant Buffer
+    pVertexShader->UpdateConstantBuffer();
+    pPixelShader->UpdateConstantBuffer();
+    // update texture
+    pVertexShader->UpdateTexture();
+    pPixelShader->UpdateTexture();
 }
 /****************************************************************************************/
 /*                                Constant Buffer Operation                             */
 /****************************************************************************************/
-void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, UniformBuffer & bufData)
+void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, CBufferData* pCBufferData, Graphics::EBindType bindType)
 {
-    if(bufData.bytesize() == 0)
+    if(pCBufferData == nullptr)
     {
-        // LOG("bufData is empty. " <<__FILE__ << "[" << __LINE__  << "]");
+        LOG("pCBufferData is empty." <<__FILE__ << "[" << __LINE__  << "]");
         return ;
     }
-    // GFX_THROW_INFO(CreateConstantBuffer(pDevice, bufData.GetAddress(), bufData.bytesize(), &targetBuf));
+    int slot = pCBufferData->slot;
+    // if(targetBuf == nullptr)
+    //     GFX_THROW_INFO(CreateConstantBuffer(pDevice, pCBufferData->pData.get(), pCBufferData->byteWidth, &targetBuf));
+    if(pCBufferData->isDirty)
+    {
+        pCBufferData->isDirty = false;
+        UpdateCBuffer(targetBuf, pCBufferData->pData.get(), pCBufferData->byteWidth);
+    }
+    BindCBuffer(slot, targetBuf, bindType);
+}
+
+
+void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, BYTE * data, unsigned int bytesize)
+{
     if(targetBuf == nullptr)
     {
-        GFX_THROW_INFO(CreateConstantBuffer(pDevice, bufData.GetAddress(), bufData.bytesize(), &targetBuf));
+        GFX_THROW_INFO(CreateConstantBuffer(pDevice, data, bytesize, &targetBuf));
     }else
     {
         // update constant buffer by map and unmap
         D3D11_MAPPED_SUBRESOURCE msr;
         pContext->Map(targetBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
-        memcpy_s(msr.pData, bufData.bytesize(), bufData.GetAddress(), bufData.bytesize());
+        memcpy_s(msr.pData, bytesize, data, bytesize);
         pContext->Unmap(targetBuf.Get(), 0);
         // pContext->UpdateSubresource(targetBuf.Get(), 0, nullptr, bufData.GetAddress(), 0, 0);
     }
 }
+
 
 void DirectXGraphics::BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& targetBuf, Graphics::EBindType bindType)
 {
@@ -521,32 +490,6 @@ void DirectXGraphics::BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& 
 /****************************************************************************************/
 /*                                Texture Operation                                     */
 /****************************************************************************************/
-void DirectXGraphics::UpdateTexture(wrl::ComPtr<ID3D11ShaderResourceView>& pTextureView, const Texture& texture)
-{
-    if(pTextureView == nullptr)
-    {
-        LOG("pTextureView is empty." <<__FILE__ << "[" << __LINE__  << "]");
-        return ;
-    }
-    // //
-    // ID3D10Resource* pResource = nullptr;
-    // pTextureView->GetResource(&pResource);
-    // ID3D11Texture2D* pTexture = nullptr;
-    // pResource->QueryInterface(&pTexture);
-    // D3D11_TEXTURE2D_DESC td;
-    // pTexture->GetDesc(&td);
-    // if(td.Width != texture.GetWidth() || td.Height != texture.GetHeight())
-    // {
-    //     LOG("texture size is not match." <<__FILE__ << "[" << __LINE__  << "]");
-    //     return ;
-    // }
-    // // update texture by map and unmap
-    // D3D11_MAPPED_SUBRESOURCE msr;
-    // pContext->Map(pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
-    // memcpy_s(msr.pData, texture.GetWidth() * texture.GetHeight() * 4, texture.GetAddress(), texture.GetWidth() * texture.GetHeight() * 4);
-    // pContext->Unmap(pTexture, 0);
-    
-}
 
 void DirectXGraphics::BindTexture(unsigned int slot, wrl::ComPtr<ID3D11ShaderResourceView>& pTextureView, Graphics::EBindType bindType)
 {
@@ -564,5 +507,23 @@ void DirectXGraphics::BindTexture(unsigned int slot, wrl::ComPtr<ID3D11ShaderRes
     {
         pContext->VSSetShaderResources(slot, 1u, pTextureView.GetAddressOf());
         pContext->PSSetShaderResources(slot, 1u, pTextureView.GetAddressOf());
+    }
+}
+void DirectXGraphics::BindSampler(unsigned int slot, wrl::ComPtr<ID3D11SamplerState>& pSamplerState, Graphics::EBindType bindType)
+{
+    if(pSamplerState == nullptr)
+    {
+        LOG("pSamplerState is empty." <<__FILE__ << "[" << __LINE__  << "]");
+        return ;
+    }
+
+    if(bindType == Graphics::EBindType::ToVS)
+        pContext->VSSetSamplers(slot, 1u, pSamplerState.GetAddressOf());
+    else if(bindType == Graphics::EBindType::ToPS)
+        pContext->PSSetSamplers(slot, 1u, pSamplerState.GetAddressOf());
+    else if(bindType == Graphics::EBindType::ToAll)
+    {
+        pContext->VSSetSamplers(slot, 1u, pSamplerState.GetAddressOf());
+        pContext->PSSetSamplers(slot, 1u, pSamplerState.GetAddressOf());
     }
 }

@@ -2,11 +2,11 @@
 #include <vector>
 #include <memory>
 #include <string>
-
+#include <queue>
 class Material;
 class VertexShader;
 class PixelShader;
-
+class IShaderHelper;
 class Graphics
 {
     friend class Material;
@@ -35,11 +35,9 @@ protected:
      *              set sampler to pipeline)
     */
     virtual void LoadMaterial(Material & material);
+    static void AddMaterial(Material* pMaterial);
+    std::shared_ptr<IShaderHelper> m_pShaderHelper = nullptr;
     
-    // Constant Buffer Operation
-    // virtual void BindFrameCBuffer() = 0;
-    // virtual void UpdateObjectCBuffer(Renderer & renderer) = 0;
-    // virtual void BindObjectCBuffer() = 0;
 public:
     enum class EBindType
     {
@@ -59,4 +57,7 @@ public:
     
     //Events
     virtual void OnResize(int width, int height) = 0;
+
+private:
+    static std::queue<Material*> m_WaitForLoadMaterials;
 };

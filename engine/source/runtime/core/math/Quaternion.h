@@ -31,12 +31,12 @@ struct Quaternion
     Quaternion Normalized();
     Quaternion Normalize();
     float Dot(const Quaternion& q) const { return Quaternion::Dot(*this, q); }
-    Vector3 EulerAngles() const;
     
-    void ToAxisAngle(Vector3& axis, float& angle) const;
-    void FromAxisAngle(const Vector3& axis, float angle);
     void SetEulerAngles(const Vector3& eularAngle);
     void SetEulerAngles(float x, float y, float z);
+    Vector3 EulerAngles() const;
+    
+    void FromAxisAngle(const Vector3& axis, float angle);
     void SetLookRotation(const Vector3& view, const Vector3& up = Vector3::Up());
     void SetFromToRotation(const Vector3& from, const Vector3& to);
     Quaternion Inverse() const;

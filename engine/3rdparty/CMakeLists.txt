@@ -2,7 +2,12 @@
 message(STATUS "Configuring 3rdparty...")
 set(third_party_folder "ThirdParty")
 
-
+if(NOT TARGET eigen)
+    set(EIGEN_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Eigen)
+    file(GLOB EIGEN_SOURCES CONFIGURE_DEPENDS  "${EIGEN_SOURCE_DIR_}/src/*.h")
+    add_library(eigen INTERFACE ${EIGEN_SOURCES})
+    target_include_directories(eigen INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
 if(NOT TARGET imgui)
     # add_subdirectory(imgui)
     set(IMGUI_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/imgui)

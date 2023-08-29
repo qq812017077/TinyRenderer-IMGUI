@@ -10,18 +10,19 @@
 #include "Graphics.h"
 #include "EngineWin.h"
 #include <memory>
-#include "UniformBuffer.h"
 
 namespace wrl = Microsoft::WRL;
 class Texture;
+struct CBufferData;
 class DirectXGraphics : public Graphics
 {
 friend class HLSLVertexShader;
 friend class HLSLPixelShader;
 public:
-    const static unsigned int FrameCBufSlot = 0u;
-    const static unsigned int MaterialCBufSlot = 1u;
-    const static unsigned int ObjectCBufSlot = 2u;
+    const static unsigned int MaxCommonSlot = 2u;
+    const static unsigned int PerFrameCBufSlot = 0u;
+    const static unsigned int PerDrawCBufSlot = 1u;
+    const static unsigned int PerLightingCBufSlot = 2u;
 
     DirectXGraphics(HWND &hwnd);
     DirectXGraphics(const DirectXGraphics&) = delete;
@@ -31,7 +32,7 @@ public:
     void BindImgui() override;
     void EndFrame() override;
     void ClearBuffer(float red, float green, float blue) noexcept override;
-
+    
     void DrawTestTriangle(float angle=0.0f) override;
     void DrawAll() override;
 
@@ -52,12 +53,12 @@ protected:
     void LoadMaterial(Material & material) override;
 
     // Constant Buffer Operation
-    void UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, UniformBuffer& bufData);
+    void UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, CBufferData* pCBufferData, Graphics::EBindType bindType = Graphics::EBindType::ToAll);
+    void UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, BYTE * data, unsigned int bytesize);
     void BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& targetBuf, EBindType bindType = Graphics::EBindType::ToAll);
 
-    // Texture Operation
-    void UpdateTexture(wrl::ComPtr<ID3D11ShaderResourceView>& pTextureView, const Texture& texture);
     void BindTexture(unsigned int slot, wrl::ComPtr<ID3D11ShaderResourceView>& pTextureView, EBindType bindType = Graphics::EBindType::ToAll);
+    void BindSampler(unsigned int slot, wrl::ComPtr<ID3D11SamplerState>& pTextureView, EBindType bindType = Graphics::EBindType::ToAll);
 private:
     wrl::ComPtr<ID3D11Device> pDevice= nullptr;
     wrl::ComPtr<ID3D11DeviceContext> pContext = nullptr;
@@ -65,10 +66,13 @@ private:
     wrl::ComPtr<ID3D11RenderTargetView> pTarget = nullptr;
     wrl::ComPtr<ID3D11DepthStencilView> pDepthStencilView = nullptr;
     wrl::ComPtr<ID3D11Buffer> pFrameConstantBuffer = nullptr;
+    wrl::ComPtr<ID3D11Buffer> pLightingConstantBuffer = nullptr;
     wrl::ComPtr<ID3D11Buffer> pObjectConstantBuffer = nullptr;
     wrl::ComPtr<ID3D11Buffer> pVertexBuffer = nullptr;
     wrl::ComPtr<ID3D11Buffer> pIndexBuffer = nullptr;
     wrl::ComPtr<ID3D11InputLayout> pInputLayout = nullptr;
+    //Render State
+    wrl::ComPtr<ID3D11RasterizerState> pRasterizerState = nullptr;
 
 #ifndef NDEBUG
     DxgiInfoManager infoManager;

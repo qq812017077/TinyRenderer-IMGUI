@@ -1,6 +1,7 @@
 #include "HLSLShader.h"
 #include "Exceptions.h"
 #include "DXUtil.h"
+#include "HLSLShaderHelper.h"
 #include "Mesh.h"
 #include "Texture.h"
 
@@ -39,10 +40,10 @@ HLSLVertexShader::HLSLVertexShader(DirectXGraphics& gfx, const std::wstring& pat
 
     // read constant buffer description from shader
     Microsoft::WRL::ComPtr<ID3D11ShaderReflection> pReflection = nullptr;
-    D3D11_SHADER_DESC shaderDesc;
-    GFX_THROW_INFO(GetShaderInfo(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &pReflection, &shaderDesc));
-    GetInputLayoutInfo(pReflection.Get(), shaderDesc, &inputLayoutDescs);
-    LoadShaderDescInfo(pReflection.Get(), shaderDesc, &shaderDescInfo);
+    GFX_THROW_INFO(GetShaderInfo(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &pReflection));
+    GetInputLayoutInfo(pReflection.Get(), &inputLayoutDescs);
+    HLSLShaderHelper::LoadShaderInfo(reinterpret_cast<const char *>(shaderName.c_str()), pReflection.Get(), &shaderDescInfo);
+    // LoadShaderDescInfo(pReflection.Get(), &shaderDescInfo);
     return ;
 }
 
@@ -60,15 +61,6 @@ ID3D11VertexShader* HLSLVertexShader::Get() const
     return pVertexShader.Get();
 }
 
-bool HLSLVertexShader::HasConstantBuffer() const
-{
-    return pMaterialConstantBuffer != nullptr;
-}
-
-wrl::ComPtr<ID3D11Buffer> HLSLVertexShader::GetConstantBuffer() const
-{
-    return pMaterialConstantBuffer;
-}
 
 bool HLSLVertexShader::CreateTexture2D(Texture* pInputTex, ID3D11Texture2D ** ppOutputTexture2D)
 {
@@ -101,9 +93,13 @@ bool HLSLVertexShader::CreateSampler(Texture * pInputTex, ID3D11SamplerState ** 
     return true;
 }
 
-void HLSLVertexShader::SetInputLayout(Mesh & mesh)
+void HLSLVertexShader::SetInputLayout()
 {
-    SetInputElementDescription(mesh);
+    for(int i = 0, imax = static_cast<int>(inputLayoutDescs.size()); i < imax; i++)
+    {
+        inputLayoutDescs[i].Format = GetVertexDataFormat(Mesh::GetVertexDataType(inputLayoutDescs[i].SemanticName));
+        inputLayoutDescs[i].AlignedByteOffset = Mesh::GetAlignedByteOffset(inputLayoutDescs[i].SemanticName, inputLayoutDescs[i].SemanticIndex);
+    }
     HRESULT hr;
     auto & infoManager = directXGfx.infoManager;
     GFX_THROW_INFO(directXGfx.pDevice->CreateInputLayout(
@@ -117,14 +113,37 @@ void HLSLVertexShader::SetInputLayout(Mesh & mesh)
     directXGfx.pContext->IASetInputLayout(pInputLayout.Get());
 }
 
-
-void HLSLVertexShader::SetInputElementDescription(Mesh & mesh)
+void HLSLVertexShader::UpdateConstantBuffer()
 {
-    //we need set AlignedByteOffset and Format for each element based on mesh's vertex type
-    for(int i = 0, imax = static_cast<int>(inputLayoutDescs.size()); i < imax; i++)
+    for(auto & pair: shaderDescInfo.GetCBuffers())
     {
-        inputLayoutDescs[i].Format = GetVertexDataFormat(Mesh::GetVertexDataType(inputLayoutDescs[i].SemanticName));
-        inputLayoutDescs[i].AlignedByteOffset = Mesh::GetAlignedByteOffset(inputLayoutDescs[i].SemanticName, inputLayoutDescs[i].SemanticIndex);
+        unsigned int slot = pair.first;
+        if(slot <= DirectXGraphics::MaxCommonSlot) continue;
+        directXGfx.UpdateCBuffer(pConstantBuffersBySlot[slot], pair.second.get(),Graphics::EBindType::ToVS);
+    }
+}
+
+void HLSLVertexShader::UpdateTexture()
+{
+    for(auto & pair: shaderDescInfo.GetTextures())
+    {
+        auto & name = pair.first;
+        TextureVariable * pTexVariable = pair.second.get();
+        unsigned int slot = pTexVariable->slot;
+        SamplerInfo samplerInfo = GetSamplerInfoByName(pTexVariable->samplerName.c_str(), (int)slot);
+        if(pTexVariable->isDirty)
+        {
+            pTexVariable->isDirty = false;
+            //Update
+            Microsoft::WRL::ComPtr<ID3D11Texture2D> pTexture2D;
+            auto pTexture = pTexVariable->pTexture.get();
+            if(pTexture == nullptr) pTexture = Texture::GetDefaultTexturePtr();
+            CreateTexture2D(pTexture, &pTexture2D);
+            CreateSampler(pTexture, &pSamplerStateBySlot[samplerInfo.slot]);
+            directXGfx.pDevice->CreateShaderResourceView(pTexture2D.Get(), nullptr, &pTextureViewBySlot[slot]);
+        }
+        directXGfx.BindTexture(slot, pTextureViewBySlot[slot], Graphics::EBindType::ToVS);
+        directXGfx.BindSampler(samplerInfo.slot, pSamplerStateBySlot[samplerInfo.slot], Graphics::EBindType::ToVS);
     }
 }
 
@@ -171,9 +190,9 @@ HLSLPixelShader::HLSLPixelShader(DirectXGraphics& gfx, const std::wstring& path,
     
     // read constant buffer description from shader
     Microsoft::WRL::ComPtr<ID3D11ShaderReflection> pReflection = nullptr;
-    D3D11_SHADER_DESC shaderDesc;
-    GFX_THROW_INFO(GetShaderInfo(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &pReflection, &shaderDesc));
-    LoadShaderDescInfo(pReflection.Get(), shaderDesc, &shaderDescInfo);
+    GFX_THROW_INFO(GetShaderInfo(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &pReflection));
+    // LoadShaderDescInfo(pReflection.Get(), &shaderDescInfo);
+    HLSLShaderHelper::LoadShaderInfo(reinterpret_cast<const char *>(shaderName.c_str()), pReflection.Get(), &shaderDescInfo);
     return ;
 }
 
@@ -182,21 +201,11 @@ HLSLPixelShader::~HLSLPixelShader()
 {
 }
 
-
 ID3D11PixelShader* HLSLPixelShader::Get() const
 {
     return pPixelShader.Get();
 }
 
-bool HLSLPixelShader::HasConstantBuffer() const
-{
-    return pMaterialConstantBuffer != nullptr;
-}
-
-wrl::ComPtr<ID3D11Buffer> HLSLPixelShader::GetConstantBuffer() const
-{
-    return pMaterialConstantBuffer;
-}
 
 bool HLSLPixelShader::CreateTexture2D(Texture* pInputTex, ID3D11Texture2D ** ppOutputTexture2D)
 {
@@ -229,6 +238,42 @@ bool HLSLPixelShader::CreateSampler(Texture * pInputTex, ID3D11SamplerState ** p
     GFX_THROW_INFO(directXGfx.pDevice->CreateSamplerState(&samplerDesc, ppOutputSampler));
     return true;
 }
+
+
+void HLSLPixelShader::UpdateConstantBuffer()
+{
+    for(auto & pair: shaderDescInfo.GetCBuffers())
+    {
+        unsigned int slot = pair.first;
+        if(slot <= DirectXGraphics::MaxCommonSlot) continue;
+        directXGfx.UpdateCBuffer(pConstantBuffersBySlot[slot], pair.second.get(), Graphics::EBindType::ToPS);
+    }
+}
+
+void HLSLPixelShader::UpdateTexture()
+{
+    for(auto & pair: shaderDescInfo.GetTextures())
+    {
+        auto & name = pair.first;
+        TextureVariable * pTexVariable = pair.second.get();
+        unsigned int slot = pTexVariable->slot;
+        SamplerInfo samplerInfo = GetSamplerInfoByName(pTexVariable->samplerName.c_str(), (int)slot);
+        if(pTexVariable->isDirty)
+        {
+            pTexVariable->isDirty = false;
+            //Update
+            Microsoft::WRL::ComPtr<ID3D11Texture2D> pTexture2D;
+            auto pTexture = pTexVariable->pTexture.get();
+            if(pTexture == nullptr) pTexture = Texture::GetDefaultTexturePtr();
+            CreateTexture2D(pTexture, &pTexture2D);
+            CreateSampler(pTexture, &pSamplerStateBySlot[samplerInfo.slot]);
+            directXGfx.pDevice->CreateShaderResourceView(pTexture2D.Get(), nullptr, &pTextureViewBySlot[slot]);
+        }
+        directXGfx.BindTexture(slot, pTextureViewBySlot[slot], Graphics::EBindType::ToPS);
+        directXGfx.BindSampler(samplerInfo.slot, pSamplerStateBySlot[samplerInfo.slot], Graphics::EBindType::ToPS);
+    }
+}
+
 static HRESULT CreateTexture(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, Texture* pTex, ID3D11Texture2D ** ppOutputTexture,
     Texture::EType textureType)
 {

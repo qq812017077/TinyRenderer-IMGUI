@@ -1,7 +1,7 @@
 #include "Camera.h"
 #include "core/math/Matrix.h"
 #include "components/Transform.h"
-
+#include "Shader.h"
 Camera* Camera::pActivedCamera = nullptr;
 Camera::Camera():
     fov(60.0f),
@@ -49,8 +49,8 @@ void Camera::Init()
 
 Matrix4x4 Camera::GetViewMatrix()
 {
-    auto position = transform->GetPosition();
-    auto rotation = transform->GetRotation();
+    auto position = pTransform->GetPosition();
+    auto rotation = pTransform->GetRotation();
 
     Matrix4x4 translation = Matrix4x4::Translation(-position);
     Matrix4x4 Rotation = Matrix4x4::Rotation(rotation).Transpose(); // we want inverse, and for orth matrix : transpose = inverse
@@ -62,4 +62,19 @@ Matrix4x4 Camera::GetProjectionMatrix()
 {
     auto projection = Matrix4x4::Perspective(fov, aspect, nearPlane, farPlane);
     return projection;
+}
+
+void Camera::UpdateCameraBuffer(IShaderHelper& shaderHelper)
+{
+    if(pActivedCamera == nullptr)
+    {
+        throw std::exception("No camera is actived!");
+    }else
+    {
+        const Matrix4x4 viewMatrix = pActivedCamera->GetViewMatrix();
+        const Matrix4x4 projMatrix = pActivedCamera->GetProjectionMatrix();
+        shaderHelper.SetGlobalMatrix("g_View", pActivedCamera->GetViewMatrix());
+        shaderHelper.SetGlobalMatrix("g_Proj", pActivedCamera->GetProjectionMatrix());
+        shaderHelper.SetGlobalVector("g_EyePos", pActivedCamera->pTransform->GetPosition());
+    }
 }

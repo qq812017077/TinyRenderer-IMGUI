@@ -114,12 +114,7 @@ void Matrix4x4::SetData(float data[4][4])
 
 float* Matrix4x4::GetData()
 {
-    float* result = new float[16];
-    for(int i = 0; i < 16; i++)
-    {
-        result[i]=data[i/4][i%4];
-    }
-    return result;
+    return reinterpret_cast<float*>(data);
 }
 
 float Matrix4x4::GetData(int row, int column) const
@@ -143,8 +138,34 @@ Matrix4x4 Matrix4x4::Transpose() const
 
 Matrix4x4 Matrix4x4::Inverse() const
 {
-    throw "Not implemented";
-    return Matrix4x4::Identity();
+    auto det = Determinant();
+    if (std::fabs(det) <= 1e-06)
+        return Matrix4x4::Zero();
+    Matrix4x4 inv_mat;
+    inv_mat[0][0] = data[1][2] * data[2][3] * data[3][1] - data[1][3] * data[2][2] * data[3][1] + data[1][3] * data[2][1] * data[3][2] - data[1][1] * data[2][3] * data[3][2] - data[1][2] * data[2][1] * data[3][3] + data[1][1] * data[2][2] * data[3][3];
+    inv_mat[0][1] = data[0][3] * data[2][2] * data[3][1] - data[0][2] * data[2][3] * data[3][1] - data[0][3] * data[2][1] * data[3][2] + data[0][1] * data[2][3] * data[3][2] + data[0][2] * data[2][1] * data[3][3] - data[0][1] * data[2][2] * data[3][3];
+    inv_mat[0][2] = data[0][2] * data[1][3] * data[3][1] - data[0][3] * data[1][2] * data[3][1] + data[0][3] * data[1][1] * data[3][2] - data[0][1] * data[1][3] * data[3][2] - data[0][2] * data[1][1] * data[3][3] + data[0][1] * data[1][2] * data[3][3];
+    inv_mat[0][3] = data[0][3] * data[1][2] * data[2][1] - data[0][2] * data[1][3] * data[2][1] - data[0][3] * data[1][1] * data[2][2] + data[0][1] * data[1][3] * data[2][2] + data[0][2] * data[1][1] * data[2][3] - data[0][1] * data[1][2] * data[2][3];
+    inv_mat[1][0] = data[1][3] * data[2][2] * data[3][0] - data[1][2] * data[2][3] * data[3][0] - data[1][3] * data[2][0] * data[3][2] + data[1][0] * data[2][3] * data[3][2] + data[1][2] * data[2][0] * data[3][3] - data[1][0] * data[2][2] * data[3][3];
+    inv_mat[1][1] = data[0][2] * data[2][3] * data[3][0] - data[0][3] * data[2][2] * data[3][0] + data[0][3] * data[2][0] * data[3][2] - data[0][0] * data[2][3] * data[3][2] - data[0][2] * data[2][0] * data[3][3] + data[0][0] * data[2][2] * data[3][3];
+    inv_mat[1][2] = data[0][3] * data[1][2] * data[3][0] - data[0][2] * data[1][3] * data[3][0] - data[0][3] * data[1][0] * data[3][2] + data[0][0] * data[1][3] * data[3][2] + data[0][2] * data[1][0] * data[3][3] - data[0][0] * data[1][2] * data[3][3];
+    inv_mat[1][3] = data[0][2] * data[1][3] * data[2][0] - data[0][3] * data[1][2] * data[2][0] + data[0][3] * data[1][0] * data[2][2] - data[0][0] * data[1][3] * data[2][2] - data[0][2] * data[1][0] * data[2][3] + data[0][0] * data[1][2] * data[2][3];
+    inv_mat[2][0] = data[1][1] * data[2][3] * data[3][0] - data[1][3] * data[2][1] * data[3][0] + data[1][3] * data[2][0] * data[3][1] - data[1][0] * data[2][3] * data[3][1] - data[1][1] * data[2][0] * data[3][3] + data[1][0] * data[2][1] * data[3][3];
+    inv_mat[2][1] = data[0][3] * data[2][1] * data[3][0] - data[0][1] * data[2][3] * data[3][0] - data[0][3] * data[2][0] * data[3][1] + data[0][0] * data[2][3] * data[3][1] + data[0][1] * data[2][0] * data[3][3] - data[0][0] * data[2][1] * data[3][3];
+    inv_mat[2][2] = data[0][1] * data[1][3] * data[3][0] - data[0][3] * data[1][1] * data[3][0] + data[0][3] * data[1][0] * data[3][1] - data[0][0] * data[1][3] * data[3][1] - data[0][1] * data[1][0] * data[3][3] + data[0][0] * data[1][1] * data[3][3];
+    inv_mat[2][3] = data[0][3] * data[1][1] * data[2][0] - data[0][1] * data[1][3] * data[2][0] - data[0][3] * data[1][0] * data[2][1] + data[0][0] * data[1][3] * data[2][1] + data[0][1] * data[1][0] * data[2][3] - data[0][0] * data[1][1] * data[2][3];
+    inv_mat[3][0] = data[1][2] * data[2][1] * data[3][0] - data[1][1] * data[2][2] * data[3][0] - data[1][2] * data[2][0] * data[3][1] + data[1][0] * data[2][2] * data[3][1] + data[1][1] * data[2][0] * data[3][2] - data[1][0] * data[2][1] * data[3][2];
+    inv_mat[3][1] = data[0][1] * data[2][2] * data[3][0] - data[0][2] * data[2][1] * data[3][0] + data[0][2] * data[2][0] * data[3][1] - data[0][0] * data[2][2] * data[3][1] - data[0][1] * data[2][0] * data[3][2] + data[0][0] * data[2][1] * data[3][2];
+    inv_mat[3][2] = data[0][2] * data[1][1] * data[3][0] - data[0][1] * data[1][2] * data[3][0] - data[0][2] * data[1][0] * data[3][1] + data[0][0] * data[1][2] * data[3][1] + data[0][1] * data[1][0] * data[3][2] - data[0][0] * data[1][1] * data[3][2];
+    inv_mat[3][3] = data[0][1] * data[1][2] * data[2][0] - data[0][2] * data[1][1] * data[2][0] + data[0][2] * data[1][0] * data[2][1] - data[0][0] * data[1][2] * data[2][1] - data[0][1] * data[1][0] * data[2][2] + data[0][0] * data[1][1] * data[2][2];
+
+    float inv_det = 1.0f / det;
+    for (int row_index = 0; row_index < 4; row_index++)
+    {
+        for (int col_index = 0; col_index < 4; col_index++)
+            inv_mat[row_index][col_index] *= inv_det;
+    }
+    return inv_mat;
 }
 
 float Matrix4x4::Determinant() const
@@ -486,8 +507,26 @@ Matrix3x3 Matrix3x3::Transpose() const
 
 Matrix3x3 Matrix3x3::Inverse() const
 {
-    throw "Not implemented";
-    return Matrix3x3::Identity();
+    float det = Determinant();
+    if (std::fabs(det) <= 1e-06)
+        return Matrix3x3::Zero();
+    Matrix3x3 inv_mat;
+    inv_mat[0][0] = data[1][1] * data[2][2] - data[1][2] * data[2][1];
+    inv_mat[0][1] = data[0][2] * data[2][1] - data[0][1] * data[2][2];
+    inv_mat[0][2] = data[0][1] * data[1][2] - data[0][2] * data[1][1];
+    inv_mat[1][0] = data[1][2] * data[2][0] - data[1][0] * data[2][2];
+    inv_mat[1][1] = data[0][0] * data[2][2] - data[0][2] * data[2][0];
+    inv_mat[1][2] = data[0][2] * data[1][0] - data[0][0] * data[1][2];
+    inv_mat[2][0] = data[1][0] * data[2][1] - data[1][1] * data[2][0];
+    inv_mat[2][1] = data[0][1] * data[2][0] - data[0][0] * data[2][1];
+    inv_mat[2][2] = data[0][0] * data[1][1] - data[0][1] * data[1][0];
+
+    float inv_det = 1.0f / det;
+    for (int row_index = 0; row_index < 3; row_index++)
+    {
+        for (int col_index = 0; col_index < 3; col_index++)
+            inv_mat[row_index][col_index] *= inv_det;
+    }
 }
 
 float Matrix3x3::Determinant() const
@@ -565,8 +604,8 @@ Matrix3x3 Matrix3x3::Rotation(const Quaternion& rotation)
     float y = rotation.y;
     float z = rotation.z;
     float w = rotation.w;
-    result.data[0][0]=1-2*y*y-2*z*z;
-    result.data[0][1]=2*x*y-2*z*w;
+    result.data[0][0]=1-2*y*y-2*z*z;    // 1-2y^2-2z^2 -> cos(yaw)*cos(pitch)
+    result.data[0][1]=2*x*y-2*z*w;      // 2xy-2zw -> sin(yaw)*cos(pitch)
     result.data[0][2]=2*x*z+2*y*w;
     result.data[1][0]=2*x*y+2*z*w;
     result.data[1][1]=1-2*x*x-2*z*z;
