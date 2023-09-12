@@ -287,14 +287,13 @@ Matrix4x4 Matrix4x4::Scale(const Vector3& scale)
     return result;
 }
 
-/**
- * @brief (Rodrigues' rotation formula)
- * 
- * @param angle 
- * @param axis 
- * @return Matrix4x4 
- */
-
+Matrix4x4 Matrix4x4::TRS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale)
+{
+    auto transMat = Matrix4x4::Translation(translation);
+    auto rotMat = Matrix4x4::Rotation(rotation);
+    auto scaleMat = Matrix4x4::Scale(scale);
+    return transMat * rotMat * scaleMat;
+}
 
 
 Matrix4x4 Matrix4x4::Perspective(float fov, float aspect, float near, float far)
@@ -452,6 +451,20 @@ Vector3 Matrix3x3::operator*(Vector3& other) const
     return result;
 }
 
+Vector3 Matrix3x3::operator*(const Vector3& other) const
+{
+    auto right = other;
+    Vector3 result;
+    for(int i = 0; i < 3; i++) result[i]=0;
+    for(int i = 0; i < 3; i++)
+    {
+        for(int k = 0; k < 3; k++)
+        {
+            result[i]+=data[i][k]*right[k];
+        }
+    }
+    return result;
+}
 float* Matrix3x3::operator[](int index)
 {
     return data[index];
@@ -527,6 +540,7 @@ Matrix3x3 Matrix3x3::Inverse() const
         for (int col_index = 0; col_index < 3; col_index++)
             inv_mat[row_index][col_index] *= inv_det;
     }
+    return inv_mat;
 }
 
 float Matrix3x3::Determinant() const

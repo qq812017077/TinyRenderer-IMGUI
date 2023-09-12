@@ -50,17 +50,17 @@ Light * Light::GetSpotLight()
         return nullptr;
     return spotLightMap.begin()->first;
 }
-std::unique_ptr<GameObject> Light::CreateDirectionalLight(std::string name)
+GameObject* Light::CreateDirectionalLight(std::string name)
 {
-    auto pGo = std::make_unique<GameObject>(name);
+    auto pGo = GameObject::CreateGameObject(name);
     auto light = pGo->AddComponent<Light>();
     pGo->transform.SetEulerAngle({ 50.0f, -30.0f, 0.0f });
     return pGo;
 
 }
-std::unique_ptr<GameObject> Light::CreatePointLight(std::string name)
+GameObject* Light::CreatePointLight(std::string name)
 {
-    auto pGo = std::make_unique<GameObject>(name);
+    auto pGo = GameObject::CreateGameObject(name);
     auto light = pGo->AddComponent<Light>();
     light->type = Type::Point;
     light->range = 10.0f;
@@ -68,9 +68,9 @@ std::unique_ptr<GameObject> Light::CreatePointLight(std::string name)
     pointLightMap.emplace(light, true);
     return pGo;
 }
-std::unique_ptr<GameObject> Light::CreateSpotLight(std::string name)
+GameObject* Light::CreateSpotLight(std::string name)
 {
-    auto pGo = std::make_unique<GameObject>(name);
+    auto pGo = GameObject::CreateGameObject(name);
     auto light = pGo->AddComponent<Light>();
     light->type = Type::Spot;
     dirLightMap.erase(light);

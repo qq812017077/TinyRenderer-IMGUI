@@ -174,9 +174,9 @@ Quaternion Quaternion::Euler(float x, float y, float z)
     // quaternion from euler angle based on left-hand coordinate system
     
     Quaternion result;
-    result = Quaternion::GetQuaternionFromAxisAngle(Vector3::Right(), x);
-    result = Quaternion::GetQuaternionFromAxisAngle(Vector3::Up(), y) * result;
-    result = Quaternion::GetQuaternionFromAxisAngle(Vector3::Forward(), z) * result;
+    result = Quaternion::GetQuaternionFromAxisAngle(Vector3::right, x);
+    result = Quaternion::GetQuaternionFromAxisAngle(Vector3::up, y) * result;
+    result = Quaternion::GetQuaternionFromAxisAngle(Vector3::forward, z) * result;
     return result;
     // float cr = cos(x * kDeg2Rad * 0.5f);
     // float sr = sin(x * kDeg2Rad * 0.5f);

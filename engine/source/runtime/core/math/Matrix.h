@@ -38,7 +38,7 @@ public:
     static Matrix4x4 Rotation(const Vector3& rotation);
     static Matrix4x4 Rotation(const Quaternion& rotation);
     static Matrix4x4 Scale(const Vector3& scale);
-
+    static Matrix4x4 TRS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale);
     static Matrix4x4 Perspective(float fov, float aspect, float near, float far);
     static Matrix4x4 Orthographic(float left, float right, float bottom, float top, float near, float far);
 };
@@ -61,6 +61,7 @@ public:
     Matrix3x3 operator*(float val) const;
     Matrix3x3 operator*(Matrix3x3& other) const;
     Vector3 operator*(Vector3& other) const;
+    Vector3 operator*(const Vector3& other) const;
     float* operator[](int row_index);
     float* operator[](int row_index) const;
 

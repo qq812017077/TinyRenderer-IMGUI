@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <string>
+#include <vector>
 #include <map>
 #include <memory>
 #include "Texture.h"
@@ -9,6 +10,11 @@ class VertexShader;
 class PixelShader;
 class Renderer;
 struct Matrix4x4;
+struct Vector3;
+struct Vector4;
+struct Color;
+
+
 class Material
 {
     friend class Graphics;
@@ -67,13 +73,15 @@ private:
     std::shared_ptr<PixelShader> pPixelShader;
     std::string vertexShaderPath;
     std::string pixelShaderPath;
-    
+
+    // std::unordered_map<std::string, Property> propertyMap;
     std::map<std::string, TextureInfo> textureMap;
     std::map<std::string, int> integerMap;
     std::map<std::string, float> floatMap;
     std::map<std::string, Color> colorMap;
     std::map<std::string, Matrix4x4> matrixMap;
     std::unordered_map<Renderer*, bool> rendererRefCountMap;
+
     unsigned int uniqueCode;
     static std::shared_ptr<Material> pDefaultMaterial;
 };

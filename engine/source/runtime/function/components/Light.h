@@ -21,9 +21,9 @@ public:
 
     Vector4 GetColor() const { return Vector4(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f) * intensity; }
     void SetIntensity(float intensity) { this->intensity = intensity; }
-    static std::unique_ptr<GameObject> CreateDirectionalLight(std::string name = "Directional Light");
-    static std::unique_ptr<GameObject> CreatePointLight(std::string name = "Point Light");
-    static std::unique_ptr<GameObject> CreateSpotLight(std::string name = "Spot Light");
+    static GameObject* CreateDirectionalLight(std::string name = "Directional Light");
+    static GameObject* CreatePointLight(std::string name = "Point Light");
+    static GameObject* CreateSpotLight(std::string name = "Spot Light");
     static Light * GetDirectionalLight();
     static Light * GetPointLight();
     static Light * GetSpotLight();

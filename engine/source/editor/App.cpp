@@ -5,13 +5,13 @@
 #include "Win32Window.h"
 #elif __linux__
 #endif
-
 #include "Material.h"
 #include "Texture.h"
-#include "primitives/Primitive.h"
+#include "geometry/Primitive.h"
 #include "behaviours/Rotater.h"
 #include "behaviours/CamController.h"
 #include "behaviours/LightController.h"
+#include "behaviours/GameController.h"
 #include "components/Light.h"
 App::App()
 {
@@ -23,34 +23,31 @@ App::App()
 #elif __linux__
     pWnd = std::make_unique<LinuxWindow>(1280, 720, L"TinyRenderer");
 #endif
+
 }
 
 App::~App()
 {
     //clear all the game objects
-    pGameObjects.clear();
 }
 
-GameObject* App::AddGO(std::unique_ptr<GameObject> pGo)
-{
-    pGameObjects.emplace_back(std::move(pGo));
-    return pGameObjects.back().get();
-}
 void App::LoadGOs()
 {
-    auto cube2 = AddGO(Primitive::CreateCube("cube2"));// here will use move constructor;
-    auto plane = AddGO(Primitive::CreatePlane("plane"));
-    auto camGO = AddGO(std::make_unique<GameObject>("Cam"));
-    auto lightController = AddGO(std::make_unique<GameObject>("LightController"));
+    auto cube2 = Primitive::CreateCube("cube2");// here will use move constructor;
+    auto plane = Primitive::CreatePlane("plane");
+    auto camGO = GameObject::CreateGameObject("Cam");
+    auto lightController = GameObject::CreateGameObject("LightController");
+    auto gameController = GameObject::CreateGameObject("GameController");
+    auto modelGO = GameObject::CreateFromFile("res/models/spider.fbx");
     // auto light = AddGO(Light::CreateDirectionalLight("light"));
-    auto pointLight = AddGO(Light::CreatePointLight("pointLight"));
-    auto whiteLittleCube = AddGO(Primitive::CreateCube("white littleCube"));
-    auto redLittleCube = AddGO(Primitive::CreateCube("red littleCube"));
+    auto pointLight = Light::CreatePointLight("pointLight");
+    auto whiteLittleCube = Primitive::CreateCube("white littleCube");
+    auto redLittleCube = Primitive::CreateCube("red littleCube");
     // load resource
     auto pMat = Material::Load("shaders/DefaultVertexShader.hlsl", "shaders/PhongPS.hlsl");
     auto pCubTex = Texture::LoadFrom("res/images/cube.png");
     auto pBrickwallTex = Texture::LoadFrom("res/images/brickwall.jpg");
-
+    
     // set camera
     auto cam = camGO->AddComponent<Camera>();
     camGO->AddComponent<CamController>();
@@ -58,13 +55,19 @@ void App::LoadGOs()
     camGO->transform.SetPosition({ 0.0f, 0.0f, 6.0f });
     camGO->transform.SetEulerAngle({ 0.0f, 180.0f, 0.0f });
     // set plane
-    plane->transform.SetPosition({ 0.0f, -2.0f, 0.0f });
+    plane->transform.SetPosition({ 0.0f, -1.0f, 0.0f });
     plane->transform.SetScale({ 2.0f, 1.0f, 2.0f });
     plane->GetComponent<Renderer>()->SetMaterial(pMat);
     // set cubes
-    cube2->transform.SetPosition({ -1.5f, -1.5f, 0.0f });
-    whiteLittleCube->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
+    cube2->transform.SetPosition({ -1.5f, 0.0f, 0.0f });
+    whiteLittleCube->transform.SetPosition({ 0.0f, 1.5f, 0.0f });
     whiteLittleCube->transform.SetScale({ 0.1f, 0.1f, 0.1f });
+
+    if(modelGO)
+    {
+        modelGO->transform.SetPosition({ 3.0f, 0.0f, 0.0f });
+        modelGO->transform.SetScale({ 0.01f, 0.01f, 0.01f });
+    }
     cube2->AddComponent<Rotater>();
     auto pRenderer2 = cube2->GetComponent<Renderer>();
     pRenderer2->SetSharedMaterial(pMat);
@@ -75,10 +78,7 @@ void App::LoadGOs()
     // light 
     // light->AddComponent<LightController>();
     lightController->AddComponent<LightController>();
-    for (auto& pGo : pGameObjects)
-    {
-        pGo->Init();
-    }
+    gameController->AddComponent<GameController>();
 }
 
 int App::Run()
@@ -92,6 +92,13 @@ int App::Run()
             pWnd->Update();
             if (const auto ecode = pWnd->ProcessMessages())
             {
+                // if the window is closed, the return value is 0
+                if (*ecode == 0)
+                {
+                    // clear all the game objects
+                    GameObject::RemoveAllGameObjects();
+                    return 0;
+                }
                 return *ecode;
             }
             DoFrame();
@@ -121,27 +128,43 @@ void App::DoFrame()
 {
     auto deltaTime = timer.Mark();
     OnFrameUpdateBegin();
-
     UpdateGameObject(deltaTime);
-    
     pWnd->Gfx()->OnFrameUpdate();
     OnFrameUpdateEnd();
 }
 
-void App::UpdateGameObject(float deltaTime)
-{
-    for (auto& pGo : pGameObjects) 
-        pGo->OnUpdate(deltaTime);
-    for (auto& pGo : pGameObjects)
-        pGo->OnLateUpdate(deltaTime);
-}
 
 void App::OnFrameUpdateBegin()
 {
     // set PerFrameUniformBuffer
+    
+    for (auto& pGo : GameObject::GetGameObjects())
+    {
+        if(!pGo->IsActived()) continue;
+        if(pGo->IsInitialized()) continue;
+        pGo->Init();
+    }
+    
     pWnd->Gfx()->OnFrameBegin();
-    for (auto& pGo : pGameObjects) 
+    for (auto& pGo : GameObject::GetGameObjects())
+    {
+        if(!pGo->IsActived()) continue;
         pGo->OnPreUpdate();
+    }
+}
+
+void App::UpdateGameObject(float deltaTime)
+{
+    for (auto& pGo : GameObject::GetGameObjects())
+    {
+        if(!pGo->IsActived()) continue;
+        pGo->OnUpdate(deltaTime);
+    }
+    for (auto& pGo : GameObject::GetGameObjects())
+    {
+        if(!pGo->IsActived()) continue;
+        pGo->OnLateUpdate(deltaTime);
+    }
 }
 
 void App::OnFrameUpdateEnd()
@@ -154,7 +177,7 @@ void App::OnFrameUpdateEnd()
         // static bool show_demo_window = true;
         // ImGui::ShowDemoWindow(&show_demo_window);
 
-        for (auto& pGo : pGameObjects) pGo->OnGUI();
+        for (auto& pGo : GameObject::GetGameObjects()) pGo->OnGUI();
 
         if(ImGui::Begin("FPS"))
         {

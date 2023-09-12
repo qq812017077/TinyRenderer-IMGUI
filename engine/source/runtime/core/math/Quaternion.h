@@ -37,7 +37,7 @@ struct Quaternion
     Vector3 EulerAngles() const;
     
     void FromAxisAngle(const Vector3& axis, float angle);
-    void SetLookRotation(const Vector3& view, const Vector3& up = Vector3::Up());
+    void SetLookRotation(const Vector3& view, const Vector3& up = Vector3::up);
     void SetFromToRotation(const Vector3& from, const Vector3& to);
     Quaternion Inverse() const;
         
@@ -53,7 +53,7 @@ struct Quaternion
     static Quaternion Lerp(const Quaternion& a, const Quaternion& b, float t, bool shortest_path = true);
     static Quaternion Slerp(const Quaternion& a, const Quaternion& b, float t, bool shortest_path = true);
     static Quaternion SlerpUnclamped(Quaternion a, Quaternion b, float t);
-    static Quaternion LookRotation(const Vector3& forward, const Vector3& up = Vector3::Up());
+    static Quaternion LookRotation(const Vector3& forward, const Vector3& up = Vector3::up);
     static Quaternion FromToRotation(const Vector3& from, const Vector3& to);
     static Quaternion RotateTowards(const Quaternion& from, const Quaternion& to, float maxDegreesDelta);
     static float Dot(const Quaternion& a, const Quaternion& b);

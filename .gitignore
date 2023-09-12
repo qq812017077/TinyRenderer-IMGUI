@@ -7,4 +7,6 @@ engine/3rdparty/stb/data
 engine/3rdparty/stb/docs
 engine/3rdparty/stb/tools
 engine/3rdparty/stb/tests
+engine/3rdparty/assimp/tests
+
 RenderRoc-Debug

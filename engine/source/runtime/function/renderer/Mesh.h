@@ -2,8 +2,8 @@
 #include <vector>
 #include "EngineMath.h"
 #include <string>
+#include "geometry/Bounds.h"
 
-#define INDICE_TYPE unsigned short
 enum class VertexDataType
 {
     None     = 0,
@@ -16,6 +16,7 @@ enum class VertexDataType
     Tangent     = 1 << 20,
     Binormal    = 1 << 25
 };
+
 
 class Mesh
 {
@@ -37,24 +38,25 @@ public:
     };
 
     Mesh();
-    Mesh(std::string filePath);
     ~Mesh();    
     Mesh(Mesh const& other);
     Mesh& operator=(Mesh& other) noexcept;
 
     // Set Functions
-    void SetVertexIndices(std::vector<INDICE_TYPE> indices);
+    void SetVertexIndices(std::vector<uint16_t> indices);
+    void SetVertexIndices(std::vector<uint32_t> indices);
     void SetVertexPosition(std::vector<Float3> positions);
     void SetVertexNormal(std::vector<Float3> normals);
     void SetVertexColor(std::vector<ColorRGBA> colors);
     void SetVertexTexCoord(std::vector<Float2> texCoords);
     void SetVertexTangent(std::vector<Float3> tangents);
-
+    void SetVertexBinormal(std::vector<Float3> binormals);
     bool HasVertexDataType(VertexDataType vertexType);
 
     // Get Functions
-    unsigned int GetVertexCount();
+    void* GetVertexBuffer(const char * semanticName, unsigned int & bufSize);
     
+    unsigned int GetVertexCount();
     void * GetVertexBufferAddress();
     unsigned int GetVertexBufferSize();
     void * GetIndexBufferAddress();
@@ -62,13 +64,30 @@ public:
     unsigned int GetVertexStride();
     unsigned int GetIndexStride();
     unsigned int GetIndexCount();
-    static VertexDataType GetVertexDataType(const char* semanticName);
-    static unsigned int GetAlignedByteOffset(const char* semanticName, int semanticIndex = 0);
+
+    Bounds GetBounds();
+    // static VertexDataType GetVertexDataType(const char* semanticName);
+    // static unsigned int GetAlignedByteOffset(const char* semanticName, int semanticIndex = 0);
     
     std::vector<Vertex> vertices;
+    std::vector<Float3> positions; 
+    std::vector<Float3> normals;
+    std::vector<ColorRGBA> colors;
+    std::vector<Float2> texCoords;
+    std::vector<Float3> tangents;
+    std::vector<Float3> binormals;
+
+    Bounds bounds;
 private:
+    enum INDICE_TYPE
+    {
+        UINT16,
+        UINT32
+    };
     VertexDataType availableVertexType = VertexDataType::None;
     // vertex array
     // index array
-    std::vector<INDICE_TYPE> indices;
+    INDICE_TYPE indiceType = INDICE_TYPE::UINT16;
+    std::vector<uint16_t> indices_16;
+    std::vector<uint32_t> indices_32;
 };

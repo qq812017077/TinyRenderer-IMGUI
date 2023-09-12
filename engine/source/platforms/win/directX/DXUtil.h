@@ -52,7 +52,7 @@ HRESULT CreateIndexBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, void* p
 
 DXGI_FORMAT GetVertexDataFormat(VertexDataType vertexType);
 DXGI_FORMAT GetIndexDataFormat(unsigned int indexStride);
-
+UINT GetDataStride(DXGI_FORMAT format);
 // ------------------------------
 // Texture函数
 // ------------------------------

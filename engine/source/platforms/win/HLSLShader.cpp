@@ -44,6 +44,15 @@ HLSLVertexShader::HLSLVertexShader(DirectXGraphics& gfx, const std::wstring& pat
     GetInputLayoutInfo(pReflection.Get(), &inputLayoutDescs);
     HLSLShaderHelper::LoadShaderInfo(reinterpret_cast<const char *>(shaderName.c_str()), pReflection.Get(), &shaderDescInfo);
     // LoadShaderDescInfo(pReflection.Get(), &shaderDescInfo);
+
+    for(int i = 0; i < inputLayoutDescs.size(); i++)
+    {
+        pVertexBuffers.emplace_back(nullptr);
+        vertexBufferPtrs.emplace_back(nullptr);
+        UINT stride = GetDataStride(inputLayoutDescs[i].Format);
+        strides.push_back(stride);
+        offsets.push_back(0);
+    }
     return ;
 }
 
@@ -95,20 +104,26 @@ bool HLSLVertexShader::CreateSampler(Texture * pInputTex, ID3D11SamplerState ** 
 
 void HLSLVertexShader::SetInputLayout()
 {
-    for(int i = 0, imax = static_cast<int>(inputLayoutDescs.size()); i < imax; i++)
-    {
-        inputLayoutDescs[i].Format = GetVertexDataFormat(Mesh::GetVertexDataType(inputLayoutDescs[i].SemanticName));
-        inputLayoutDescs[i].AlignedByteOffset = Mesh::GetAlignedByteOffset(inputLayoutDescs[i].SemanticName, inputLayoutDescs[i].SemanticIndex);
-    }
-    HRESULT hr;
-    auto & infoManager = directXGfx.infoManager;
-    GFX_THROW_INFO(directXGfx.pDevice->CreateInputLayout(
-            inputLayoutDescs.data(),
-            static_cast<UINT>(inputLayoutDescs.size()),
-            pBlob->GetBufferPointer(), 
-            pBlob->GetBufferSize(),
-            &pInputLayout));
+    // for(int i = 0, imax = static_cast<int>(inputLayoutDescs.size()); i < imax; i++)
+    // {
+    //     inputLayoutDescs[i].InputSlot = i;
+    //     // inputLayoutDescs[i].Format = GetVertexDataFormat(Mesh::GetVertexDataType(inputLayoutDescs[i].SemanticName));
+    //     // inputLayoutDescs[i].AlignedByteOffset = Mesh::GetAlignedByteOffset(inputLayoutDescs[i].SemanticName, inputLayoutDescs[i].SemanticIndex);
 
+    //     inputLayoutDescs[i].InputSlot = i;
+    //     inputLayoutDescs[i].AlignedByteOffset = 0;
+    // }
+    if(pInputLayout == nullptr)
+    {
+        HRESULT hr;
+        auto & infoManager = directXGfx.infoManager;
+        GFX_THROW_INFO(directXGfx.pDevice->CreateInputLayout(
+                inputLayoutDescs.data(),
+                static_cast<UINT>(inputLayoutDescs.size()),
+                pBlob->GetBufferPointer(),
+                pBlob->GetBufferSize(),
+                &pInputLayout)); 
+    }
     // bind input layout to pipeline
     directXGfx.pContext->IASetInputLayout(pInputLayout.Get());
 }
@@ -147,7 +162,30 @@ void HLSLVertexShader::UpdateTexture()
     }
 }
 
+UINT HLSLVertexShader::UpdateVertexBuffers(Mesh& mesh, ID3D11Buffer**& pVertexBuffers,UINT*& strides,UINT*& offsets)
+{
+    UINT varNum = inputLayoutDescs.size();
+#ifndef NDEBUG
+    auto & infoManager = directXGfx.infoManager;
+#endif
+    HRESULT hr;
+    //we need allocate buffer to every variable
+    for(int i = 0; i<varNum; i++)
+    {
+        UINT bufferSize;
+        auto bufferAddress = mesh.GetVertexBuffer(inputLayoutDescs[i].SemanticName, bufferSize);
+        if(bufferSize != 0)
+        {
+            GFX_THROW_INFO(CreateVertexBuffer(directXGfx.pDevice, bufferAddress, bufferSize, this->strides[i], &this->pVertexBuffers[i]));
+            vertexBufferPtrs[i] = this->pVertexBuffers[i].Get();
+        }
+    }
 
+    pVertexBuffers = vertexBufferPtrs.data();
+    strides = this->strides.data();
+    offsets = this->offsets.data();
+    return varNum;
+}
 // *********************************************************************************************************************
 // HLSLPixelShader implementation
 // *********************************************************************************************************************

@@ -1,6 +1,7 @@
 #pragma once
 #include "EngineMath.h"
 #include "Component.h"
+#include <memory>
 enum Space
 {
     //
@@ -33,8 +34,11 @@ public:
 
     Vector3 TransformDirection(Vector3 direction) const;
     Vector3 GetPosition() const;
+    Vector3 GetLocalPosition() const;
     Quaternion GetRotation() const;
+    Quaternion GetLocalRotation() const;
     Vector3 GetEulerAngle() const;
+    Vector3 GetLocalEulerAngle() const;
     Vector3 GetScale() const;
 
     Vector3 forward() const;
@@ -46,11 +50,12 @@ public:
     void RotateAround(Vector3 axis, float angle);
     void RotateAroundLocal(Vector3 axis, float angle);
     void Translate(Vector3 translation, Space relativeTo = Space::Self);
-    void LookAt(const Vector3& target, const Vector3& up = Vector3::Up());
+    void LookAt(const Vector3& target, const Vector3& up = Vector3::up);
     Matrix4x4 GetWorldMatrix() const;
 protected:
     void Init() override;
 private:
+    std::shared_ptr<Transform> parent{nullptr};
     Vector3 position;
     // Vector3 rotation;
     Quaternion rotation;

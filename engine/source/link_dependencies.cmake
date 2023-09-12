@@ -26,7 +26,7 @@
 # find_package(imgui CONFIG REQUIRED)
 
 # find_package(stb CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE imgui stb eigen)
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui stb eigen assimp)
 # target_link_libraries(${PROJECT_NAME} PRIVATE stb)
 
 if(WIN32)

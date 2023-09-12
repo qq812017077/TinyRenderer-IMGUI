@@ -55,17 +55,49 @@ void Transform::SetScale(const Vector3& scale)
     this->scale = scale;
 }
 
+
+
 Vector3 Transform::GetPosition() const
+{
+    if(parent)
+    {
+        // get world position
+        return parent->GetWorldMatrix() * Vector4(position, 1.0f);
+    }
+    return position;
+}
+
+Vector3 Transform::GetLocalPosition() const
 {
     return position;
 }
 
 Vector3 Transform::GetEulerAngle() const
 {
+    if (parent)
+    {
+        // get world rotation
+        return (parent->GetRotation() * rotation).EulerAngles();
+    }
+    return rotation.EulerAngles();
+}
+
+Vector3 Transform::GetLocalEulerAngle() const
+{
     return rotation.EulerAngles();
 }
 
 Quaternion Transform::GetRotation() const
+{
+    if (parent)
+    {
+        // get world rotation
+        return parent->GetRotation() * rotation;
+    }
+    return rotation;
+}
+
+Quaternion Transform::GetLocalRotation() const
 {
     return rotation;
 }
@@ -77,17 +109,17 @@ Vector3 Transform::GetScale() const
 
 Vector3 Transform::forward() const
 {
-    return Matrix3x3::Rotation(rotation) * Vector3::Forward();
+    return Matrix3x3::Rotation(rotation) * Vector3::forward;
 }
 
 Vector3 Transform::right() const
 {
-    return Matrix3x3::Rotation(rotation) * Vector3::Right();
+    return Matrix3x3::Rotation(rotation) * Vector3::right;
 }
 
 Vector3 Transform::up() const
 {
-    return Matrix3x3::Rotation(rotation) * Vector3::Up();
+    return Matrix3x3::Rotation(rotation) * Vector3::up;
 }
 
 
@@ -149,7 +181,7 @@ void Transform::LookAt(const Vector3& target, const Vector3& up)
     Vector3 forward = target - position;
     Vector3 right = Vector3::Cross(up, forward);
 
-    if (Vector3::Approximately(right, Vector3::Zero()))
+    if (Vector3::Approximately(right, Vector3::zero))
     {
         if (forward.z > 0)
         {
@@ -181,10 +213,9 @@ void Transform::LookAt(const Vector3& target, const Vector3& up)
 
 Matrix4x4 Transform::GetWorldMatrix() const
 {
-    Matrix4x4 translation = Matrix4x4::Translation(position);
-    Matrix4x4 rotation = Matrix4x4::Rotation(this->rotation);
-    Matrix4x4 scale = Matrix4x4::Scale(this->scale);
-    return  translation * rotation * scale;
+    
+    if(parent) return parent->GetWorldMatrix() * Matrix4x4::TRS(position, rotation, scale);
+    return Matrix4x4::TRS(position, rotation, scale);
 }
 
 void Transform::Init()

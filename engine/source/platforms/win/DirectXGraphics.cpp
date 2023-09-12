@@ -251,7 +251,7 @@ void DirectXGraphics::DrawAll()
         auto& mat = pair.first;
         auto& pRenderers = pair.second;
         LoadMaterial(*mat);
-
+        auto pVertexShader = dynamic_cast<HLSLVertexShader*>(mat->GetVertexShader().get());
         for (auto& pRenderer : pRenderers)
         {
             pRenderer->UpdateObjBuffer(helper);
@@ -261,12 +261,20 @@ void DirectXGraphics::DrawAll()
             auto & mesh = pRenderer->GetMesh();
 
             // BindMesh();
-            const UINT stride = mesh.GetVertexStride();
-            const UINT offset = 0u;
-            GFX_THROW_INFO(CreateVertexBuffer(pDevice, mesh.GetVertexBufferAddress(), mesh.GetVertexBufferSize(), mesh.GetVertexStride(), &pVertexBuffer));
+            // get vertex buffers, strides, offsets from mesh and layout from vertex shader
+            // UINT vbcount = pVertexShader->GetInputLayoutDescs().size();
+            ID3D11Buffer** pVertexBuffers;
+            UINT *strides;
+            UINT *offsets;
+            UINT vbcount = pVertexShader->UpdateVertexBuffers(mesh, pVertexBuffers, strides, offsets);
+
+            // const UINT stride = mesh.GetVertexStride();
+            // const UINT offset = 0u;
+            // GFX_THROW_INFO(CreateVertexBuffer(pDevice, mesh.GetVertexBufferAddress(), mesh.GetVertexBufferSize(), stride, &pVertexBuffer));
             GFX_THROW_INFO(CreateIndexBuffer(pDevice, mesh.GetIndexBufferAddress(), mesh.GetIndexBufferSize(), mesh.GetIndexStride(), &pIndexBuffer));
             
-            pContext->IASetVertexBuffers(0u, 1u, pVertexBuffer.GetAddressOf(), &stride, &offset);
+            // pContext->IASetVertexBuffers(0u, 1u, pVertexBuffer.GetAddressOf(), &stride, &offset);
+            pContext->IASetVertexBuffers(0u, vbcount, pVertexBuffers, strides, offsets);
             // bind index buffer to pipeline
             pContext->IASetIndexBuffer(pIndexBuffer.Get(), GetIndexDataFormat(mesh.GetIndexStride()), 0u);
 
@@ -276,7 +284,7 @@ void DirectXGraphics::DrawAll()
             // bind render target
             pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr);
             // enable depth stencil
-            // pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), pDepthStencilView.Get());
+            pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), pDepthStencilView.Get());
 
             // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
             GFX_THROW_INFO_ONLY(pContext->DrawIndexed(mesh.GetIndexCount(), 0u, 0u));
@@ -416,8 +424,8 @@ void DirectXGraphics::LoadMaterial(Material & material)
 {
     Graphics::LoadMaterial(material);
 
-    HLSLVertexShader* pVertexShader = dynamic_cast<HLSLVertexShader*>(material.GetVertexShader().get());
-    HLSLPixelShader* pPixelShader = dynamic_cast<HLSLPixelShader*>(material.GetPixelShader().get());
+    auto pVertexShader = dynamic_cast<HLSLVertexShader*>(material.GetVertexShader().get());
+    auto pPixelShader = dynamic_cast<HLSLPixelShader*>(material.GetPixelShader().get());
     pContext->VSSetShader(pVertexShader->Get(), nullptr, 0u);
     pContext->PSSetShader(pPixelShader->Get(), nullptr, 0u);
     

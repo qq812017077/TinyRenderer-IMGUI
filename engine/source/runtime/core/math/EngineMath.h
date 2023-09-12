@@ -12,22 +12,11 @@ struct Float2
 {
     float x;
     float y;
+    Float2() = default;
+    Float2(float x, float y) : x(x), y(y) {}
 };
-struct Float3
-{
-    float x;
-    float y;
-    float z;
-    Float3() = default;
-    Float3(float x, float y, float z) : x(x), y(y), z(z) {}
-};
-struct Float4
-{
-    float x;
-    float y;
-    float z;
-    float w;
-};
+typedef Vector3 Float3;
+typedef Vector4 Float4;
 
 struct ColorRGBA
 {
@@ -38,5 +27,16 @@ struct ColorRGBA
     ColorRGBA() = default;
     ColorRGBA(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b), a(255) {}
     ColorRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a) {}
-
+    ColorRGBA(int r, int g, int b) : r(static_cast<unsigned char>(r)), g(static_cast<unsigned char>(g)), b(static_cast<unsigned char>(b)), a(255) {}
+    ColorRGBA(int r, int g, int b, int a) : r(static_cast<unsigned char>(r)), g(static_cast<unsigned char>(g)), b(static_cast<unsigned char>(b)), a(static_cast<unsigned char>(a)) {}
+    ColorRGBA(float r, float g, float b) :
+        r(static_cast<unsigned char>(r * 255)),
+        g(static_cast<unsigned char>(g * 255)),
+        b(static_cast<unsigned char>(b * 255)),
+        a(255) {}
+    ColorRGBA(float r, float g, float b, float a) :
+        r(static_cast<unsigned char>(r * 255)),
+        g(static_cast<unsigned char>(g * 255)),
+        b(static_cast<unsigned char>(b * 255)),
+        a(static_cast<unsigned char>(a * 255)) {}
 };

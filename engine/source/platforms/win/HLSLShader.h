@@ -15,6 +15,7 @@ namespace wrl = Microsoft::WRL;
 using string = std::string;
 
 class Texture;
+class Mesh;
 class HLSLVertexShader : public VertexShader
 {
 public:
@@ -28,9 +29,12 @@ public:
     bool CreateTexture2D(Texture * pInputTex, ID3D11Texture2D ** ppOutputTexture2D);
     bool CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler);
     void SetInputLayout() override;
+    
 
     void UpdateConstantBuffer() override;
     void UpdateTexture();
+
+    UINT UpdateVertexBuffers(Mesh& mesh, ID3D11Buffer **& pVertexBuffers,UINT*& strides,UINT*& offsets);
 private:
     DirectXGraphics& directXGfx;
     wrl::ComPtr<ID3D11VertexShader> pVertexShader = nullptr;
@@ -39,8 +43,12 @@ private:
     std::unordered_map<int, wrl::ComPtr<ID3D11ShaderResourceView>> pTextureViewBySlot;
     std::unordered_map<int, wrl::ComPtr<ID3D11SamplerState>> pSamplerStateBySlot;
 
-    wrl::ComPtr<ID3D11InputLayout> pInputLayout;
+    wrl::ComPtr<ID3D11InputLayout> pInputLayout = nullptr;
     std::vector<D3D11_INPUT_ELEMENT_DESC> inputLayoutDescs;
+    std::vector<wrl::ComPtr<ID3D11Buffer>> pVertexBuffers;
+    std::vector<ID3D11Buffer*> vertexBufferPtrs;
+    std::vector<UINT> strides;
+    std::vector<UINT> offsets;
 };
 
 class HLSLPixelShader : public PixelShader

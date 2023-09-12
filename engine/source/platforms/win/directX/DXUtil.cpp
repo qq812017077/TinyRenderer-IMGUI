@@ -59,6 +59,8 @@ HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, ID3D11S
     HRESULT hr = D3DReflect(shaderBytecode, bytecodeLength, IID_ID3D11ShaderReflection, (void**)ppReflection);
     return hr;
 }
+
+
 void GetInputLayoutInfo(ID3D11ShaderReflection* pReflection, std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed)
 {
     if(pReflection == nullptr) return ;
@@ -76,8 +78,8 @@ void GetInputLayoutInfo(ID3D11ShaderReflection* pReflection, std::vector<D3D11_I
         strcpy_s(const_cast<char*>(inputElementDesc.SemanticName), len + 1, inputParamDesc.SemanticName);
         inputElementDesc.SemanticIndex = inputParamDesc.SemanticIndex;
         inputElementDesc.Format = GetInputElementFormatByMask(inputParamDesc.Mask, inputParamDesc.ComponentType);
-        inputElementDesc.InputSlot = 0;
-        inputElementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+        inputElementDesc.InputSlot = i;
+        inputElementDesc.AlignedByteOffset = 0;
         inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
         inputElementDesc.InstanceDataStepRate = 0;
         pLed->push_back(inputElementDesc);
@@ -130,41 +132,6 @@ void LoadShaderDescInfo(ID3D11ShaderReflection* pReflection, ShaderDesc * pShade
     }
 }
 
-
-
-// void GetTextureInfo(ID3D11ShaderReflection* pReflection, D3D11_SHADER_DESC& shaderDesc, std::map<std::string, int> * pTextureSlotMap)
-// {
-//     if(pReflection == nullptr) return ;
-//     pTextureSlotMap->clear();
-//     // collect all texture slots and names
-//     for (UINT i = 0; i < shaderDesc.BoundResources; ++i)
-//     {
-//         D3D11_SHADER_INPUT_BIND_DESC bindDesc;
-//         pReflection->GetResourceBindingDesc(i, &bindDesc);
-//         if (bindDesc.Type == D3D_SIT_TEXTURE)
-//         {
-//             // texture slots
-//             pTextureSlotMap->insert({ bindDesc.Name, bindDesc.BindPoint });
-//         }
-//         else if (bindDesc.Type == D3D_SIT_SAMPLER)
-//         {
-//             // sampler slots
-//         }
-//     }
-// }
-
-// HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, std::vector<UniformVar>* pUniformVars, 
-// std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed, std::map<std::string, int> * pTextureSlotMap)
-// {
-//     Microsoft::WRL::ComPtr<ID3D11ShaderReflection> pReflection = nullptr;
-//     D3D11_SHADER_DESC shaderDesc;
-//     HRESULT hr = GetShaderInfo(shaderBytecode, bytecodeLength, &pReflection, &shaderDesc);
-//     if (FAILED(hr)) return hr;
-//     if(pUniformVars != nullptr) GetUniformsInfo(pReflection.Get(), shaderDesc, pUniformVars);
-//     if(pLed != nullptr) GetInputLayoutInfo(pReflection.Get(), shaderDesc, pLed);
-//     if(pTextureSlotMap != nullptr) GetTextureInfo(pReflection.Get(), shaderDesc, pTextureSlotMap);
-//     return hr;
-// }
 
 //--------------------------------------------------------------------------------------
 // 
@@ -268,7 +235,6 @@ DXGI_FORMAT GetVertexDataFormat(VertexDataType vertexType)
             return DXGI_FORMAT_R32G32B32_FLOAT;
         case VertexDataType::Position2D:
             return DXGI_FORMAT_R32G32_FLOAT;
-        
         case VertexDataType::Normal:
             return DXGI_FORMAT_R32G32B32_FLOAT;
         case VertexDataType::Color:
@@ -290,6 +256,39 @@ DXGI_FORMAT GetIndexDataFormat(unsigned int indexStride)
     else if (indexStride == 2)
         return DXGI_FORMAT_R16_UINT;
     return DXGI_FORMAT_R16_UINT;
+}
+
+UINT GetDataStride(DXGI_FORMAT format)
+{
+    switch (format)
+    {
+        case DXGI_FORMAT_R32G32B32A32_FLOAT: return 16;
+        case DXGI_FORMAT_R32G32B32_FLOAT: return 12;
+        case DXGI_FORMAT_R32G32_FLOAT: return 8;
+        case DXGI_FORMAT_R32_FLOAT: return 4;
+        case DXGI_FORMAT_R8G8B8A8_UNORM: return 4;
+        case DXGI_FORMAT_R8G8B8A8_UINT: return 4;
+        case DXGI_FORMAT_R8G8B8A8_SNORM: return 4;
+        case DXGI_FORMAT_R8G8B8A8_SINT: return 4;
+        case DXGI_FORMAT_R16G16B16A16_FLOAT: return 8;
+        case DXGI_FORMAT_R16G16B16A16_UNORM: return 8;
+        case DXGI_FORMAT_R16G16B16A16_UINT: return 8;
+        case DXGI_FORMAT_R16G16B16A16_SNORM: return 8;
+        case DXGI_FORMAT_R16G16B16A16_SINT: return 8;
+        case DXGI_FORMAT_R32G32B32A32_UINT: return 16;
+        case DXGI_FORMAT_R32G32B32A32_SINT: return 16;
+        case DXGI_FORMAT_R32G32B32_UINT: return 12;
+        case DXGI_FORMAT_R32G32B32_SINT: return 12;
+        case DXGI_FORMAT_R16G16_FLOAT: return 4;
+        case DXGI_FORMAT_R16G16_UNORM: return 4;
+        case DXGI_FORMAT_R16G16_UINT: return 4;
+        case DXGI_FORMAT_R16G16_SNORM: return 4;
+        case DXGI_FORMAT_R16G16_SINT: return 4;
+        case DXGI_FORMAT_R32G32_UINT: return 8;
+        case DXGI_FORMAT_R32G32_SINT: return 8;
+        case DXGI_FORMAT_R32_UINT: return 4;
+    }
+    return 0;
 }
 
 DXGI_FORMAT GetTextureFormat(ETextureFormat textureFormat, bool islinear)

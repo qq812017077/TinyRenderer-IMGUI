@@ -16,11 +16,15 @@ const Vector3 Vector3::forward = Vector3(0.0f, 0.0f, 1.0f);
 Vector3::Vector3(const Vector3 &v):x(v.x), y(v.y), z(v.z)  
 {  
 }  
+Vector3::Vector3(const Vector4 &v):x(v.x), y(v.y), z(v.z)
+{
+}
   
 Vector3::~Vector3()
 {  
 }  
-  
+
+
 void Vector3::operator=(const Vector3 &v)  
 {  
     x = v.x;  
@@ -28,6 +32,12 @@ void Vector3::operator=(const Vector3 &v)
     z = v.z;  
 }  
 
+
+Vector3 Vector3::operator+(const Vector3& v) const { return Vector3(x + v.x, y + v.y, z + v.z); }
+Vector3 Vector3::operator+(const Vector3& v) { return Vector3(x+v.x, y+v.y, z+v.z); }
+Vector3 Vector3::operator+(float f)const {return Vector3(x+f, y+f, z+f);}
+Vector3& Vector3::operator+=(const Vector3 &v) { x+=v.x; y+=v.y; z+=v.z; return *this; }
+Vector3& Vector3::operator+=(float f) {x+=f; y+=f; z+=f; return *this;}
 Vector3 Vector3::operator-() const
 {
     return Vector3(-x, -y, -z);
@@ -182,6 +192,16 @@ bool Vector3::Approximately(const Vector3& v1, const Vector3& v2)
     return fabsf(v1.x - v2.x) < uZero && fabsf(v1.y - v2.y) < uZero && fabsf(v1.z - v2.z) < uZero;
 }
 
+
+Vector3 Vector3::Max(const Vector3& v1, const Vector3& v2)
+{
+    return Vector3(std::max(v1.x, v2.x), std::max(v1.y, v2.y), std::max(v1.z, v2.z));
+}
+
+Vector3 Vector3::Min(const Vector3& v1, const Vector3& v2)
+{
+    return Vector3(std::min(v1.x, v2.x), std::min(v1.y, v2.y), std::min(v1.z, v2.z));
+}
 /****************************************************************************************/
 //Vector4.cpp
 /****************************************************************************************/
@@ -190,6 +210,9 @@ Vector4::Vector4(const Vector4 &v):x(v.x), y(v.y), z(v.z), w(v.w)
 {
 }
 
+Vector4::Vector4(const Vector3 &v, float w):x(v.x), y(v.y), z(v.z), w(w)
+{
+}
 Vector4::~Vector4()
 {
 }

@@ -10,8 +10,8 @@ public:
     App();
     ~App();
     int Run();
+    int Close();
 private:
-    GameObject* AddGO(std::unique_ptr<GameObject> pGo);
     void LoadGOs();
     void DoFrame();
 
@@ -24,5 +24,5 @@ private:
     std::unique_ptr<Window> pWnd;
     Timer timer;
     ImguiManager imgui;
-    std::vector<std::unique_ptr<GameObject>> pGameObjects;
+    // std::vector<std::unique_ptr<GameObject>> pGameObjects;
 };

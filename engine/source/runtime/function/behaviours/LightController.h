@@ -26,7 +26,7 @@ public:
         if(pPointLight)
         {
             pWhiteLittleCube = GameObject::Find("white littleCube");
-            pointLightPos = { 0.0f, 0.0f, 0.0f };
+            pointLightPos = { 0.3f, 1.5f, 0.0f };
             pPointLight->pTransform->SetPosition(pointLightPos);
             pPointLight->SetIntensity(1.0f);
         }

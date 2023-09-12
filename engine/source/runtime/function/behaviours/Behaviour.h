@@ -6,4 +6,6 @@ class Behaviour : public Component
 {
 public:
     using Component::Component;
+protected:
+    void Init() override {}
 };
