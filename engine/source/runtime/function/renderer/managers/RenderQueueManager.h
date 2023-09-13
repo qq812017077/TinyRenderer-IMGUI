@@ -14,6 +14,7 @@ public:
 
     static std::map<Material *, std::vector<Renderer*>> GetRenderQueue();
     static void AddMaterial(Material * pMaterial);
+    static void AddRenderer(Renderer * pRenderer);
     static void Clear();
     static void Sort();
 

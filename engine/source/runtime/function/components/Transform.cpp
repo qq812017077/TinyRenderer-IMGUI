@@ -23,33 +23,55 @@ Transform& Transform::operator=(Transform& other) noexcept
     scale = other.scale;
     return *this;
 }
-Vector3 Transform::TransformDirection(Vector3 direction) const
-{
-    return Matrix3x3::Rotation(rotation) * direction;
-}
+
 void Transform::SetPosition(const Vector3& position)
+{
+    if(parent)
+    {
+        // get local position
+        this->position = parent->GetWorldMatrix().Inverse() * Vector4(position, 1.0f);
+    }
+    else
+    {
+        this->position = position;
+    }
+}
+void Transform::SetLocalPosition(const Vector3& position)
 {
     this->position = position;
 }
 
 void Transform::SetEulerAngle(const Vector3& eulerAngle)
 {
-    // auto curEuler = this->rotation.EulerAngles();
-    // auto & newRot = Quaternion::Euler(eulerAngle);
-    // auto newEuler = newRot.EulerAngles();
-    // // curEuler is near (x,y,z), but far from newEuler, we think newEuler it not valid
-    // if((curEuler.x - eulerAngle.x) < 10.f && (newEuler.x - eulerAngle.x) > 10.f)
-    // {   
-    //     return ;
-    // }
+    rotation = Quaternion::Euler(eulerAngle);
+    if (parent)
+    {
+        // get local rotation
+        rotation = Quaternion::Inverse(parent->GetRotation()) * rotation;
+    }
+}
+void Transform::SetLocalEulerAngle(const Vector3& eulerAngle)
+{
     this->rotation = Quaternion::Euler(eulerAngle);
 }
 
 void Transform::SetRotation(const Quaternion& rotation)
 {
+    if (parent)
+    {
+        // get local rotation
+        auto inv = Quaternion::Inverse(parent->GetRotation());
+        this->rotation = inv * rotation;
+    }
+    else
+    {
+        this->rotation = rotation;
+    }
+}
+void Transform::SetLocalRotation(const Quaternion& rotation)
+{
     this->rotation = rotation;
 }
-
 void Transform::SetScale(const Vector3& scale)
 {
     this->scale = scale;
@@ -106,6 +128,21 @@ Vector3 Transform::GetScale() const
 {
     return scale;
 }
+Vector3 Transform::GetLossyScale() const
+{
+    if (parent)
+    {
+        // get world scale
+        return parent->GetLossyScale() * scale;
+    }
+    return scale;
+}
+
+Vector3 Transform::TransformDirection(Vector3 direction) const
+{
+    return Matrix3x3::Rotation(rotation) * direction;
+}
+
 
 Vector3 Transform::forward() const
 {
@@ -216,6 +253,59 @@ Matrix4x4 Transform::GetWorldMatrix() const
     
     if(parent) return parent->GetWorldMatrix() * Matrix4x4::TRS(position, rotation, scale);
     return Matrix4x4::TRS(position, rotation, scale);
+}
+
+
+void Transform::SetParent(Transform& parent, bool worldPositionStays)
+{
+    if (worldPositionStays)
+    {
+        auto worldPos = GetPosition();
+        auto worldRot = GetRotation();
+        auto worldScale = GetScale();
+        this->parent = &parent;
+        SetPosition(worldPos);
+        SetRotation(worldRot);
+        SetScale(worldScale);
+    }
+    else
+        this->parent = &parent;
+
+    parent.children.push_back(this);
+}
+
+Transform* Transform::GetParent() const
+{
+    return parent;
+}
+
+Transform* Transform::FindChild(const char * name) const
+{
+    return nullptr;
+}
+
+Transform* Transform::GetChild(int index) const
+{
+    return nullptr;
+}
+
+bool Transform::IsChildOf(Transform * parent) const
+{
+    return false;
+}
+
+int Transform::GetChildCount() const
+{
+    return 0;
+}
+void Transform::DetachChildren()
+{
+    for(auto child : children)
+    {
+        child->parent = nullptr;
+    }
+    
+    children.clear();
 }
 
 void Transform::Init()

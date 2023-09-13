@@ -32,23 +32,38 @@ void Light::Init()
 
 Light * Light::GetDirectionalLight()
 {
-    if(dirLightMap.empty())
-        return nullptr;
-    return dirLightMap.begin()->first;
+    for (auto& pair : dirLightMap)
+    {
+        if(pair.first && pair.first->GetGameObject()->IsActived())
+        {
+            return pair.first;
+        }
+    }
+    return nullptr;
 }
 
 Light * Light::GetPointLight()
 {
-    if(pointLightMap.empty())
-        return nullptr;
-    return pointLightMap.begin()->first;
+    for (auto& pair : pointLightMap)
+    {
+        if(pair.first && pair.first->GetGameObject()->IsActived())
+        {
+            return pair.first;
+        }
+    }
+    return nullptr;
 }
 
 Light * Light::GetSpotLight()
 {
-    if(spotLightMap.empty())
-        return nullptr;
-    return spotLightMap.begin()->first;
+    for (auto& pair : spotLightMap)
+    {
+        if(pair.first && pair.first->GetGameObject()->IsActived())
+        {
+            return pair.first;
+        }
+    }
+    return nullptr;
 }
 GameObject* Light::CreateDirectionalLight(std::string name)
 {
@@ -122,6 +137,14 @@ void Light::UpdateLightBuffer(IShaderHelper& shaderHelper)
         pointLight.color = pPointLight->GetColor();
         pointLight.atten = 1.0f;
         pointLight.range = pPointLight->range;
+        shaderHelper.SetGlobalVariable("g_PointLight", &pointLight, sizeof(Light::PointLight));
+    }else
+    {
+        Light::PointLight pointLight;
+        pointLight.pos = Vector3(0.0f, 0.0f, 0.0f);
+        pointLight.color = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+        pointLight.atten = 1.0f;
+        pointLight.range = 0.0f;
         shaderHelper.SetGlobalVariable("g_PointLight", &pointLight, sizeof(Light::PointLight));
     }
 }

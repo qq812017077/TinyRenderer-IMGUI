@@ -7,6 +7,7 @@
 #include <memory>
 #include <unordered_map>
 
+struct Model;
 class GameObject
 {
 public:
@@ -41,7 +42,7 @@ public:
         auto & pComp = std::make_unique<T>(std::forward<Args>(args)...);
         pCom = pComp.get();
         components[compName] = std::move(pComp);
-        pCom->SetOwner(this);
+        pCom->SetGameObject(this);
         componentsToInit.push_back(pCom);
         return pCom;
     }
@@ -67,20 +68,23 @@ public:
     }
 
 
-    static const std::vector<std::unique_ptr<GameObject>>& GetGameObjects() { return pGameObjects;}
+    static const std::vector<std::unique_ptr<GameObject>>& GetRootGameObjects() { return pGameObjects;}
     static GameObject* Find(const char* name);
     static GameObject* CreateGameObject(std::string name="GameObject");
     static GameObject* CreateFromFile(const char * filePath);
     static void RemoveAllGameObjects();
-protected:
+    static void Destroy(GameObject& gameObject);
+    static void Destroy(GameObject* pGameObject);
+    static void RefreshQueue();
+    
+    Transform transform;
+private:
     GameObject(const GameObject&) = delete;
     //move constructor
     GameObject(GameObject&& other) noexcept = default;
     GameObject& operator=(const GameObject&) = delete;
+    static GameObject* ParseModel(Model & model);
 
-public:
-    Transform transform;
-private:
     friend class App;
     bool initialized = false;
     bool isActived{true};
@@ -88,6 +92,10 @@ private:
     std::unordered_map<std::string, std::unique_ptr<Component>> components;
     std::vector<Component*> componentsToInit;
     
+    static std::vector<GameObject*> pRootGameObjects;
     static std::vector<std::unique_ptr<GameObject>> pGameObjects;
     static std::unordered_map<std::string, std::vector<int>> goIdsByName;
+
+    static std::vector<GameObject*> pGameObjectsToDestroy;
+    static std::vector<std::unique_ptr<GameObject>> pGameObjectsToCreate;
 };

@@ -159,8 +159,8 @@ Quaternion Quaternion::Inverse() const
     float norm = w * w + x * x + y * y + z * z;
     if (norm > 0.0)
     {
-        float inv_norm = 1.0f / norm;
-        return Quaternion(w * inv_norm, -x * inv_norm, -y * inv_norm, -z * inv_norm);
+        float invNorm = 1.0f / norm;
+        return Quaternion(-x * invNorm, -y * invNorm, -z * invNorm, w * invNorm);
     }
     // return an invalid result to flag the error
     return zero;

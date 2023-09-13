@@ -4,6 +4,7 @@
 #include <variant>
 #include "Mesh.h"
 #include <unordered_map>
+#include <memory>
 
 struct Bounds;
 
@@ -30,6 +31,17 @@ inline XID StringToID(std::string_view str)
 
 struct Model
 {
+    struct Node
+    {
+        Node(std::string name)
+            : name(name){}
+        Node(std::string name, Matrix4x4 transform)
+            : name(name), transform(transform){}
+        std::string name;
+        Matrix4x4 transform;
+        std::vector<uint32_t> meshIndices;
+        std::vector<std::unique_ptr<Node>> children;
+    };
     struct MeshData
     {
         Mesh mesh;
@@ -75,8 +87,9 @@ struct Model
         private:
         std::unordered_map<XID, Property> m_Properties;
     };
-    std::vector<MaterialData> matdatas;
+    std::unique_ptr<Node> pRoot;
     std::vector<MeshData> meshdatas;
+    std::vector<MaterialData> materialdatas;
     Bounds bounds;
     static bool Load(const std::string& filePath, Model& model);
 };

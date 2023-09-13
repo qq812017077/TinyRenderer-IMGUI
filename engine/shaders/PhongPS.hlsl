@@ -9,7 +9,7 @@ float3 get_directional_light(float3 normal, float3 worldPos, DirectionalLight di
     float3 vToL = -lightdir;
     float3 vReflect = reflect(lightdir, normal);
     float3 vView = normalize(g_EyePos - worldPos);
-    float3 ambient = light_color * float3(0.1, 0.1, 0.1);
+    float3 ambient = texColor * float3(0.06, 0.06, 0.06);
     float3 diffuse = light_color * saturate(dot(normal, vToL));
     float3 specular = light_color * pow(saturate(dot(vReflect, vView)), 10);
     float3 _color = ambient + diffuse + specular;
@@ -31,7 +31,7 @@ float3 get_point_light(float3 normal, float3 worldPos, PointLight pointLight, fl
     float3 vToL = -lightdir;
     float3 vReflect = reflect(lightdir, normal);
     float3 vView = normalize(g_EyePos - worldPos);
-    float3 ambient = light_color * float3(0.1, 0.1, 0.1);
+    float3 ambient = texColor * float3(0.06, 0.06, 0.06);
     float3 diffuse = light_color * saturate(dot(normal, vToL));
     float3 specular = light_color * pow(saturate(dot(vReflect, vView)), 10);
     float3 _color = ambient + diffuse + specular;

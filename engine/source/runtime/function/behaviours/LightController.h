@@ -15,8 +15,10 @@ public:
         if(pLightGO) pLight = pLightGO->GetComponent<Light>();
         if(pPointLightGO) pPointLight = pPointLightGO->GetComponent<Light>();
         
-        pRedLittleCube = GameObject::Find("red littleCube");
+        pRedLittleCube = Primitive::CreateCube("red littleCube");
         pRedLittleCube->transform.SetScale({ 0.1f, 0.1f, 0.1f });
+        pRedLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::Red());
+
         if(pLight)
         {
             pLight->pTransform->SetEulerAngle({ 90.0f, 0.0f, 0.0f });
@@ -25,7 +27,11 @@ public:
         
         if(pPointLight)
         {
-            pWhiteLittleCube = GameObject::Find("white littleCube");
+            pWhiteLittleCube = Primitive::CreateCube("white littleCube");
+            pWhiteLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::White());
+            pWhiteLittleCube->transform.SetPosition({ 0.0f, 1.5f, 0.0f });
+            pWhiteLittleCube->transform.SetScale({ 0.1f, 0.1f, 0.1f });
+            
             pointLightPos = { 0.3f, 1.5f, 0.0f };
             pPointLight->pTransform->SetPosition(pointLightPos);
             pPointLight->SetIntensity(1.0f);

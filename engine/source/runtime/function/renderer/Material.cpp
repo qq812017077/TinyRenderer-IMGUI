@@ -280,6 +280,7 @@ std::shared_ptr<Material> Material::GetDefaultMaterialPtr()
         auto materialName = "Material-VS[" + vertexShaderFileName + "]-PS[" + pixelShaderFileName + "]";
         pDefaultMaterial = std::shared_ptr<Material>(new Material(vertexShaderPath, pixelShaderPath, materialName));
         MaterialManager::AddMaterial(pDefaultMaterial);
+        pDefaultMaterial->SetColor("color", Color::Gray());
     }
     return pDefaultMaterial;
 }

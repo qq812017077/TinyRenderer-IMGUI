@@ -104,15 +104,6 @@ bool HLSLVertexShader::CreateSampler(Texture * pInputTex, ID3D11SamplerState ** 
 
 void HLSLVertexShader::SetInputLayout()
 {
-    // for(int i = 0, imax = static_cast<int>(inputLayoutDescs.size()); i < imax; i++)
-    // {
-    //     inputLayoutDescs[i].InputSlot = i;
-    //     // inputLayoutDescs[i].Format = GetVertexDataFormat(Mesh::GetVertexDataType(inputLayoutDescs[i].SemanticName));
-    //     // inputLayoutDescs[i].AlignedByteOffset = Mesh::GetAlignedByteOffset(inputLayoutDescs[i].SemanticName, inputLayoutDescs[i].SemanticIndex);
-
-    //     inputLayoutDescs[i].InputSlot = i;
-    //     inputLayoutDescs[i].AlignedByteOffset = 0;
-    // }
     if(pInputLayout == nullptr)
     {
         HRESULT hr;
@@ -177,6 +168,13 @@ UINT HLSLVertexShader::UpdateVertexBuffers(Mesh& mesh, ID3D11Buffer**& pVertexBu
         if(bufferSize != 0)
         {
             GFX_THROW_INFO(CreateVertexBuffer(directXGfx.pDevice, bufferAddress, bufferSize, this->strides[i], &this->pVertexBuffers[i]));
+            // if(this->pVertexBuffers[i] == nullptr)
+            // {
+            //     GFX_THROW_INFO(CreateVertexBuffer(directXGfx.pDevice, bufferAddress, bufferSize, this->strides[i], &this->pVertexBuffers[i]));
+            // }else
+            // {
+
+            // }
             vertexBufferPtrs[i] = this->pVertexBuffers[i].Get();
         }
     }

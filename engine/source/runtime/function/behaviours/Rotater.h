@@ -9,7 +9,7 @@ public:
     float time = 0.0f;
     void Init() override
     {
-        pMaterial = owner->GetComponent<Renderer>()->GetMaterialPtr();
+        pMaterial = pGameObject->GetComponent<Renderer>()->GetMaterialPtr();
         time = 0.0f;
     }
 
@@ -20,10 +20,9 @@ public:
         if(pMaterial != nullptr)
             pMaterial->SetFloat("offset", sinValue * 0.1f);
         // owner->transform.Rotate(Vector3(0.0f, 0.0f, 1.0f) * deltaTime * 15.f);
-        owner->transform.Rotate(Vector3(0.0f, 1.0f, 0.0f) * deltaTime * 15.f);
+        pGameObject->transform.Rotate(Vector3(0.0f, 1.0f, 0.0f) * deltaTime * 15.f);
         // owner->transform.Rotate(Vector3(1.0f, 0.0f, 0.0f) * deltaTime * 15.f);
     }
 protected:
-    using Behaviour::owner;
     Material * pMaterial;
 };

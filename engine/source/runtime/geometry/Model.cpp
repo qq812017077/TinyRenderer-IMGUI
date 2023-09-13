@@ -12,6 +12,9 @@
 #include "core/EngineException.h"
 #include "core/math/EngineMath.h"
 
+using Node = Model::Node;
+std::unique_ptr<Node> ParseNode(const aiNode* node);
+
 Model::Model(): bounds(Vector3::zero,Vector3::zero) {}
 
 bool Model::Load(const std::string& filePath, Model& model)
@@ -35,7 +38,7 @@ bool Model::Load(const std::string& filePath, Model& model)
             auto numMeshes = pScene->mNumMeshes;
             auto numMaterials = pScene->mNumMaterials;
             model.meshdatas.resize(numMeshes);
-            model.matdatas.resize(numMaterials);
+            model.materialdatas.resize(numMaterials);
 
             // meshes
             for(unsigned int i = 0; i < numMeshes; ++i)
@@ -134,7 +137,7 @@ bool Model::Load(const std::string& filePath, Model& model)
             for (uint32_t i = 0; i < pScene->mNumMaterials; ++i)
             {
                 auto pAiMaterial = pScene->mMaterials[i];
-                MaterialData& matdata = model.matdatas[i];
+                MaterialData& matdata = model.materialdatas[i];
                 Vector4 vec4;
                 float value{};
                 uint32_t boolean{};
@@ -256,7 +259,25 @@ bool Model::Load(const std::string& filePath, Model& model)
                 }
                 
             }
+            
+            
+            model.pRoot = ParseNode(pScene->mRootNode);
             return true;
         }
         return false;
+    }
+
+    std::unique_ptr<Node> ParseNode(const aiNode* node)
+    {
+        std::unique_ptr<Node> pNode = std::make_unique<Node>(node->mName.C_Str());
+        pNode->transform = Matrix4x4{
+            node->mTransformation.a1, node->mTransformation.a2, node->mTransformation.a3, node->mTransformation.a4,
+            node->mTransformation.b1, node->mTransformation.b2, node->mTransformation.b3, node->mTransformation.b4,
+            node->mTransformation.c1, node->mTransformation.c2, node->mTransformation.c3, node->mTransformation.c4,
+            node->mTransformation.d1, node->mTransformation.d2, node->mTransformation.d3, node->mTransformation.d4
+        };
+        
+        for(size_t i=0; i < node->mNumMeshes; i++) pNode->meshIndices.push_back(node->mMeshes[i]);
+        for(size_t i=0; i < node->mNumChildren; i++) pNode->children.push_back(ParseNode(node->mChildren[i]));
+        return pNode;
     }

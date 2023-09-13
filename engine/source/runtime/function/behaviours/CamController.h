@@ -10,7 +10,10 @@ public:
 
     void Init() override
     {
-        pCamera = owner->GetComponent<Camera>();
+        pCamera = pGameObject->GetComponent<Camera>();
+        pCamera->SetAspect(1280.0f / 720.0f);
+        pTransform->SetPosition({ 0.0f, 3.0f, -6.0f });
+        pTransform->SetEulerAngle({ 30.0f, 0.0f, 0.0f });
     }
 
     void OnUpdate(float deltaTime) override
@@ -37,10 +40,19 @@ public:
             pCamera->pTransform->Translate(-Vector3::right * deltaTime * moveSpeed);
         }
 
-        if(Input::InputSystem::GetMouseButton(Mouse::MouseButton::Right))
+        // bool isMouseLeftDown = Input::InputSystem::GetMouseButton(Mouse::MouseButton::Left);
+        bool isMouseRightDown = Input::InputSystem::GetMouseButton(Mouse::MouseButton::Right);
+        bool isMouseMiddleDown = Input::InputSystem::GetMouseButton(Mouse::MouseButton::Middle);
+        float scroll = Input::InputSystem::GetMouseScrollWheel();
+        // std::cout << "scroll: " << scroll << std::endl;
+        float dx = Input::InputSystem::GetMouseAxisX();
+        float dy = Input::InputSystem::GetMouseAxisY();
+        if(isMouseMiddleDown)
         {
-            float dx = Input::InputSystem::GetMouseAxisX();
-            float dy = Input::InputSystem::GetMouseAxisY();
+            pCamera->pTransform->Translate(-Vector3::up * dy * moveSpeed * deltaTime);
+            pCamera->pTransform->Translate(-Vector3::right * dx * moveSpeed * deltaTime);
+        }else if(isMouseRightDown)
+        {
             auto euler = pCamera->pTransform->GetEulerAngle();
             euler.x -= dy * rotateSpeed;
             euler.y += dx * rotateSpeed;
@@ -51,6 +63,9 @@ public:
             auto & rotation = pCamera->pTransform->GetRotation();
             // std::cout << "x:" << rotation.x << " y: " << rotation.y << " z: " << rotation.z << " w: " << rotation.w << std::endl;
             // std::cout << "dx: " << dx << " dy: " << dy << std::endl;
+        }else if (scroll > kEpsilon || scroll < -kEpsilon)
+        {
+            pCamera->pTransform->Translate(Vector3::forward * scroll * moveSpeed * deltaTime);
         }
     }
 

@@ -20,7 +20,21 @@ void RenderQueueManager::AddMaterial(Material* pMaterial)
     if(manager.renderQueue.find(pMaterial) != manager.renderQueue.end()) return;
     manager.renderQueue.emplace(pMaterial, std::vector<Renderer*>());
     for(auto& pair : pMaterial->rendererRefCountMap)
-        manager.renderQueue[pMaterial].emplace_back(pair.first);
+    {
+        auto & pRenderer = pair.first;
+        if(!pRenderer->IsVisible()) continue;
+        manager.renderQueue[pMaterial].emplace_back(pRenderer);
+    }
+}
+void RenderQueueManager::AddRenderer(Renderer * pRenderer)
+{
+    auto& manager = RenderQueueManager::Get();
+    auto pMaterial = pRenderer->GetMaterialPtr();
+    if(manager.renderQueue.find(pMaterial) == manager.renderQueue.end())
+    {
+        manager.renderQueue.emplace(pMaterial, std::vector<Renderer*>());
+    }
+    manager.renderQueue[pMaterial].emplace_back(pRenderer);
 }
 
 void RenderQueueManager::Clear()

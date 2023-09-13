@@ -10,6 +10,12 @@ public:
     Matrix4x4();
     Matrix4x4(float* data);
     Matrix4x4(float data[4][4]);
+    Matrix4x4(float a1, float a2, float a3, float a4,
+        float b1, float b2, float b3, float b4,
+        float c1, float c2, float c3, float c4,
+        float d1, float d2, float d3, float d4);
+    Matrix4x4(float a[4], float b[4], float c[4], float d[4]);
+    Matrix4x4(Vector4& a, Vector4& b, Vector4& c, Vector4& d);
     ~Matrix4x4() = default;
     Matrix4x4(Matrix4x4 const& other) = default;
     Matrix4x4& operator=(Matrix4x4& other) noexcept;

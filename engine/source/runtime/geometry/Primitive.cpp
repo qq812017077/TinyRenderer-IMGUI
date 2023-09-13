@@ -1,5 +1,5 @@
 #include "Primitive.h"
-
+#include "Color.h"
 typedef unsigned short INDICE_TYPE;
 GameObject* Primitive::CreateSimpleCube(std::string name)
 {
@@ -227,7 +227,7 @@ GameObject* Primitive::CreateCube(std::string name)
     mesh.SetVertexNormal(normals);
 
     auto pGO = GameObject::CreateGameObject(name);
-    pGO->AddComponent<Renderer>(mesh);
+    auto renderer = pGO->AddComponent<Renderer>(mesh);
     return pGO;
 }
 

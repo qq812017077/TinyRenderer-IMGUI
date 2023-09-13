@@ -30,7 +30,8 @@ void Renderer::OnPreUpdate()
 {
     ClearObjBuffer();
     if(IsVisible())
-        RenderQueueManager::Get().AddMaterial(pMaterial.get());
+        // RenderQueueManager::Get().AddMaterial(pMaterial.get());
+        RenderQueueManager::Get().AddRenderer(this);
 }
 
 void Renderer::OnUpdate(float deltaTime)
@@ -40,7 +41,7 @@ void Renderer::OnUpdate(float deltaTime)
 
 bool Renderer::IsVisible() const
 {
-    return true;
+    return enabled && pGameObject->IsActived();
 }
 
 Material * Renderer::GetMaterialPtr()
@@ -141,7 +142,7 @@ void Renderer::ClearObjBuffer()
 
 void Renderer::UpdateObjBuffer(IShaderHelper & shaderHelper)
 {
-    auto worldMatrix = owner->transform.GetWorldMatrix();
+    auto worldMatrix = pGameObject->transform.GetWorldMatrix();
     shaderHelper.SetGlobalMatrix("g_World", worldMatrix);
     shaderHelper.SetGlobalMatrix("g_WorldInv", worldMatrix.Inverse());
 }

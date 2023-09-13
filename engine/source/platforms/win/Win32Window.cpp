@@ -115,82 +115,165 @@ LRESULT Win32Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
         break;
     case WM_KEYUP:
     case WM_SYSKEYUP: // yeah, we hope to do something like comment above
+        if(imio.WantCaptureKeyboard)
+            break;
         // LOG("Key Up: " << static_cast<unsigned char>(wParam));
         OnKeyReleased(static_cast<unsigned char>(wParam));
         break;
     case WM_CHAR:
         OnChar(static_cast<unsigned char>(wParam));
         break;
-    // Mouse part
+        // Mouse part
     //event of mouse move out of window
-    case WM_MOUSEMOVE:
+    // case WM_MOUSEMOVE:
+    //     {
+    //         if(imio.WantCaptureMouse)
+    //             break;
+    //         int x = LOWORD(lParam);
+    //         int y = HIWORD(lParam); 
+    //         // if mouse is in window, send move event
+    //         if(x >= 0 && x < width && y >= 0 && y < height)
+    //         {
+    //             OnMouseMove(x, y);
+    //             if(!mouse.IsInWindow())
+    //             {
+    //                 SetCapture(hwnd);
+    //                 OnMouseEnter();
+    //             }
+    //         }else // if mouse is out of window, send leave event
+    //         {
+    //             //equals to
+    //             if( wParam & (MK_LBUTTON | MK_RBUTTON | MK_MBUTTON))
+    //             {
+    //                 OnMouseMove(x, y);
+    //             }else
+    //             {
+    //                 ReleaseCapture();
+    //                 OnMouseLeave();
+    //             }
+    //         }
+    //         break;
+    //     }
+    // case WM_LBUTTONDOWN:
+    //     {
+    //         if(imio.WantCaptureMouse) break;
+    //         OnMouseLeftPressed();
+    //         break;
+    //     }
+    // case WM_RBUTTONDOWN:
+    //     {
+    //         if(imio.WantCaptureMouse) break;
+    //         if(imio.WantCaptureMouse) break;
+    //         OnMouseRightPressed();
+    //         break;
+    //     }
+    // case WM_MBUTTONDOWN:
+    //     {
+    //         if(imio.WantCaptureMouse) break;
+    //         OnMouseWheelPressed();
+    //         break;
+    //     }
+    // case WM_LBUTTONUP:
+    //     {
+    //         if(imio.WantCaptureMouse) break;
+    //         if(imio.WantCaptureMouse) break;
+    //         OnMouseLeftReleased();
+    //         break;
+    //     }
+    // case WM_RBUTTONUP:
+    //     {
+    //         if(imio.WantCaptureMouse) break;
+    //         OnMouseRightReleased();
+    //         break;
+    //     }
+    // case WM_MBUTTONUP:
+    //     {
+    //         if(imio.WantCaptureMouse) break;
+    //         OnMouseWheelReleased();
+    //         break;
+    //     }
+    // case WM_MOUSEWHEEL:
+    //     {
+    //         if(imio.WantCaptureMouse) break;
+    //         int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+    //         OnMouseWheelDelta(delta);
+    //         break;
+    //     }
+    }
+    // Mouse part
+    if(!imio.WantCaptureMouse)
+    {
+        switch (msg)
         {
-            if(imio.WantCaptureMouse)
-                break;
-            int x = LOWORD(lParam);
-            int y = HIWORD(lParam); 
-            
-            // if mouse is in window, send move event
-            if(x >= 0 && x < width && y >= 0 && y < height)
-            {
-                OnMouseMove(x, y);
-                if(!mouse.IsInWindow())
+            case WM_MOUSEMOVE:
                 {
-                    SetCapture(hwnd);
-                    OnMouseEnter();
+                    if(imio.WantCaptureMouse)
+                        break;
+                    int x = LOWORD(lParam);
+                    int y = HIWORD(lParam); 
+                    
+                    // if mouse is in window, send move event
+                    if(x >= 0 && x < width && y >= 0 && y < height)
+                    {
+                        OnMouseMove(x, y);
+                        if(!mouse.IsInWindow())
+                        {
+                            SetCapture(hwnd);
+                            OnMouseEnter();
+                        }
+                    }else // if mouse is out of window, send leave event
+                    {
+                        //equals to
+                        if( wParam & (MK_LBUTTON | MK_RBUTTON | MK_MBUTTON))
+                        {
+                            OnMouseMove(x, y);
+                        }else
+                        {
+                            ReleaseCapture();
+                            OnMouseLeave();
+                        }
+                    }
+                    break;
                 }
-            }else // if mouse is out of window, send leave event
-            {
-                //equals to
-                if( wParam & (MK_LBUTTON | MK_RBUTTON | MK_MBUTTON))
+            case WM_LBUTTONDOWN:
                 {
-                    OnMouseMove(x, y);
-                }else
-                {
-                    ReleaseCapture();
-                    OnMouseLeave();
+                    OnMouseLeftPressed();
+                    break;
                 }
-            }
-            break;
-        }
-    case WM_LBUTTONDOWN:
-        {
-            OnMouseLeftPressed();
-            break;
-        }
-    case WM_RBUTTONDOWN:
-        {
-            OnMouseRightPressed();
-            break;
-        }
-    case WM_MBUTTONDOWN:
-        {
-            OnMouseWheelPressed();
-            break;
-        }
-    case WM_LBUTTONUP:
-        {
-            OnMouseLeftReleased();
-            break;
-        }
-    case WM_RBUTTONUP:
-        {
-            OnMouseRightReleased();
-            break;
-        }
-    case WM_MBUTTONUP:
-        {
-            OnMouseWheelReleased();
-            break;
-        }
-    case WM_MOUSEWHEEL:
-        {
-            int delta = GET_WHEEL_DELTA_WPARAM(wParam);
-            OnMouseWheelDelta(delta);
-            break;
+            case WM_RBUTTONDOWN:
+                {
+                    OnMouseRightPressed();
+                    break;
+                }
+            case WM_MBUTTONDOWN:
+                {
+                    OnMouseWheelPressed();
+                    break;
+                }
+            case WM_LBUTTONUP:
+                {
+                    if(imio.WantCaptureMouse) break;
+                    OnMouseLeftReleased();
+                    break;
+                }
+            case WM_RBUTTONUP:
+                {
+                    OnMouseRightReleased();
+                    break;
+                }
+            case WM_MBUTTONUP:
+                {
+                    OnMouseWheelReleased();
+                    break;
+                }
+            case WM_MOUSEWHEEL:
+                {
+                    int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+                    OnMouseWheelDelta(delta);
+                    break;
+                }
         }
     }
-    
     return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
 

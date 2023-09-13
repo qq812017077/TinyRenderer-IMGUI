@@ -96,6 +96,11 @@ namespace Input
             {
                 return InputSystem::Get().m_mouse->GetMouseButtonUp(static_cast<Mouse::MouseButton>(button));
             }
+
+            static float GetMouseScrollWheel() noexcept
+            {
+                return InputSystem::Get().m_mouse->GetWhellScroll();
+            }
         
         private:
             Keyboard* m_keyboard;

@@ -33,52 +33,38 @@ App::~App()
 
 void App::LoadGOs()
 {
-    auto cube2 = Primitive::CreateCube("cube2");// here will use move constructor;
-    auto plane = Primitive::CreatePlane("plane");
-    auto camGO = GameObject::CreateGameObject("Cam");
-    auto lightController = GameObject::CreateGameObject("LightController");
-    auto gameController = GameObject::CreateGameObject("GameController");
-    auto modelGO = GameObject::CreateFromFile("res/models/spider.fbx");
-    // auto light = AddGO(Light::CreateDirectionalLight("light"));
-    auto pointLight = Light::CreatePointLight("pointLight");
-    auto whiteLittleCube = Primitive::CreateCube("white littleCube");
-    auto redLittleCube = Primitive::CreateCube("red littleCube");
     // load resource
     auto pMat = Material::Load("shaders/DefaultVertexShader.hlsl", "shaders/PhongPS.hlsl");
     auto pCubTex = Texture::LoadFrom("res/images/cube.png");
     auto pBrickwallTex = Texture::LoadFrom("res/images/brickwall.jpg");
+
+    auto gameController = GameObject::CreateGameObject("GameController");
+    gameController->AddComponent<GameController>();
+
+    auto lightController = GameObject::CreateGameObject("LightController");
+    lightController->AddComponent<LightController>();
+
+    auto plane = Primitive::CreatePlane("plane");
+    auto pointLight = Light::CreatePointLight("pointLight");
+    
     
     // set camera
+    auto camGO = GameObject::CreateGameObject("Cam");
     auto cam = camGO->AddComponent<Camera>();
     camGO->AddComponent<CamController>();
-    cam->SetAspect(1280.0f / 720.0f);
-    camGO->transform.SetPosition({ 0.0f, 0.0f, 6.0f });
-    camGO->transform.SetEulerAngle({ 0.0f, 180.0f, 0.0f });
+
     // set plane
     plane->transform.SetPosition({ 0.0f, -1.0f, 0.0f });
     plane->transform.SetScale({ 2.0f, 1.0f, 2.0f });
     plane->GetComponent<Renderer>()->SetMaterial(pMat);
-    // set cubes
-    cube2->transform.SetPosition({ -1.5f, 0.0f, 0.0f });
-    whiteLittleCube->transform.SetPosition({ 0.0f, 1.5f, 0.0f });
-    whiteLittleCube->transform.SetScale({ 0.1f, 0.1f, 0.1f });
 
-    if(modelGO)
-    {
-        modelGO->transform.SetPosition({ 3.0f, 0.0f, 0.0f });
-        modelGO->transform.SetScale({ 0.01f, 0.01f, 0.01f });
-    }
+    
+    auto cube2 = Primitive::CreateCube("cube2");// here will use move constructor;
+    cube2->transform.SetPosition({ -1.5f, 0.0f, 0.0f });
     cube2->AddComponent<Rotater>();
     auto pRenderer2 = cube2->GetComponent<Renderer>();
     pRenderer2->SetSharedMaterial(pMat);
     pRenderer2->GetMaterial()->SetTexture("_MainTex", pBrickwallTex);
-    whiteLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::White());
-    redLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::Red());
-    
-    // light 
-    // light->AddComponent<LightController>();
-    lightController->AddComponent<LightController>();
-    gameController->AddComponent<GameController>();
 }
 
 int App::Run()
@@ -137,8 +123,8 @@ void App::DoFrame()
 void App::OnFrameUpdateBegin()
 {
     // set PerFrameUniformBuffer
-    
-    for (auto& pGo : GameObject::GetGameObjects())
+    GameObject::RefreshQueue();
+    for (auto& pGo : GameObject::GetRootGameObjects())
     {
         if(!pGo->IsActived()) continue;
         if(pGo->IsInitialized()) continue;
@@ -146,7 +132,7 @@ void App::OnFrameUpdateBegin()
     }
     
     pWnd->Gfx()->OnFrameBegin();
-    for (auto& pGo : GameObject::GetGameObjects())
+    for (auto& pGo : GameObject::GetRootGameObjects())
     {
         if(!pGo->IsActived()) continue;
         pGo->OnPreUpdate();
@@ -155,12 +141,12 @@ void App::OnFrameUpdateBegin()
 
 void App::UpdateGameObject(float deltaTime)
 {
-    for (auto& pGo : GameObject::GetGameObjects())
+    for (auto& pGo : GameObject::GetRootGameObjects())
     {
         if(!pGo->IsActived()) continue;
         pGo->OnUpdate(deltaTime);
     }
-    for (auto& pGo : GameObject::GetGameObjects())
+    for (auto& pGo : GameObject::GetRootGameObjects())
     {
         if(!pGo->IsActived()) continue;
         pGo->OnLateUpdate(deltaTime);
@@ -169,7 +155,6 @@ void App::UpdateGameObject(float deltaTime)
 
 void App::OnFrameUpdateEnd()
 {
-    
     // imgui
     if( imgui.IsEnabled())
     {
@@ -177,7 +162,7 @@ void App::OnFrameUpdateEnd()
         // static bool show_demo_window = true;
         // ImGui::ShowDemoWindow(&show_demo_window);
 
-        for (auto& pGo : GameObject::GetGameObjects()) pGo->OnGUI();
+        for (auto& pGo : GameObject::GetRootGameObjects()) pGo->OnGUI();
 
         if(ImGui::Begin("FPS"))
         {

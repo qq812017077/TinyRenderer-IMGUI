@@ -7,22 +7,18 @@ Component::Component()
 
 Component::~Component()
 {
-    owner = nullptr;
+    pGameObject = nullptr;
 }
 
-GameObject& Component::GetOwner() const
+GameObject* Component::GetGameObject() const
 {
-    if(owner == nullptr)
-    {
-        throw std::runtime_error("Component has no owner");
-    }
-    
-    return *owner;
+    if(pGameObject == nullptr) throw std::runtime_error("Component has no owner");
+    return pGameObject;
 }
 
-void Component::SetOwner(GameObject* owner)
+void Component::SetGameObject(GameObject* owner)
 {
-    this->owner = owner;
+    this->pGameObject = owner;
     this->pTransform = &owner->transform;
 }
 

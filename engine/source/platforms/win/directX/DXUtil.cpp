@@ -153,6 +153,8 @@ static HRESULT CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, D3D11
             cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
             break;
         case D3D11_BIND_VERTEX_BUFFER:
+            cbd.Usage = D3D11_USAGE_DEFAULT; // default means
+            
             break;
         case D3D11_BIND_INDEX_BUFFER:
             break; 

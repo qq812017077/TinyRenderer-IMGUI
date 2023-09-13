@@ -62,7 +62,7 @@ public:
     ~Mouse() {}
 
     bool IsEmpty() const { return m_mouseBuffer.empty(); }
-    void Update() noexcept { m_MouseStatePrev = m_MouseState; m_last_x = m_x; m_last_y = m_y; }
+    void Update() noexcept { m_MouseStatePrev = m_MouseState; m_last_x = m_x; m_last_y = m_y; m_wheelDeltaCarry = 0; }
     //mouse events
     bool GetMouseButton(MouseButton button) const { return m_MouseState[button]; }
     bool GetMouseButtonDown(MouseButton button) const { return !m_MouseStatePrev[button] && m_MouseState[button]; }
@@ -74,7 +74,7 @@ public:
     int GetPosY() const { return m_y; }
     float GetMouseAxisX() const { return float(m_x - m_last_x) * mouseSensitivity; }
     float GetMouseAxisY() const { return float(m_last_y - m_y) * mouseSensitivity; }
-
+    float GetWhellScroll() const { return m_wheelDeltaCarry * mouseSensitivity; }
     //read
     MouseEvent Read() { if (m_mouseBuffer.size() > 0) { MouseEvent e = m_mouseBuffer.front(); m_mouseBuffer.pop(); return e; } else { return MouseEvent(); } }
     //flush
@@ -87,20 +87,23 @@ private:
     void OnWheelPressed() noexcept { m_MouseState[MouseButton::Middle] = true; m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_PRESSED, *this)); TrimBuffer(); }
     void OnWheelReleased() noexcept { m_MouseState[MouseButton::Middle] = false; m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_RELEASED, *this)); TrimBuffer(); }
     
-    void OnWheelUp() noexcept { m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_UP, *this)); TrimBuffer(); }
-    void OnWheelDown() noexcept { m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_DOWN, *this)); TrimBuffer(); }
+    void OnWheelUp() noexcept {m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_UP, *this)); TrimBuffer(); }
+    void OnWheelDown() noexcept {m_mouseBuffer.push(MouseEvent(MouseState::WHEEL_DOWN, *this)); TrimBuffer(); }
     void OnWheelDelta(int delta) noexcept {
+        // m_wheelStateDelta += delta;
         m_wheelDeltaCarry += delta;
-        while (m_wheelDeltaCarry >= WHEEL_DELTA)
-        {
-            m_wheelDeltaCarry -= WHEEL_DELTA;
-            OnWheelUp();
-        }
-        while (m_wheelDeltaCarry <= -WHEEL_DELTA)
-        {
-            m_wheelDeltaCarry += WHEEL_DELTA;
-            OnWheelDown();
-        }
+        if (m_wheelDeltaCarry > 0) OnWheelUp();
+        else if (m_wheelDeltaCarry < 0) OnWheelDown();
+        // while (m_wheelDeltaCarry >= WHEEL_DELTA)
+        // {
+        //     m_wheelDeltaCarry -= WHEEL_DELTA;
+        //     OnWheelUp();
+        // }
+        // while (m_wheelDeltaCarry <= -WHEEL_DELTA)
+        // {
+        //     m_wheelDeltaCarry += WHEEL_DELTA;
+        //     OnWheelDown();
+        // }
     }
 
     void OnMouseMove(int x, int y) noexcept { m_x = x; m_y = y; m_mouseBuffer.push(MouseEvent(MouseState::MOVE, *this)); TrimBuffer(); }
@@ -121,7 +124,6 @@ private:
     std::bitset<3> m_MouseStatePrev;
 
     int m_wheelDeltaCarry = 0;
-
     bool m_isInWindow = false;
     int m_x = 0;
     int m_y = 0;

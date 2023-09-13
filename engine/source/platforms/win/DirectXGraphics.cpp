@@ -476,6 +476,22 @@ void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, BYTE *
     }
 }
 
+// void DirectXGraphics::UpdateVBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, BYTE * data, unsigned int bytesize)
+// {
+//     if(targetBuf == nullptr)
+//     {
+//         GFX_THROW_INFO(CreateVertexBuffer(pDevice, data, bytesize, &targetBuf));
+//     }else
+//     {
+//         // update constant buffer by map and unmap
+//         D3D11_MAPPED_SUBRESOURCE msr;
+//         pContext->Map(targetBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+//         memcpy_s(msr.pData, bytesize, data, bytesize);
+//         pContext->Unmap(targetBuf.Get(), 0);
+//         // pContext->UpdateSubresource(targetBuf.Get(), 0, nullptr, bufData.GetAddress(), 0, 0);
+//     }
+// }
+
 
 void DirectXGraphics::BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& targetBuf, Graphics::EBindType bindType)
 {
