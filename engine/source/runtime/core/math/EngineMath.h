@@ -8,16 +8,9 @@ const static float kEpsilon = 1E-06f;
 const static float kRad2Deg = 57.29578f;
 const static float kDeg2Rad = 0.01745329f;
 
-struct Float2
-{
-    float x;
-    float y;
-    Float2() = default;
-    Float2(float x, float y) : x(x), y(y) {}
-};
 typedef Vector3 Float3;
 typedef Vector4 Float4;
-
+typedef Vector2 Float2;
 struct ColorRGBA
 {
     unsigned char r;

@@ -1,13 +1,18 @@
 #include "GameObject.h"
 #include "components/Component.h"
 #include "geometry/Model.h"
-std::vector<GameObject*> GameObject::pRootGameObjects;
-std::vector<std::unique_ptr<GameObject>> GameObject::pGameObjects;
-std::unordered_map<std::string, std::vector<int>> GameObject::goIdsByName;
-std::vector<std::unique_ptr<GameObject>> GameObject::pGameObjectsToCreate;
-std::vector<GameObject*> GameObject::pGameObjectsToDestroy;
-GameObject::GameObject(std::string name):
-    name(name),
+#include "world/WorldManager.h"
+#include "res_type/common.h"
+
+// GameObject::GameObject(std::string name):
+//     name(name),
+//     transform()
+// {
+//     componentsToInit.push_back(&transform);
+// }
+
+GameObject::GameObject(size_t instanceId):
+    instanceId(instanceId),
     transform()
 {
     componentsToInit.push_back(&transform);
@@ -16,10 +21,9 @@ GameObject::GameObject(std::string name):
 GameObject::~GameObject()
 {
     RemoveAllComponents();
-    // remove go from gameobjects
-    
-    //display gameobject address
+#if DEBUG
     std::cout << "GameObject[" << name << "] destroyed at " << this << std::endl;
+#endif
 }
 
 
@@ -102,17 +106,24 @@ void GameObject::RemoveAllComponents()
 /**********************************************************************************************/
 GameObject* GameObject::Find(const char* name)
 {
-    auto & goids = goIdsByName[name];
-    if(goids.size() > 0)
-        return pGameObjects[goids[0]].get();
-    return nullptr;
+    auto pLevel = TinyEngine::WorldManager::Get().GetCurrentActiveLevel();
+    if(pLevel == nullptr) 
+    {
+        std::cout << "Failed to create gameobject[" << name << "], level is null" << std::endl;
+        return nullptr;
+    }
+    return pLevel->Find(name);
 }
 
 GameObject* GameObject::CreateGameObject(std::string name)
 {
-    // make unique_ptr
-    pGameObjectsToCreate.emplace_back(std::make_unique<GameObject>(name));
-    return pGameObjectsToCreate.back().get();
+    auto pLevel = TinyEngine::WorldManager::Get().GetCurrentActiveLevel();
+    if(pLevel == nullptr) 
+    {
+        std::cout << "Failed to create gameobject[" << name << "], level is null" << std::endl;
+        return nullptr;
+    }
+    return pLevel->CreateGameObject(name);
 }
 
 GameObject* GameObject::CreateFromFile(const char * filePath)
@@ -142,75 +153,46 @@ GameObject* GameObject::CreateFromFile(const char * filePath)
     }
     
 }
-void GameObject::RemoveAllGameObjects()
-{
-    // clear pGameObjects
-    for(auto& go : pGameObjects)
-    {
-        go.release();
-    }
-    pRootGameObjects.clear();
-    pGameObjects.clear();
-    goIdsByName.clear();
-}
+
 void GameObject::Destroy(GameObject& gameObject)
 {
-    //if go has children, destroy them too, recursively
-    if(gameObject.transform.GetChildCount() > 0)
+    
+    auto pLevel = TinyEngine::WorldManager::Get().GetCurrentActiveLevel();
+    if(pLevel == nullptr) 
     {
-        for(int i = 0; i < gameObject.transform.GetChildCount(); i++)
-        {
-            Destroy(gameObject.transform.GetChild(i)->GetGameObject());
-        }
+        std::cout << "Failed to destroy gameobject[" << gameObject.name << "], level is null" << std::endl;
+        return;
     }
-    // add to destroy list
-    pGameObjectsToDestroy.emplace_back(&gameObject);
+    pLevel->DestroyGameObject(&gameObject);
 }
 void GameObject::Destroy(GameObject* pGameObject)
 {
-    Destroy(*pGameObject);
+    auto pLevel = TinyEngine::WorldManager::Get().GetCurrentActiveLevel();
+    if(pLevel == nullptr) 
+    {
+        std::cout << "Failed to destroy gameobject[" << pGameObject->name << "], level is null" << std::endl;
+        return;
+    }
+    pLevel->DestroyGameObject(pGameObject);
 }
 
-void GameObject::RefreshQueue()
+
+bool GameObject::loadres(const TinyEngine::GameObjectRes& go_instance_res)
 {
-    for(auto& go : pGameObjectsToCreate)
+    name = go_instance_res.m_name;
+
+    // load transform component
+    transform = go_instance_res.m_transform;
+    // load other components
+    for(auto& comp_res : go_instance_res.m_components)
     {
-        if(go == nullptr) continue;
-        // add go to gameobjects
-        int idx = static_cast<int>(pGameObjects.size());
-        pGameObjects.emplace_back(std::move(go));
-        goIdsByName[pGameObjects.back()->name].emplace_back(idx);
+        throw std::runtime_error("not implemented");
+        // auto pComp = Component::CreateComponent(comp_res);
+        // if(pComp == nullptr) continue;
+        // pComp->SetGameObject(this);
+        // componentsToInit.push_back(pComp);
     }
-    // destroy all gameobjects in destroy list
-    for(auto& go : pGameObjectsToDestroy)
-    {
-        if(go == nullptr) continue;
-        // find this go, and remove it from pGameObjects and goIdsByName
-        int index = 0;
-        while(index < pGameObjects.size() && pGameObjects[index].get() != go) index++;
-        if(index < pGameObjects.size())
-        {
-            //remove from pGameObjects
-            pGameObjects[index].release();
-            pGameObjects.erase(pGameObjects.begin() + index);
-            
-            auto & goIds = goIdsByName[go->name];
-            // find this go
-            int _index = 0;
-            while(_index < goIds.size() && pGameObjects[goIds[_index]].get() != go) _index++;
-            if(_index < goIds.size())
-            {
-                //remove from pGameObjects
-                goIds.erase(goIds.begin() + _index);
-                //remove from goIdsByName
-                goIdsByName[go->name].erase(goIdsByName[go->name].begin() + _index);
-            }else
-            {
-                std::cout << "GameObject[" << go->name << "] not found in goIdsByName" << std::endl;
-            }
-        }
-    }
-    pGameObjectsToDestroy.clear();
+    return true;
 }
 
 void ParseNode(Model& model, Model::Node* pNode, Transform & parent)
@@ -255,7 +237,6 @@ GameObject* GameObject::ParseModel(Model & model)
         // auto matdata = model.materialdatas[model.meshdatas[idx].m_MaterialIndex];
         //TODO: set material properties
     }
-
     // add children
     for(auto& child : root->children)
     {

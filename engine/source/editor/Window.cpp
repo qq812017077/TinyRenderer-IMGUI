@@ -31,7 +31,7 @@ void Window::OnKeyPressed(unsigned char keycode) noexcept {
 }
 void Window::OnKeyReleased(unsigned char keycode) noexcept 
 { 
-    kbd.OnKeyReleased(keycode); 
+    kbd.OnKeyReleased(keycode);
 }
 void Window::OnChar(unsigned char character) noexcept 
 { 

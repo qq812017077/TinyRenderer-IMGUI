@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <queue>
+#include "FrameBuffer.h"
 class Material;
 class VertexShader;
 class PixelShader;
@@ -19,7 +20,6 @@ protected:
     virtual void ClearupRenderTarget() = 0;
 
     virtual void DrawAll() = 0;
-    virtual void EndFrame() = 0;
     
     // Shader Operation
     virtual std::shared_ptr<VertexShader> CreateVertexShader(const std::string& path) = 0;
@@ -50,9 +50,8 @@ public:
     ~Graphics();
     virtual void ClearBuffer(float red, float green, float blue) noexcept = 0;
     virtual void BindImgui() = 0;
-    virtual void OnFrameBegin();
-    virtual void OnFrameUpdate();
-    virtual void OnFrameEnd();
+    virtual void OnTick(TinyEngine::FrameBuffer * pFrameBuffer);
+    virtual void EndFrame() = 0;
     virtual void DrawTestTriangle(float angle=0.0f) = 0;
     
     //Events

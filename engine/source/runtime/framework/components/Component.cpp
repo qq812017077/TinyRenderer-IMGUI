@@ -1,5 +1,5 @@
 #include "components/Component.h"
-#include "core/GameObject.h"
+#include "object/GameObject.h"
 
 Component::Component()
 {

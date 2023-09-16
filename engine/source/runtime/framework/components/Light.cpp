@@ -1,5 +1,5 @@
 #include "Light.h"
-#include "core/GameObject.h"
+#include "object/GameObject.h"
 #include "Shader.h"
 #include "ui/GUI.h"
 std::unordered_map<Light*, bool> Light::dirLightMap;

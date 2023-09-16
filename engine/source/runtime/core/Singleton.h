@@ -23,6 +23,8 @@ protected:
         std::cout << "Singleton constructor <" << typeid(T).name() << "> called" << std::endl;
 #endif
     }
+    virtual ~Singleton() noexcept {}
+
     Singleton(const Singleton&) = delete;
     Singleton& operator=(const Singleton&) = delete;
     static std::shared_ptr<T> pInstance;

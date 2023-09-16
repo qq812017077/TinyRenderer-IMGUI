@@ -4,6 +4,7 @@
 #include "Material.h"
 #include "components/Camera.h"
 #include "components/Light.h"
+
 #define LOG(X) std::cout << X << std::endl;
 std::queue<Material*> Graphics::m_WaitForLoadMaterials;
 
@@ -36,9 +37,9 @@ void Graphics::AddMaterial(Material* pMaterial)
     m_WaitForLoadMaterials.push(pMaterial);
 }
 
-void Graphics::OnFrameBegin()
+
+void Graphics::OnTick(TinyEngine::FrameBuffer * pFrameBuffer)
 {
-    RenderQueueManager::Clear();
     ClearBuffer(0.0f, 0.0f, 0.0f);
 
     while(!m_WaitForLoadMaterials.empty())
@@ -51,18 +52,11 @@ void Graphics::OnFrameBegin()
             pMat->LoadShader(*this);
         }
     }
-}
 
-void Graphics::OnFrameUpdate()
-{
     if(m_pShaderHelper != nullptr)
     {
         Camera::UpdateCameraBuffer(*m_pShaderHelper);
         Light::UpdateLightBuffer(*m_pShaderHelper);
     }
     DrawAll();
-}
-void Graphics::OnFrameEnd()
-{
-    EndFrame();
 }

@@ -23,6 +23,13 @@ Transform& Transform::operator=(Transform& other) noexcept
     scale = other.scale;
     return *this;
 }
+Transform& Transform::operator=(const Transform& other) noexcept
+{
+    position = other.position;
+    rotation = other.rotation;
+    scale = other.scale;
+    return *this;
+}
 
 void Transform::SetPosition(const Vector3& position)
 {

@@ -1,6 +1,6 @@
 #pragma once
 #include "components/Component.h"
-#include "core/GameObject.h"
+#include "object/GameObject.h"
 #include "components/Renderer.h"
 #include "geometry/Primitive.h"
 #include "Color.h"

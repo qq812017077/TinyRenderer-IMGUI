@@ -3,6 +3,14 @@ struct Matrix3x3;
 extern const double uZero;  
 struct Vector4;
 
+struct alignas(4) Vector2
+{
+    float x;
+    float y;
+    Vector2() = default;
+    Vector2(float x, float y) : x(x), y(y) {}
+};
+
 struct alignas(4) Vector3  
 {  
     float x, y, z; 

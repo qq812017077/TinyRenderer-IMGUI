@@ -1,7 +1,8 @@
 #include "components/Renderer.h"
-#include "core/GameObject.h"
+#include "object/GameObject.h"
 #include "managers/MaterialManager.h"
 #include "managers/RenderQueueManager.h"
+#include "scene/SceneManager.h"
 #include "renderer/Graphics.h"
 #include "Material.h"
 #include "Shader.h"
@@ -30,13 +31,15 @@ void Renderer::OnPreUpdate()
 {
     ClearObjBuffer();
     if(IsVisible())
+    {
         // RenderQueueManager::Get().AddMaterial(pMaterial.get());
         RenderQueueManager::Get().AddRenderer(this);
+        TinyEngine::SceneManager::Get().AddRenderer(this);
+    }
 }
 
 void Renderer::OnUpdate(float deltaTime)
 {
-    // UpdateObjBuffer();
 }
 
 bool Renderer::IsVisible() const
@@ -137,7 +140,6 @@ Mesh& Renderer::GetMesh()
 
 void Renderer::ClearObjBuffer()
 {
-    // objBuffer.Clear();
 }
 
 void Renderer::UpdateObjBuffer(IShaderHelper & shaderHelper)

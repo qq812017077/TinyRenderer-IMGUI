@@ -1,5 +1,5 @@
 #pragma once
-#include "core/GameObject.h"
+#include "object/GameObject.h"
 #include "EngineMath.h"
 #include <memory>
 

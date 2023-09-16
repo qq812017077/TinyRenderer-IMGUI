@@ -155,13 +155,13 @@ void HLSLVertexShader::UpdateTexture()
 
 UINT HLSLVertexShader::UpdateVertexBuffers(Mesh& mesh, ID3D11Buffer**& pVertexBuffers,UINT*& strides,UINT*& offsets)
 {
-    UINT varNum = inputLayoutDescs.size();
+    UINT varNum = static_cast<UINT>(inputLayoutDescs.size());
 #ifndef NDEBUG
     auto & infoManager = directXGfx.infoManager;
 #endif
     HRESULT hr;
     //we need allocate buffer to every variable
-    for(int i = 0; i<varNum; i++)
+    for(UINT i = 0; i<varNum; i++)
     {
         UINT bufferSize;
         auto bufferAddress = mesh.GetVertexBuffer(inputLayoutDescs[i].SemanticName, bufferSize);

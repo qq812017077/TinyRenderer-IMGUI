@@ -1,7 +1,9 @@
 
-#include "App.h"
 #include <unordered_set>
 #include <memory>
+#include "engine.h"
+#include "editor.h"
+
 class A
 {
 public:
@@ -28,6 +30,14 @@ public:
 // Main code
 int main(int, char**)
 {
-  App app{};
-  return app.Run();
+  auto & engine = TinyEngine::Engine::Get();
+  auto & editor = TinyEngine::Editor::Get();
+  engine.Initialize();
+  editor.Initialize(&(engine));
+  editor.Run();
+  editor.Clear();
+  engine.ShutdownEngine();
+  return 0;
+  // App app{};
+  // return app.Run();
 }

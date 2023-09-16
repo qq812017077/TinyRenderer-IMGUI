@@ -26,6 +26,7 @@ public:
     ~Transform() = default;
     Transform(Transform const& other) = delete;
     Transform& operator=(Transform& other) noexcept;
+    Transform& operator=(const Transform& other) noexcept;
 
     void SetPosition(const Vector3& position);
     void SetLocalPosition(const Vector3& position);
