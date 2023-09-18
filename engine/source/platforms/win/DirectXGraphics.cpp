@@ -21,8 +21,7 @@ DirectXGraphics::DirectXGraphics(HWND &hwnd):
 {
     LOG("Directx Graphics  constructor begin")
     CreateDevice();
-    CreateRenderTarget();
-
+    UpdateRenderSceneViewPort(0, 0, 1280, 720);
     OnResize(1280, 720);
     m_pShaderHelper = HLSLShaderHelper::GetPtr();
     LOG("   Directx Graphics  constructor end")
@@ -38,8 +37,6 @@ DirectXGraphics::~DirectXGraphics()
 {
     if(bindedImgui)
         ImGui_ImplDX11_Shutdown();
-    ClearupDevice();
-    ClearupRenderTarget();
 }
 
 void DirectXGraphics::EndFrame()
@@ -64,7 +61,7 @@ void DirectXGraphics::EndFrame()
 void DirectXGraphics::ClearBuffer(float red, float green, float blue) noexcept
 {
     const float color[] = { red, green, blue, 1.0f };
-    pContext->ClearRenderTargetView(pTarget.Get(), color);
+    pContext->ClearRenderTargetView(pRenderTargetView.Get(), color);
     pContext->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
     
 }
@@ -215,7 +212,7 @@ void DirectXGraphics::DrawTestTriangle(float angle)
     pContext->VSSetShader(pVertexShader.Get(), nullptr, 0u);
     pContext->PSSetShader(pPixelShader.Get(), nullptr, 0u);
     // bind render target
-    pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr);
+    pContext->OMSetRenderTargets(1u, pRenderTargetView.GetAddressOf(), nullptr);
 
     // configure viewport
     D3D11_VIEWPORT vp;
@@ -282,10 +279,9 @@ void DirectXGraphics::DrawAll()
             pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
             
             // bind render target
-            pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr);
+            pContext->OMSetRenderTargets(1u, pRenderTargetView.GetAddressOf(), nullptr);
             // enable depth stencil
-            pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), pDepthStencilView.Get());
-
+            pContext->OMSetRenderTargets(1u, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
             // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
             GFX_THROW_INFO_ONLY(pContext->DrawIndexed(mesh.GetIndexCount(), 0u, 0u));
         }
@@ -295,40 +291,25 @@ void DirectXGraphics::DrawAll()
 /****************************************************************************************/
 /*                                      Event  Part                                     */
 /****************************************************************************************/
-void DirectXGraphics::OnResize(int width, int height)
+void DirectXGraphics::UpdateRenderSceneViewPort(int pos_x, int pos_y, int width, int height)
 {
-    // configure viewport
-
     D3D11_VIEWPORT vp;
     ZeroMemory(&vp, sizeof(vp));
     vp.Width = static_cast<FLOAT>(width);
     vp.Height = static_cast<FLOAT>(height);
     vp.MinDepth = 0.0f;
     vp.MaxDepth = 1.0f;
-    vp.TopLeftX = 0;
-    vp.TopLeftY = 0;
+    vp.TopLeftX = static_cast<FLOAT>(pos_x);
+    vp.TopLeftY = static_cast<FLOAT>(pos_y);
     pContext->RSSetViewports(1u, &vp);
+}
 
-    // pDepthStencilView
-    D3D11_TEXTURE2D_DESC depthStencilDesc = {};
-    depthStencilDesc.Width = width;
-    depthStencilDesc.Height = height;
-    depthStencilDesc.MipLevels = 1u;
-    depthStencilDesc.ArraySize = 1u;
-    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    depthStencilDesc.SampleDesc.Count = 1u;
-    depthStencilDesc.SampleDesc.Quality = 0u;
-    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
-    GFX_THROW_INFO(pDevice->CreateTexture2D(&depthStencilDesc, nullptr, &pDepthStencil));
-    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
-    depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-    depthStencilViewDesc.Flags = 0u;
-    depthStencilViewDesc.Texture2D.MipSlice = 0u;
-    GFX_THROW_INFO(pDevice->CreateDepthStencilView(pDepthStencil.Get(), &depthStencilViewDesc, &pDepthStencilView));
-
+void DirectXGraphics::OnResize(int width, int height)
+{
+#ifdef DEBUG
+    std::cout << "OnResize" << std::endl;
+#endif
+    CreateBuffers(width, height);
 }
 
 
@@ -380,21 +361,30 @@ void DirectXGraphics::CreateDevice()
 
     LOG("   CreateDevice end")
 }
-void DirectXGraphics::CreateRenderTarget()
+void DirectXGraphics::CreateBuffers(int width, int height)
 {
-    LOG("CreateRenderTarget begin")
-    wrl::ComPtr<ID3D11Resource> pBackBuffer = nullptr;
+    wrl::ComPtr<ID3D11Texture2D> pBackBuffer = nullptr;
+    pRenderTargetView = nullptr;
+    pSwap->ResizeBuffers(0u, width, height, DXGI_FORMAT_UNKNOWN, 0u);
     GFX_THROW_INFO(pSwap->GetBuffer(0u, __uuidof(ID3D11Texture2D), &pBackBuffer));
-    GFX_THROW_INFO(pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &pTarget));
-    LOG("   CreateRenderTarget end")
-}
-void DirectXGraphics::ClearupDevice()
-{
+    GFX_THROW_INFO(pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &pRenderTargetView));
     
-}
-void DirectXGraphics::ClearupRenderTarget()
-{
-    
+    // create depth stencil buffer
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil = nullptr;
+    // pDepthStencilView
+    D3D11_TEXTURE2D_DESC depthStencilDesc = {};
+    depthStencilDesc.Width = width;
+    depthStencilDesc.Height = height;
+    depthStencilDesc.MipLevels = 1u;
+    depthStencilDesc.ArraySize = 1u;
+    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthStencilDesc.SampleDesc.Count = 1u;
+    depthStencilDesc.SampleDesc.Quality = 0u;
+    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    GFX_THROW_INFO(pDevice->CreateTexture2D(&depthStencilDesc, nullptr, &pDepthStencil));
+
+    GFX_THROW_INFO(pDevice->CreateDepthStencilView(pDepthStencil.Get(), nullptr, &pDepthStencilView));
 }
 
 

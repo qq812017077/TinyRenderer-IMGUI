@@ -14,11 +14,6 @@ class Graphics
 protected:
     Graphics();
 
-    virtual void CreateDevice() = 0;
-    virtual void CreateRenderTarget() = 0;
-    virtual void ClearupDevice() = 0;
-    virtual void ClearupRenderTarget() = 0;
-
     virtual void DrawAll() = 0;
     
     // Shader Operation
@@ -55,6 +50,7 @@ public:
     virtual void DrawTestTriangle(float angle=0.0f) = 0;
     
     //Events
+    virtual void UpdateRenderSceneViewPort(int pos_x, int pos_y, int width, int height) = 0;
     virtual void OnResize(int width, int height) = 0;
 
 private:

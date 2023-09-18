@@ -2,6 +2,7 @@
 #include "core\Singleton.h"
 #include "Keyboard.h"
 #include "Mouse.h"
+
 namespace Input
 {
     enum class EditorCommand : unsigned int
@@ -35,6 +36,26 @@ namespace Input
     class InputSystem : public Singleton<InputSystem>
     {   
         public:
+            void Initialize()
+            {
+                
+            }
+            void Tick()
+            {
+                m_keyboard->Tick();
+                m_mouse->Tick();
+            }
+
+            void OnKey(int key, int action)
+            {
+                // m_keyboard->OnKey(key, action);
+            }
+            void OnCursorPos(double current_cursor_x, double current_cursor_y)
+            {
+                // m_mouse->OnCursorPos(current_cursor_x, current_cursor_y);
+            }
+
+        public: // static interface
             static void RegisterInput(Keyboard& keyboard, Mouse& mouse)
             {
                 auto& inputSystem = InputSystem::Get();

@@ -9,6 +9,10 @@ struct alignas(4) Vector2
     float y;
     Vector2() = default;
     Vector2(float x, float y) : x(x), y(y) {}
+
+    bool operator==(const Vector2& v) const ;
+
+    bool operator!=(const Vector2& v) const ;
 };
 
 struct alignas(4) Vector3  

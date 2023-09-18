@@ -3,10 +3,10 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include "Level.h"
 
 namespace TinyEngine
 {
-    class Level;
     struct WorldRes
     {
         std::string              m_name;

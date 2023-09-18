@@ -45,6 +45,8 @@ public:
         bool isMouseMiddleDown = Input::InputSystem::GetMouseButton(Mouse::MouseButton::Middle);
         float scroll = Input::InputSystem::GetMouseScrollWheel();
         // std::cout << "scroll: " << scroll << std::endl;
+        // std::cout << "isMouseRightDown: " << isMouseRightDown << std::endl;
+        // std::cout << "isMouseMiddleDown: " << isMouseMiddleDown << std::endl;
         float dx = Input::InputSystem::GetMouseAxisX();
         float dy = Input::InputSystem::GetMouseAxisY();
         if(isMouseMiddleDown)

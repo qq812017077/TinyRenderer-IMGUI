@@ -11,8 +11,6 @@ std::queue<Material*> Graphics::m_WaitForLoadMaterials;
 Graphics::Graphics()
 {
     LOG("base Graphics  constructor begin")
-    // CreateDevice();
-    // CreateRenderTarget();
     LOG("base Graphics  constructor end")
 }
 

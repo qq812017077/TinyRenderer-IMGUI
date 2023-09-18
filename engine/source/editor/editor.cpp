@@ -1,5 +1,5 @@
-#include "editor.h"
-#include "engine.h"
+#include "Editor.h"
+#include "Engine.h"
 #include <cassert>
 #include <iomanip>
 #include "core/EngineException.h"
@@ -23,7 +23,7 @@ namespace TinyEngine
         assert(engine_runtime);
         m_engine_runtime = engine_runtime;
         m_editor_ui      = std::make_shared<EditorUI>(this);
-        
+        m_editor_ui->initialize();
         // if win32 , use win32 window
 #ifdef _WIN32
         pWnd = std::make_unique<Win32Window>(1280, 720, L"TinyRenderer");
@@ -67,6 +67,14 @@ namespace TinyEngine
     void Editor::Clear()
     {
         m_engine_runtime = nullptr;
+    }
+
+    
+    void   Editor::onWindowChanged(float pos_x, float pos_y, float width, float height) const
+    {
+        // we need to reset camera aspect
+        // we need to reset viewport
+        pWnd->Gfx()->UpdateRenderSceneViewPort(static_cast<int>(pos_x), static_cast<int>(pos_y), static_cast<int>(width), static_cast<int>(height));
     }
 };
 

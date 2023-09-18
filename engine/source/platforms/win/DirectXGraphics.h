@@ -39,12 +39,11 @@ public:
     ID3D11Device* GetDevice() const noexcept { return pDevice.Get(); }
     ID3D11DeviceContext* GetContext() const noexcept { return pContext.Get(); }
     //Events
-    void OnResize(int width, int height) override;
+    virtual void UpdateRenderSceneViewPort(int pos_x, int pos_y, int width, int height) override;
+    virtual void OnResize(int width, int height) override;
 protected:
-    void CreateDevice() override;
-    void CreateRenderTarget() override;
-    void ClearupDevice() override;
-    void ClearupRenderTarget() override;
+    void CreateDevice() ;
+    void CreateBuffers(int width, int height);
 
     std::shared_ptr<VertexShader> CreateVertexShader(const std::string& path) override;
     std::shared_ptr<PixelShader> CreatePixelShader(const std::string& path) override;
@@ -63,7 +62,7 @@ private:
     wrl::ComPtr<ID3D11Device> pDevice= nullptr;
     wrl::ComPtr<ID3D11DeviceContext> pContext = nullptr;
     wrl::ComPtr<IDXGISwapChain> pSwap = nullptr;
-    wrl::ComPtr<ID3D11RenderTargetView> pTarget = nullptr;
+    wrl::ComPtr<ID3D11RenderTargetView> pRenderTargetView = nullptr;
     wrl::ComPtr<ID3D11DepthStencilView> pDepthStencilView = nullptr;
     wrl::ComPtr<ID3D11Buffer> pFrameConstantBuffer = nullptr;
     wrl::ComPtr<ID3D11Buffer> pLightingConstantBuffer = nullptr;

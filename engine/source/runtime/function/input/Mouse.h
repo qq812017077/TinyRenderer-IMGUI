@@ -18,6 +18,22 @@ enum class MouseState
     INVALID
 };
 
+namespace Input
+{
+    enum MouseButton: int
+    {
+        Left = 0,
+        Right = 1,
+        Middle = 2
+    };
+
+    enum MouseButtonState : int
+    {
+        PRESSED = 0,
+        RELEASED = 1
+    };
+}
+
 class Mouse
 {
 friend class Window;
@@ -62,7 +78,7 @@ public:
     ~Mouse() {}
 
     bool IsEmpty() const { return m_mouseBuffer.empty(); }
-    void Update() noexcept { m_MouseStatePrev = m_MouseState; m_last_x = m_x; m_last_y = m_y; m_wheelDeltaCarry = 0; }
+    void Tick() noexcept { m_MouseStatePrev = m_MouseState; m_last_x = m_x; m_last_y = m_y; m_wheelDeltaCarry = 0; }
     //mouse events
     bool GetMouseButton(MouseButton button) const { return m_MouseState[button]; }
     bool GetMouseButtonDown(MouseButton button) const { return !m_MouseStatePrev[button] && m_MouseState[button]; }

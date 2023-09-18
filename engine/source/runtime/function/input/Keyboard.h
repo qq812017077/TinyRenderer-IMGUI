@@ -2,7 +2,7 @@
 #include <queue>
 #include <bitset>
 #include "KeyCode.h"
-enum class KeyState
+enum class KeyState : int
 {
     KEY_PRESSED,
     KEY_RELEASED,
@@ -36,7 +36,7 @@ public:
     Keyboard& operator=(const Keyboard&) = delete;
     ~Keyboard() {}
 
-    void Update() noexcept { m_keyStatesPrev = m_keyStates; }
+    void Tick() noexcept { m_keyStatesPrev = m_keyStates; }
     //key events 
     bool GetKey(Input::KeyCode keycode) const { return m_keyStates[keycode]; }
     bool GetKeyDown(Input::KeyCode keycode) const

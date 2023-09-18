@@ -9,10 +9,10 @@
 #include <string>
 #include "surfaces/SurfaceUI.h"
 
+class GameObject;
 namespace TinyEngine
 {
     class Editor;
-    class GameObject;
     enum class EditorAxisMode : int
     {
         TranslateMode = 0,
@@ -41,10 +41,10 @@ namespace TinyEngine
         
         void showEditorUI();
         void showEditorMenu(bool* p_open);
-        void showEditorWorldObjectsWindow(bool* p_open);
-        void showEditorFileContentWindow(bool* p_open);
+        void showEditorHierarchysWindow(bool* p_open);
+        void showEditorProjectWindow(bool* p_open);
         void showEditorGameWindow(bool* p_open);
-        void showEditorDetailWindow(bool* p_open);
+        void showEditorInspectorWindow(bool* p_open);
         
         void onReset();
 
@@ -56,14 +56,23 @@ namespace TinyEngine
         EditorUI(Editor* editor);
         EditorUI::~EditorUI();
         bool OnTick(UIState* uistate) override;
-        void draw_ui() override;
+        
+        void draw_frame() override;
+        void processEditorCommand();
         void clear() override;
+    
+    protected:
+        void registerInput() override;
     private:
         Editor* m_editor {nullptr};
 
         std::unordered_map<std::string, std::function<void(std::string, void*)>> m_editor_ui_creator;
         std::unordered_map<std::string, unsigned int>                            m_new_object_index_map;
 
+        bool focused_game_engine;
+        Vector2 m_engine_window_pos {0.0f, 0.0f};
+        Vector2 m_engine_window_size {1280.0f, 768.0f};
+        
         bool m_is_editor_mode {true};
         int  m_key_state {0};
 

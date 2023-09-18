@@ -1,7 +1,8 @@
-#include "engine.h"
+#include "Engine.h"
 #include "scene/SceneManager.h"
 #include "world/WorldManager.h"
 #include "surfaces/SurfaceUI.h"
+#include "input/Input.h"
 #include "FrameBuffer.h"
 #include "Graphics.h"
 namespace TinyEngine
@@ -26,7 +27,7 @@ namespace TinyEngine
         // 4. initialize sceneManager
         SceneManager::Get().Initialize();
         // 5. initialize inputSystem
-        
+        Input::InputSystem::Get().Initialize();
 
         // initialize frame buffer
         m_framebuffer = new FrameBuffer();
@@ -54,6 +55,7 @@ namespace TinyEngine
         // scene manager
         SceneManager::Get().Tick(m_framebuffer);
         // input system
+        Input::InputSystem::Get().Tick();
     }
     bool Engine::rendererTick()
     {
@@ -61,8 +63,9 @@ namespace TinyEngine
         m_graphics->OnTick(m_framebuffer);
         // 2. render ui
         bool not_quit = m_surface_ui->OnTick(m_framebuffer->m_uistate.get());
-        //release framebuffer
+        
         m_graphics->EndFrame();
+        //release framebuffer
         return not_quit;
     }
 

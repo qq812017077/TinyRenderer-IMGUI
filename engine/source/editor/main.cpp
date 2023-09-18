@@ -1,8 +1,8 @@
 
 #include <unordered_set>
 #include <memory>
-#include "engine.h"
-#include "editor.h"
+#include "Engine.h"
+#include "Editor.h"
 
 class A
 {

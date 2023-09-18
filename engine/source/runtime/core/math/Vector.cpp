@@ -1,14 +1,29 @@
 //Vector3.cpp 
 #include "Vector.h"
 #include "Matrix.h"
-#include<iostream>
-  
+#include <iostream>
+#include <cmath>
 const double uZero = 1e-6;  
 const Vector3 Vector3::zero = Vector3(0.0f, 0.0f, 0.0f);
 const Vector3 Vector3::one = Vector3(1.0f, 1.0f, 1.0f);
 const Vector3 Vector3::up = Vector3(0.0f, 1.0f, 0.0f);
 const Vector3 Vector3::right = Vector3(1.0f, 0.0f, 0.0f);
 const Vector3 Vector3::forward = Vector3(0.0f, 0.0f, 1.0f);
+
+/****************************************************************************************/
+//Vector2.cpp
+/****************************************************************************************/
+bool Vector2::operator==(const Vector2& v) const
+{
+    return std::fabsf(x - v.x) < uZero && std::fabsf(y - v.y) < uZero;
+}
+
+bool Vector2::operator!=(const Vector2& v) const
+{
+    return std::fabsf(x - v.x) > uZero || std::fabsf(y - v.y) > uZero;
+}
+
+
 /****************************************************************************************/
 //Vector3.cpp
 /****************************************************************************************/
