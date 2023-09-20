@@ -39,7 +39,11 @@ public:
     bool SetVector(const char * varName, Vector4& vec) override;
     
     // void Update(UniformBuffer * buffer);
-	static HRESULT LoadShaderInfo(const char *shaderName, ID3D11ShaderReflection* pShaderReflection, ShaderDesc * pShaderDesc);
+    static HRESULT LoadShader(DirectXGraphics& gfx, const std::wstring& path, LPCSTR entryPoint, LPCSTR shaderModel, 
+    wrl::ComPtr<ID3D11VertexShader>& pVertexShaderOut, wrl::ComPtr<ID3DBlob> & pBlobOut, wrl::ComPtr<ID3D11ShaderReflection> & pShaderReflectionOut);
+    static HRESULT LoadShader(DirectXGraphics& gfx, const std::wstring& path, LPCSTR entryPoint, LPCSTR shaderModel, 
+    wrl::ComPtr<ID3D11PixelShader>& pPixelShaderOut, wrl::ComPtr<ID3DBlob> & pBlobOut, wrl::ComPtr<ID3D11ShaderReflection> & pShaderReflectionOut);
+	static HRESULT LoadShaderInfo(ID3D11ShaderReflection* pShaderReflection, ShaderDesc * pShaderDesc);
 
 protected:
     CBufferData* GetCommonCBufferBySlot(UINT slot);

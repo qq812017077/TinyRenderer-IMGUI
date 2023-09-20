@@ -7,6 +7,7 @@
 #include "Graphics.h"
 namespace TinyEngine
 {
+    bool g_is_editor_mode {true};
     Engine::Engine()
     {
     }

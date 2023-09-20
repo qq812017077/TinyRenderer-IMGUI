@@ -8,12 +8,11 @@
 #include "Window.h"
 #include <memory>
 #include "ImguiManager.h"
-#include "EditorUI.h"
 
 namespace TinyEngine
 {
     class Engine;
-
+    class EditorUI;
     class Editor : public Singleton<Editor>
     {
         friend class EditorUI;

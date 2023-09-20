@@ -1,5 +1,6 @@
 #include "Editor.h"
 #include "Engine.h"
+#include "EditorUI.h"
 #include <cassert>
 #include <iomanip>
 #include "core/EngineException.h"

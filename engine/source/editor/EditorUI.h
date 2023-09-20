@@ -8,6 +8,7 @@
 #include <functional>
 #include <string>
 #include "surfaces/SurfaceUI.h"
+#include "core/base/macro.h"
 
 class GameObject;
 namespace TinyEngine
@@ -25,7 +26,7 @@ namespace TinyEngine
     {
     private:
         // void        onFileContentItemClicked(EditorFileNode* node);
-        // void        drawSelectedEntityAxis();
+        void        drawSelectedEntityAxis();
         // void        moveEntity(float     new_mouse_pos_x,
         //                        float     new_mouse_pos_y,
         //                        float     last_mouse_pos_x,
@@ -34,7 +35,7 @@ namespace TinyEngine
         // void        updateCursorOnAxis(Vector2 cursor_uv);
         // void        buildEditorFileAssstsUITree(Edi?torFileNode* node);
         // void        processEditorCommand();
-        // void        drawAxisToggleButton(const char* string_id, bool check_state, EditorAxisMode axis_mode);
+        void        drawAxisToggleButton(const char* string_id, bool check_state, EditorAxisMode axis_mode);
         // void        createComponentUI(Reflection::ReflectionInstance& instance);
         // void        createLeafNodeUI(Reflection::ReflectionInstance& instance);
         // std::string getLeafUINodeParentLabel();
@@ -45,11 +46,12 @@ namespace TinyEngine
         void showEditorProjectWindow(bool* p_open);
         void showEditorGameWindow(bool* p_open);
         void showEditorInspectorWindow(bool* p_open);
-        
+        void buildHierarchysUITree(GameObject* node);
         void onReset();
 
         GameObject* getSelectedGameObject() const;
         void     onGameObjectSelected(size_t selected_gobject_id);
+        std::string getLeafUINodeParentLabel();
         void     onDeleteSelectedGameObject();
 
     public:
@@ -75,10 +77,11 @@ namespace TinyEngine
         
         bool m_is_editor_mode {true};
         int  m_key_state {0};
+        EditorAxisMode m_axis_mode {EditorAxisMode::TranslateMode};
 
         // 0 for x, 1 for y, 2 for z
         // 0 for yoz, 1 for xoz, 2 for xoy
-        size_t    m_selected_gobject_id {0};
+        size_t    m_selected_gobject_id {INVALID_GO_ID};
         Matrix4x4 m_selected_object_matrix {Matrix4x4::Identity()};
 
     };

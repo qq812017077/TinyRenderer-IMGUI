@@ -1,6 +1,7 @@
 #pragma once
 #include "EngineWin.h"
 #include "Window.h"
+#include <vector>
 
 class Win32Window : public Window
 {
@@ -12,8 +13,6 @@ public:
     Win32Window(const Win32Window&) = delete;
     Win32Window& operator=(const Win32Window&) = delete;
     
-    void BindImgui() override;
-
     //Window 
     void ShowMessageBox(const std::string& title, const std::string& message) const noexcept override;
     void SetTitle(const std::wstring& title);
@@ -21,10 +20,12 @@ public:
     HWND GetHwnd() const noexcept { return hWnd; }
 protected:
     void CloseWindow() noexcept;
+    // registerMouseRawInputDevice();
 private:
     LRESULT HandleMsg(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
     HWND hWnd;
     bool bindedImgui = false;
+    std::vector<char> rawInputBuffer;
 };
 
 class WindowClass

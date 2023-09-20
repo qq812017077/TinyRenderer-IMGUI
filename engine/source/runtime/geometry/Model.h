@@ -29,6 +29,7 @@ inline XID StringToID(std::string_view str)
     return hash(str);
 }
 
+class Material;
 struct Model
 {
     struct Node
@@ -84,12 +85,17 @@ struct Model
         {
             return m_Properties.find(StringToID(name)) != m_Properties.end();
         }
+
+        std::string name;
         private:
         std::unordered_map<XID, Property> m_Properties;
     };
+    std::string model_path;
     std::unique_ptr<Node> pRoot;
     std::vector<MeshData> meshdatas;
     std::vector<MaterialData> materialdatas;
     Bounds bounds;
+
+    std::vector<std::shared_ptr<Material>> GenerateMaterials();
     static bool Load(const std::string& filePath, Model& model);
 };

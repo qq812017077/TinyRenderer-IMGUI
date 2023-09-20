@@ -20,7 +20,7 @@ Renderer::Renderer(Mesh mesh, std::shared_ptr<Material> pMaterial)
 Renderer::~Renderer()
 {
     if(pMaterial) pMaterial->UnBind(this);
-    std::cout << "Renderer destructor called" << std::endl;
+    // std::cout << "Renderer destructor called" << std::endl;
 }
 
 void Renderer::Init()
@@ -112,12 +112,12 @@ void Renderer::SetSharedMaterial(std::shared_ptr<Material> pMaterial)
         if(refCount == 1) return;
         // UnBind and CreateInstance
         this->pMaterial->UnBind(this);
-        this->pMaterial = Material::CreateInstance(pMaterial);
+        this->pMaterial = pMaterial;
         this->pMaterial->Bind(this);
     }else
     {
         this->pMaterial->UnBind(this);   //unbind old material
-        this->pMaterial = refCount == 0? pMaterial : Material::CreateInstance(pMaterial);
+        this->pMaterial = pMaterial;
         this->pMaterial->Bind(this);      //bind new material
     }
     
@@ -144,7 +144,7 @@ void Renderer::ClearObjBuffer()
 
 void Renderer::UpdateObjBuffer(IShaderHelper & shaderHelper)
 {
-    auto worldMatrix = pGameObject->transform.GetWorldMatrix();
+    auto worldMatrix = pGameObject->transform().GetWorldMatrix();
     shaderHelper.SetGlobalMatrix("g_World", worldMatrix);
     shaderHelper.SetGlobalMatrix("g_WorldInv", worldMatrix.Inverse());
 }

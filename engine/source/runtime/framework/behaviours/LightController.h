@@ -3,6 +3,8 @@
 #include "ui/GUI.h"
 #include "components/Light.h"
 #include "input/Input.h"
+#include "Texture.h"
+#include "object/GameObject.h"
 class LightController : public Behaviour
 {
 public:
@@ -10,76 +12,67 @@ public:
 
     void Init() override
     {
-        pLightGO = GameObject::Find("light");
-        pPointLightGO = GameObject::Find("pointLight");
+        auto pMat = Material::Create("shaders/DefaultVertexShader.hlsl", "shaders/UnlitPixelShader.hlsl", "Unlit-Material");
+        pLightGO = Light::CreateDirectionalLight("dirLight");
+        pPointLightGO = Light::CreatePointLight("pointLight");
         if(pLightGO) pLight = pLightGO->GetComponent<Light>();
         if(pPointLightGO) pPointLight = pPointLightGO->GetComponent<Light>();
         
-        pRedLittleCube = Primitive::CreateCube("red littleCube");
-        pRedLittleCube->transform.SetScale({ 0.1f, 0.1f, 0.1f });
-        pRedLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::Red());
-
         if(pLight)
         {
             pLight->pTransform->SetEulerAngle({ 90.0f, 0.0f, 0.0f });
-            eulerAngle = pLight->pTransform->GetEulerAngle();
+            pLight->SetIntensity(0.2f);
         }
         
         if(pPointLight)
         {
             pWhiteLittleCube = Primitive::CreateCube("white littleCube");
+            pWhiteLittleCube->GetComponent<Renderer>()->SetMaterial(pMat);
             pWhiteLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::White());
-            pWhiteLittleCube->transform.SetPosition({ 0.0f, 1.5f, 0.0f });
-            pWhiteLittleCube->transform.SetScale({ 0.1f, 0.1f, 0.1f });
-            
+            pWhiteLittleCube->transform().SetPosition({ 0.0f, 0.f, 0.0f });
+            pWhiteLittleCube->transform().SetScale({ 1.f, 1.f, 1.f });
+            pWhiteLittleCube->transform().SetParent(pPointLightGO->transform());
+            pWhiteLittleCube->transform().SetLocalPosition({ 0.0f, 0.0f, 0.0f });
             pointLightPos = { 0.3f, 1.5f, 0.0f };
-            pPointLight->pTransform->SetPosition(pointLightPos);
-            pPointLight->SetIntensity(1.0f);
+            pPointLight->pTransform->SetPosition({ 0.0f, 100.f, 0.0f });
+            pPointLight->SetIntensity(0.5f);
         }
     }
 
     void OnUpdate(float deltaTime) override
     {
-        if(pLight)
-        {
-            pLight->pTransform->SetEulerAngle(eulerAngle);
-            if(pRedLittleCube != nullptr)
-                pRedLittleCube->transform.SetPosition(pLight->pTransform->forward() * 1.0f);
-            pLight->SetIntensity(intensity);
-        }
-
-        if(pPointLight)
-        {
-            pPointLight->pTransform->SetPosition(pointLightPos);
-            pWhiteLittleCube->transform.SetPosition(pointLightPos);
-        }
         
     }
 
     void OnGUI() override
     {
+        GUI::Begin("Lights");
         if(pLight)
         {
-            GUI::Begin("Directional Light");
+            GUI::Separator();
+            bool active = pLight->GetGameObject()->IsActived();
+            GUI::Checkbox("Active", &active);
+            pLight->GetGameObject()->SetActive(active);
+            auto eulerAngle = pLight->pTransform->GetEulerAngle();
             GUI::SliderFloat("Euler Angle x", &eulerAngle.x, -180.0f, 180.0f);
             GUI::SliderFloat("Euler Angle y", &eulerAngle.y, -180.0f, 180.0f);
             GUI::SliderFloat("Euler Angle z", &eulerAngle.z, -180.0f, 180.0f);
-            GUI::SliderFloat("Intensity", &intensity, 0.0f, 1.0f);
-            auto & qua = pLight->pTransform->GetRotation();
-            GUI::Text("Light quaternion: (%.2f, %.2f, %.2f, %.2f)", qua.x, qua.y, qua.z, qua.w);
-            //show Light direction
-            auto & forward = pLight->pTransform->forward();
-            GUI::Text("Light Direction: (%.2f, %.2f, %.2f)", forward.x, forward.y, forward.z);
-            GUI::End();
+            auto intensity = pLight->GetIntensity();
+            GUI::SliderFloat("Dir Intensity", &intensity, 0.0f, 1.0f);
+            pLight->SetIntensity(intensity);
+            pLight->pTransform->SetEulerAngle(eulerAngle);
         }
-        
         if(pPointLight)
         {
-            GUI::Begin("Point Light");
-            // update pointLightPos
-            GUI::DragFloat3("Point Light Position", reinterpret_cast<float*>(&pointLightPos), 0.1f);
-            GUI::End();
+            GUI::Separator();
+            bool active = pPointLight->GetGameObject()->IsActived();
+            GUI::Checkbox("Active", &active);
+            pPointLight->GetGameObject()->SetActive(active);
+            auto intensity = pPointLight->GetIntensity();
+            GUI::SliderFloat("Point Intensity", &intensity, 0.0f, 1.0f);
+            pPointLight->SetIntensity(intensity);
         }
+        GUI::End();
     }
 
 private:
@@ -87,9 +80,7 @@ private:
     GameObject * pPointLightGO;
     Light * pLight;
     Light * pPointLight;
-    Vector3 eulerAngle;
-    float intensity = 1.0f;
-    GameObject * pRedLittleCube;
+    
     Vector3 pointLightPos;
     GameObject * pWhiteLittleCube;
 };

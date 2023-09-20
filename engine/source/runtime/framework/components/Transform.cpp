@@ -1,6 +1,7 @@
 #include "Transform.h"
 #include <cmath>
 #include "Quaternion.h"
+#include "object/GameObject.h"
 Transform::Transform():
     position(0.0f,0.0f,0.0f),
     rotation(0.0f,0.0f,0.0f,1.0f),
@@ -288,11 +289,18 @@ Transform* Transform::GetParent() const
 
 Transform* Transform::FindChild(const char * name) const
 {
+    for(auto & pChild : children)
+    {
+        auto pGameObject = pChild->pGameObject;
+        auto name = pGameObject->GetName();
+        if(name == name) return pChild;
+    }
     return nullptr;
 }
 
 Transform* Transform::GetChild(int index) const
 {
+    if(index < children.size()) return children[index];
     return nullptr;
 }
 
@@ -303,7 +311,7 @@ bool Transform::IsChildOf(Transform * parent) const
 
 int Transform::GetChildCount() const
 {
-    return 0;
+    return children.size();
 }
 void Transform::DetachChildren()
 {

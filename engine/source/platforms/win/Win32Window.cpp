@@ -36,21 +36,25 @@ Win32Window::Win32Window(int width, int height, const wchar_t * name): Window(wi
 
     pGfx = std::make_unique<DirectXGraphics>(hWnd);
     
+    //register mouse raw input device
+    RAWINPUTDEVICE rid;
+    rid.usUsagePage = 0x01; // mouse page
+    rid.usUsage = 0x02; // mouse usage
+    rid.dwFlags = 0;
+    rid.hwndTarget = nullptr;
+    if(!RegisterRawInputDevices(&rid, 1, sizeof(rid)))
+    {
+        throw WND_LAST_EXCEPT();
+    }
+
     ::ShowWindow(hWnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hWnd);
-    LOG("construct Window..  done");
-}
 
-void Win32Window::BindImgui()
-{
-    ImGui_ImplWin32_Init(hWnd);
-    bindedImgui = true;
+    LOG("construct Window..  done");
 }
 
 Win32Window::~Win32Window()
 {
-    if(bindedImgui)
-        ImGui_ImplWin32_Shutdown();
     ::DestroyWindow(hWnd);
 }
 
@@ -85,7 +89,7 @@ LRESULT Win32Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
         {
             width = LOWORD(lParam);
             height = HIWORD(lParam);
-            pGfx->OnResize(width, height);
+             pGfx->OnResize(width, height);
             return 0;
         }
     case WM_SYSCOMMAND:
@@ -200,6 +204,27 @@ LRESULT Win32Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
                 OnMouseWheelDelta(delta);
                 break;
             }
+    }
+    
+    switch (msg)
+    {
+    case WM_INPUT:
+        UINT rawInputSize;
+        if(GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &rawInputSize, sizeof(RAWINPUTHEADER)) == -1)
+            break;
+        rawInputBuffer.resize(rawInputSize);
+        if(GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawInputBuffer.data(), &rawInputSize, sizeof(RAWINPUTHEADER)) != rawInputSize)
+            break;
+        auto& rawInput = reinterpret_cast<const RAWINPUT&>(*rawInputBuffer.data());
+        if(rawInput.header.dwType == RIM_TYPEMOUSE)
+        {
+            if(rawInput.data.mouse.usFlags == MOUSE_MOVE_RELATIVE)
+            {
+                OnMouseMoveDelta(rawInput.data.mouse.lLastX, rawInput.data.mouse.lLastY);
+            }
+        }
+        break;
+    
     }
     return DefWindowProcW(hwnd, msg, wParam, lParam);
 }

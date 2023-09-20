@@ -16,7 +16,6 @@ public:
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
 
-    virtual void BindImgui() = 0;
     int GetWidth() const noexcept { return width; }
     int GetHeight() const noexcept { return height; }
     //Keyboard events
@@ -50,6 +49,7 @@ public: // events
     typedef std::function<void(int, unsigned int)>  onCharModsFunc;
     
     typedef std::function<void(int, int)>           onMouseButtonFunc;
+    typedef std::function<void(double, double)>     onMouseMoveDeltaFunc;
     typedef std::function<void(double, double)>     onCursorPosFunc;
 
     typedef std::function<void(int)>                onCursorEnterFunc;
@@ -63,6 +63,7 @@ public: // events
     void        registerOnCharFunc(onCharFunc func) { m_onCharFunc.push_back(func); }
     void        registerOnCharModsFunc(onCharModsFunc func) { m_onCharModsFunc.push_back(func); }
     void        registerOnMouseButtonFunc(onMouseButtonFunc func) { m_onMouseButtonFunc.push_back(func); }
+    void        registerOnMouseDeltaFunc(onMouseMoveDeltaFunc func) { m_onMouseMoveDeltaFunc.push_back(func); }
     void        registerOnCursorPosFunc(onCursorPosFunc func) { m_onCursorPosFunc.push_back(func); }
     void        registerOnCursorEnterFunc(onCursorEnterFunc func) { m_onCursorEnterFunc.push_back(func); }
     void        registerOnScrollFunc(onScrollFunc func) { m_onScrollFunc.push_back(func); }
@@ -76,6 +77,7 @@ protected:
     void OnKeyReleased(unsigned char keycode) noexcept;
     void OnChar(unsigned char character) noexcept;
     void OnMouseMove(int x, int y) noexcept;
+    void OnMouseMoveDelta(int x, int y) noexcept;
     void OnMouseLeave() noexcept;
     void OnMouseEnter() noexcept;
     void OnMouseLeftPressed() noexcept;
@@ -93,6 +95,7 @@ protected:
     std::vector<onCharFunc>        m_onCharFunc;
     std::vector<onCharModsFunc>    m_onCharModsFunc;
     std::vector<onMouseButtonFunc> m_onMouseButtonFunc;
+    std::vector<onMouseMoveDeltaFunc>  m_onMouseMoveDeltaFunc;
     std::vector<onCursorPosFunc>   m_onCursorPosFunc;
     std::vector<onCursorEnterFunc> m_onCursorEnterFunc;
     std::vector<onScrollFunc>      m_onScrollFunc;

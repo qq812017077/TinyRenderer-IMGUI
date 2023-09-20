@@ -26,7 +26,6 @@ public:
     ~HLSLVertexShader() ;
 
     ID3D11VertexShader* Get() const;
-    bool CreateTexture2D(Texture * pInputTex, ID3D11Texture2D ** ppOutputTexture2D);
     bool CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler);
     void SetInputLayout() override;
     
@@ -63,7 +62,6 @@ public:
     ~HLSLPixelShader() ;
     
     ID3D11PixelShader* Get() const ;
-    bool CreateTexture2D(Texture * pInputTex, ID3D11Texture2D ** ppOutputTexture2D);
     bool CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler);
     
     void UpdateConstantBuffer() override;

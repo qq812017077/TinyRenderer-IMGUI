@@ -54,6 +54,11 @@ namespace Input
             {
                 // m_mouse->OnCursorPos(current_cursor_x, current_cursor_y);
             }
+            void OnMouseMoveDelta(double delta_x, double delta_y)
+            {
+                // std::cout << "delta_x: " << delta_x << " delta_y: " << delta_y << std::endl;
+                // m_mouse->OnMouseMoveDelta(delta_x, delta_y);
+            }
 
         public: // static interface
             static void RegisterInput(Keyboard& keyboard, Mouse& mouse)

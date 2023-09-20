@@ -78,7 +78,14 @@ public:
     ~Mouse() {}
 
     bool IsEmpty() const { return m_mouseBuffer.empty(); }
-    void Tick() noexcept { m_MouseStatePrev = m_MouseState; m_last_x = m_x; m_last_y = m_y; m_wheelDeltaCarry = 0; }
+    void Tick() noexcept { 
+        m_MouseStatePrev = m_MouseState; 
+        m_last_x = m_x; 
+        m_last_y = m_y; 
+        m_wheelDeltaCarry = 0;
+        m_deltaX = 0;
+        m_deltaY = 0;
+    }
     //mouse events
     bool GetMouseButton(MouseButton button) const { return m_MouseState[button]; }
     bool GetMouseButtonDown(MouseButton button) const { return !m_MouseStatePrev[button] && m_MouseState[button]; }
@@ -88,8 +95,10 @@ public:
     std::pair<int,int> GetPos() const { return { m_x, m_y }; }
     int GetPosX() const { return m_x; }
     int GetPosY() const { return m_y; }
-    float GetMouseAxisX() const { return float(m_x - m_last_x) * mouseSensitivity; }
-    float GetMouseAxisY() const { return float(m_last_y - m_y) * mouseSensitivity; }
+    // float GetMouseAxisX() const { return float(m_x - m_last_x) * mouseSensitivity; }
+    // float GetMouseAxisY() const { return float(m_last_y - m_y) * mouseSensitivity; }
+    float GetMouseAxisX() const { return float(m_deltaX) * mouseSensitivity; }
+    float GetMouseAxisY() const { return float(-m_deltaY) * mouseSensitivity; }
     float GetWhellScroll() const { return m_wheelDeltaCarry * mouseSensitivity; }
     //read
     MouseEvent Read() { if (m_mouseBuffer.size() > 0) { MouseEvent e = m_mouseBuffer.front(); m_mouseBuffer.pop(); return e; } else { return MouseEvent(); } }
@@ -123,6 +132,7 @@ private:
     }
 
     void OnMouseMove(int x, int y) noexcept { m_x = x; m_y = y; m_mouseBuffer.push(MouseEvent(MouseState::MOVE, *this)); TrimBuffer(); }
+    void OnMouseMoveDelta(int x, int y) noexcept { m_deltaX = x; m_deltaY = y; }
     void OnMouseEnter() noexcept {m_isInWindow = true; m_mouseBuffer.push(MouseEvent(MouseState::ENTER, *this)); TrimBuffer(); }
     void OnMouseLeave() noexcept {m_isInWindow = false; m_mouseBuffer.push(MouseEvent(MouseState::LEAVE, *this)); TrimBuffer(); }
     
@@ -134,7 +144,6 @@ private:
         }
     }
 
-
     std::queue<MouseEvent> m_mouseBuffer;
     std::bitset<3> m_MouseState;
     std::bitset<3> m_MouseStatePrev;
@@ -145,6 +154,8 @@ private:
     int m_y = 0;
     int m_last_x = 0;
     int m_last_y = 0;
+    int m_deltaX = 0;
+    int m_deltaY = 0;
     float mouseSensitivity = 0.1f;
 
     static constexpr unsigned int bufferSize = 16u;

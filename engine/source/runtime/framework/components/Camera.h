@@ -2,6 +2,7 @@
 #include "Component.h"
 class IShaderHelper;
 struct Matrix4x4;
+struct Vector3;
 class Camera : public Component
 {
 public:
@@ -18,7 +19,7 @@ public:
     Matrix4x4 GetViewMatrix();
     // Projection Matrix
     Matrix4x4 GetProjectionMatrix();
-    
+    void LookAt(Vector3 target);
     static void UpdateCameraBuffer(IShaderHelper& shaderHelper);
     static Camera* pActivedCamera;
 protected:

@@ -1,7 +1,9 @@
 #include "Camera.h"
 #include "core/math/Matrix.h"
+#include "core/math/Vector.h"
 #include "components/Transform.h"
 #include "Shader.h"
+#include "d3d11.h"
 Camera* Camera::pActivedCamera = nullptr;
 Camera::Camera():
     fov(60.0f),
@@ -62,6 +64,16 @@ Matrix4x4 Camera::GetProjectionMatrix()
 {
     auto projection = Matrix4x4::Perspective(fov, aspect, nearPlane, farPlane);
     return projection;
+}
+
+void Camera::LookAt(Vector3 target)
+{
+    auto position = pTransform->GetPosition();
+    auto rotation = pTransform->GetRotation();
+    Vector3 forward = Vector3::Normalize(target - position);
+    Vector3 right = Vector3::Normalize(Vector3::Cross(Vector3::up, forward));
+    Vector3 up = Vector3::Normalize(Vector3::Cross(forward, right));
+    pTransform->SetRotation(Quaternion::LookRotation(forward, up));
 }
 
 void Camera::UpdateCameraBuffer(IShaderHelper& shaderHelper)

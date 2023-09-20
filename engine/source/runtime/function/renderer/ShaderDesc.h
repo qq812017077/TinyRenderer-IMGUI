@@ -239,9 +239,9 @@ public:
     }
 	
 	
-	void AddVariable(UINT slot, const char * bufName, UINT startOffset, UINT size)
+	void AddVariable(UINT slot, const char * varName, UINT startOffset, UINT size)
 	{
-		variables.emplace(bufName, std::make_shared<CBufferVariable>(startOffset, size, CBufferBySlot[slot].get()));
+		variables.emplace(varName, std::make_shared<CBufferVariable>(startOffset, size, CBufferBySlot[slot].get()));
 	}
 
 	void AddTexture(UINT slot, const char * name)

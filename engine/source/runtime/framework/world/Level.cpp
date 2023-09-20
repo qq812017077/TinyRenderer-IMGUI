@@ -24,6 +24,7 @@ namespace TinyEngine
 /************************************************************************************************/
 GameObject* Level::addGameObject(GameObject* pGo)
     {
+        if (pGo == nullptr) return nullptr;
         pGameObjectsToCreate.emplace_back(pGo);
         return pGo;
     }
@@ -153,10 +154,10 @@ GameObject* Level::addGameObject(GameObject* pGo)
         assert(pGo);
         if (!pGo) return;
         // destroy all children
-        if(pGo->transform.GetChildCount() > 0)
+        if(pGo->transform().GetChildCount() > 0)
         {
-            for(int i = 0; i < pGo->transform.GetChildCount(); i++) 
-                DestroyGameObject(pGo->transform.GetChild(i)->GetGameObject());
+            for(int i = 0; i < pGo->transform().GetChildCount(); i++) 
+                DestroyGameObject(pGo->transform().GetChild(i)->GetGameObject());
         }
         // add to destroy list
         pGameObjectsToDestroy.emplace_back(pGo);
@@ -248,7 +249,7 @@ GameObject* Level::addGameObject(GameObject* pGo)
         auto m_main_camera = camGO->AddComponent<Camera>();
         camGO->AddComponent<CamController>();
         
-        auto pMat = Material::Load("shaders/DefaultVertexShader.hlsl", "shaders/PhongPS.hlsl");
+        auto pMat = Material::Create("shaders/DefaultVertexShader.hlsl", "shaders/PhongPS.hlsl");
         auto pCubTex = Texture::LoadFrom("res/images/cube.png");
         auto pBrickwallTex = Texture::LoadFrom("res/images/brickwall.jpg");
 
@@ -259,21 +260,34 @@ GameObject* Level::addGameObject(GameObject* pGo)
         lightController->AddComponent<LightController>();
 
         auto plane = addGameObject(Primitive::CreatePlane("plane"));
-        auto pointLight = addGameObject(Light::CreatePointLight("pointLight"));
         
-
         // set plane
-        plane->transform.SetPosition({ 0.0f, -1.0f, 0.0f });
-        plane->transform.SetScale({ 2.0f, 1.0f, 2.0f });
+        plane->transform().SetPosition({ 0.0f, -1.0f, 0.0f });
+        plane->transform().SetScale({ 2.0f, 1.0f, 2.0f });
         plane->GetComponent<Renderer>()->SetMaterial(pMat);
         
         auto cube2 = addGameObject(Primitive::CreateCube("cube2"));
-        cube2->transform.SetPosition({ -1.5f, 0.0f, 0.0f });
+        cube2->transform().SetPosition({ -1.5f, 0.0f, 0.0f });
         cube2->AddComponent<Rotater>();
         auto pRenderer2 = cube2->GetComponent<Renderer>();
         pRenderer2->SetSharedMaterial(pMat);
         pRenderer2->GetMaterial()->SetTexture("_MainTex", pBrickwallTex);    
         return ;
+    }
+
+    void Level::LoadSponzaScene()
+    {
+        auto camGO = CreateGameObject("Cam");
+        auto m_main_camera = camGO->AddComponent<Camera>();
+        camGO->AddComponent<CamController>();
+        
+        camGO->pTransform->SetPosition({ 0.0f, 100.0f, -6.0f });
+        camGO->pTransform->SetEulerAngle({ 30.0f, 0.0f, 0.0f });
+
+        auto lightController = CreateGameObject("LightController");
+        lightController->AddComponent<LightController>();
+
+        auto sponza = addGameObject(GameObject::CreateFromFile("res/models/sponza/sponza.obj"));
     }
 /************************************************************************************************/
 /*                                         Static Methods                                      */

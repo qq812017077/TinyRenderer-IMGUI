@@ -29,7 +29,6 @@ public:
     DirectXGraphics& operator=(const DirectXGraphics&) = delete;
     ~DirectXGraphics();
 
-    void BindImgui() override;
     void EndFrame() override;
     void ClearBuffer(float red, float green, float blue) noexcept override;
     

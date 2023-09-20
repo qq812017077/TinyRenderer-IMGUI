@@ -1,5 +1,5 @@
 #pragma once
-
+#include <iostream>
 #include "Vector.h"
 #include "Matrix.h"
 #include "Quaternion.h"
@@ -32,4 +32,11 @@ struct ColorRGBA
         g(static_cast<unsigned char>(g * 255)),
         b(static_cast<unsigned char>(b * 255)),
         a(static_cast<unsigned char>(a * 255)) {}
+
+    // operator << for std::cout
+    friend std::ostream& operator<<(std::ostream& os, const ColorRGBA& color)
+    {
+        os << "ColorRGBA(" << static_cast<int>(color.r) << ", " << static_cast<int>(color.g) << ", " << static_cast<int>(color.b) << ", " << static_cast<int>(color.a) << ")";
+        return os;
+    }
 };

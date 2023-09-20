@@ -13,18 +13,16 @@ public:
         if(modelGO)
         {
             modelPos = { 3.0f, 0.0f, 0.0f };
-            modelGO->transform.SetPosition(modelPos);
+            modelGO->transform().SetPosition(modelPos);
             modelRot = { 0.0f, 0.0f, 0.0f };
-            modelGO->transform.SetEulerAngle(modelRot);
-            modelGO->transform.SetScale({ 0.01f, 0.01f, 0.01f });
+            modelGO->transform().SetEulerAngle(modelRot);
+            modelGO->transform().SetScale({ 0.01f, 0.01f, 0.01f });
         }
         selectedGO = modelGO;
     }
 
     void OnUpdate(float deltaTime) override
     {
-        modelGO->transform.SetPosition(modelPos);
-        modelGO->transform.SetEulerAngle(modelRot);
     }
     void OnGUI() override
     {

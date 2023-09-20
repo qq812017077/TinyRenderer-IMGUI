@@ -10,14 +10,17 @@ ImguiManager::ImguiManager()
 
 ImguiManager::~ImguiManager()
 {
+    ImGui_ImplWin32_Shutdown();
+    ImGui_ImplDX11_Shutdown();
     ImGui::DestroyContext();
 }
 
 void ImguiManager::Init(Win32Window* pWindow)
 {
     hWnd = pWindow->GetHwnd();
-    pWindow->BindImgui();
-    pWindow->Gfx()->BindImgui();
+    ImGui_ImplWin32_Init(hWnd);
+    DirectXGraphics* pGfx = dynamic_cast<DirectXGraphics*>(pWindow->Gfx().get());
+    ImGui_ImplDX11_Init(pGfx->GetDevice(), pGfx->GetContext());
     isEnabled = true;
 }
 

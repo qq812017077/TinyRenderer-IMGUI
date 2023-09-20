@@ -1,10 +1,12 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <vector>
 #include "surfaces/Surface.h"
 #include "Color.h"
 #include "TextureFormat.h"
 #include "SampleMode.h"
+
 class Texture
 {
 public:
@@ -41,8 +43,10 @@ public:
 	Color GetPixel( unsigned int x,unsigned int y ) const;
     ETextureFormat GetTextureFormat() const;
     int GetMipMapLevels() const;
+    bool UseMipMap() const;
     bool IsLinear() const;
     Color * GetImageData() const;
+
 
     EFilterMode GetFilterMode() const;
     EWrapMode GetWrapMode() const;
@@ -57,9 +61,14 @@ public:
     static std::shared_ptr<Texture> LoadFrom(const std::string name);
     static std::shared_ptr<Texture> LoadFrom(const char* name);
     static Texture* GetDefaultTexturePtr();
+
+private:
+    void releaseMipChain();
+    void generateMipChain();
 private:
     std::string name;
     Surface m_Surface;
+    std::vector<Surface *> m_MipChain;
     ETextureFormat m_TextureFormat;
     EFilterMode m_FilterMode;
     EWrapMode m_WrapMode;

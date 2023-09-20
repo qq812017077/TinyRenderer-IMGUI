@@ -134,6 +134,7 @@ Surface Surface::LoadFromFile(const char* filename)
 		}
 	}
 	free(image);
+	
 	return Surface(width, height, std::move(pBuffer));
 }
 

@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 
 std::shared_ptr<Material> Material::pDefaultMaterial = nullptr;
 
-static bool ExistMaterial(std::string vertexShaderPath, std::string pixelShaderPath)
+static bool ExistShader(std::string vertexShaderPath, std::string pixelShaderPath)
 {
     if (vertexShaderPath == "" || pixelShaderPath == "")
         return false;
@@ -21,13 +21,21 @@ static bool ExistMaterial(std::string vertexShaderPath, std::string pixelShaderP
     return true;
 }
 
-Material::Material(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName)
+Material::Material(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName, size_t mat_id)
 {
     this->vertexShaderPath = vertexShaderPath;
     this->pixelShaderPath = pixelShaderPath;
     // set name is vertexShaderPath + pixelShaderPath
     this->materialName = materialName;
-    uniqueCode = Tools::UniqueCode(this->materialName);
+    instanceId = mat_id;
+    Graphics::AddMaterial(this);
+}
+Material::Material(const Material& mat)
+{
+    this->vertexShaderPath = mat.vertexShaderPath;
+    this->pixelShaderPath = mat.pixelShaderPath;
+    this->materialName = mat.materialName;
+    instanceId = MaterialManager::GetNextID();
     Graphics::AddMaterial(this);
 }
 
@@ -36,9 +44,9 @@ Material::~Material()
     // remove material from material manager
 }
 
-int Material::GetUniqueCode() const
+size_t Material::GetInstanceID() const
 {
-    return uniqueCode;
+    return instanceId;
 }
 
 /*********************************************************/
@@ -263,55 +271,59 @@ std::string Material::GetSamplerNameByTexName(std::string& texName) const
 /*********************************************************/
 /*                  static function                      */
 /*********************************************************/
-std::shared_ptr<Material> Material::GetDefaultMaterialPtr()
+
+int Material::GetRefCount(std::shared_ptr<Material> pMaterial)
 {
-    if (pDefaultMaterial == nullptr)
-    {
-        std::string vertexShaderPath = "shaders/DefaultVertexShader.hlsl";
-        std::string pixelShaderPath = "shaders/DefaultPixelShader.hlsl";
-        if(!ExistMaterial(vertexShaderPath, pixelShaderPath))
-            throw EngineException(__LINE__, __FILE__, "Default material not exist");
-        
-        auto vertexShaderFileName = vertexShaderPath.substr(vertexShaderPath.find_last_of("/\\") + 1);
-        auto pixelShaderFileName = pixelShaderPath.substr(pixelShaderPath.find_last_of("/\\") + 1);
-        vertexShaderFileName = vertexShaderFileName.substr(0, vertexShaderFileName.find_last_of("."));
-        pixelShaderFileName = pixelShaderFileName.substr(0, pixelShaderFileName.find_last_of("."));
-
-        auto materialName = "Material-VS[" + vertexShaderFileName + "]-PS[" + pixelShaderFileName + "]";
-        pDefaultMaterial = std::shared_ptr<Material>(new Material(vertexShaderPath, pixelShaderPath, materialName));
-        MaterialManager::AddMaterial(pDefaultMaterial);
-        pDefaultMaterial->SetColor("color", Color::Gray());
-    }
-    return pDefaultMaterial;
-}
-std::shared_ptr<Material> Material::Load(std::string vertexShaderPath, std::string pixelShaderPath)
-{
-    if(!ExistMaterial(vertexShaderPath, pixelShaderPath))
-        return Material::GetDefaultMaterialPtr();
-
-    // get vertexShader filen name and pixelShader file name and remove postfix
-    auto vertexShaderFileName = vertexShaderPath.substr(vertexShaderPath.find_last_of("/\\") + 1);
-    auto pixelShaderFileName = pixelShaderPath.substr(pixelShaderPath.find_last_of("/\\") + 1);
-    vertexShaderFileName = vertexShaderFileName.substr(0, vertexShaderFileName.find_last_of("."));
-    pixelShaderFileName = pixelShaderFileName.substr(0, pixelShaderFileName.find_last_of("."));
-
-    auto materialName = "Material-VS[" + vertexShaderFileName + "]-PS[" + pixelShaderFileName + "]";
-    std::shared_ptr<Material> pMaterial(new Material(vertexShaderPath, pixelShaderPath, materialName));
-    MaterialManager::AddMaterial(pMaterial);
-    return pMaterial;
+    return static_cast<int>(pMaterial->rendererRefCountMap.size());
 }
 
 std::shared_ptr<Material> Material::CreateInstance(std::shared_ptr<Material> pMaterial)
 {
     //Create Instance of material
-    auto pNewMaterial = std::shared_ptr<Material>(new Material(pMaterial->GetVertexShaderPath(), pMaterial->GetPixelShaderPath(),
-        pMaterial->materialName + "(Instance)"));
+    auto pNewMaterial = std::shared_ptr<Material>(new Material(*pMaterial));
     MaterialManager::AddMaterial(pNewMaterial);
     return pNewMaterial;
 }
 
-int Material::GetRefCount(std::shared_ptr<Material> pMaterial)
+
+std::shared_ptr<Material> Material::CreateDefault(std::string materialName)
 {
-    return static_cast<int>(pMaterial->rendererRefCountMap.size());
+    std::string vertexShaderPath = "shaders/DefaultVertexShader.hlsl";
+    std::string pixelShaderPath = "shaders/DefaultPixelShader.hlsl";
+
+    if(!ExistShader(vertexShaderPath, pixelShaderPath))
+        throw EngineException(__LINE__, __FILE__, "Default material not exist");
+    // if materialName is exist, make new name
+    if(materialName == "")
+        materialName = "New Material";
+    int i = 1;
+    while(MaterialManager::HasExist(materialName)) materialName = "New Material (" + std::to_string(i) + ")";
+    auto pMat = Create(vertexShaderPath, pixelShaderPath, materialName);
+    pMat->SetColor("color", Color::LightGray());
+    return pMat;
+}
+
+
+std::shared_ptr<Material> Material::Create(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName)
+{
+    if(!ExistShader(vertexShaderPath, pixelShaderPath))
+        return Material::GetDefaultMaterialPtr();
+    
+    auto vertexShaderFileName = vertexShaderPath.substr(vertexShaderPath.find_last_of("/\\") + 1);
+    auto pixelShaderFileName = pixelShaderPath.substr(pixelShaderPath.find_last_of("/\\") + 1);
+    vertexShaderFileName = vertexShaderFileName.substr(0, vertexShaderFileName.find_last_of("."));
+    pixelShaderFileName = pixelShaderFileName.substr(0, pixelShaderFileName.find_last_of("."));
+    if(materialName == "")
+        materialName = "Material-VS[" + vertexShaderFileName + "]-PS[" + pixelShaderFileName + "]";
+    
+    auto pMat = std::shared_ptr<Material>(new Material(vertexShaderPath, pixelShaderPath, materialName, MaterialManager::GetNextID()));
+    MaterialManager::AddMaterial(pMat);
+    return pMat;
+}
+
+std::shared_ptr<Material> Material::GetDefaultMaterialPtr()
+{
+    if (pDefaultMaterial == nullptr) pDefaultMaterial = CreateDefault("Default-Material");
+    return pDefaultMaterial;
 }
 /*********************************************************/

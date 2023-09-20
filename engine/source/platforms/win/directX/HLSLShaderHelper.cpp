@@ -1,6 +1,50 @@
 #include "HLSLShaderHelper.h"
+#include "DXUtil.h"
+#include "Exceptions.h"
 
-HRESULT HLSLShaderHelper::LoadShaderInfo(const char * shaderName, ID3D11ShaderReflection* pShaderReflection, ShaderDesc * pShaderDesc)
+HRESULT HLSLShaderHelper::LoadShader(DirectXGraphics& gfx, const std::wstring& path, LPCSTR entryPoint, LPCSTR shaderModel, 
+    wrl::ComPtr<ID3D11VertexShader>& pVertexShaderOut, wrl::ComPtr<ID3DBlob> & pBlobOut, wrl::ComPtr<ID3D11ShaderReflection> & pShaderReflectionOut)
+{
+    std::wstring shaderName = path;
+    if (shaderName.find(L".hlsl") != std::string::npos)
+    {
+        shaderName = shaderName.substr(0, shaderName.find(L".hlsl"));
+    }
+    // add '.cso' postfix
+    auto output = shaderName.append(L".cso").c_str();
+    HRESULT hr;
+    // load vertex shader
+    hr = CreateShaderFromFile(output, path.c_str(), entryPoint, shaderModel, &pBlobOut);
+    if (FAILED(hr)) return hr;
+    hr = gfx.GetDevice()->CreateVertexShader(pBlobOut->GetBufferPointer(), pBlobOut->GetBufferSize(), nullptr, &pVertexShaderOut);
+
+    if (FAILED(hr)) return hr;
+    // read constant buffer description from shader
+    hr = GetShaderInfo(pBlobOut->GetBufferPointer(), pBlobOut->GetBufferSize(), &pShaderReflectionOut);
+    return hr;
+} 
+HRESULT HLSLShaderHelper::LoadShader(DirectXGraphics& gfx, const std::wstring& path, LPCSTR entryPoint, LPCSTR shaderModel, 
+    wrl::ComPtr<ID3D11PixelShader>& pPixelShaderOut, wrl::ComPtr<ID3DBlob> & pBlobOut, wrl::ComPtr<ID3D11ShaderReflection>& pShaderReflectionOut)
+{
+    std::wstring shaderName = path;
+    if (shaderName.find(L".hlsl") != std::string::npos)
+    {
+        shaderName = shaderName.substr(0, shaderName.find(L".hlsl"));
+    }
+    // add '.cso' postfix
+    auto output = shaderName.append(L".cso").c_str();
+    HRESULT hr;
+    // load vertex shader
+    hr = CreateShaderFromFile(output, path.c_str(), entryPoint, shaderModel, &pBlobOut);
+    if (FAILED(hr)) return hr;
+    hr = gfx.GetDevice()->CreatePixelShader(pBlobOut->GetBufferPointer(), pBlobOut->GetBufferSize(), nullptr, &pPixelShaderOut);
+
+    if (FAILED(hr)) return hr;
+    hr = GetShaderInfo(pBlobOut->GetBufferPointer(), pBlobOut->GetBufferSize(), &pShaderReflectionOut);
+    return hr;
+} 
+
+HRESULT HLSLShaderHelper::LoadShaderInfo(ID3D11ShaderReflection* pShaderReflection, ShaderDesc * pShaderDesc)
 {
     HRESULT hr;
 

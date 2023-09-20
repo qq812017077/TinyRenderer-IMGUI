@@ -11,13 +11,14 @@ public:
     void Init() override
     {
         pCamera = pGameObject->GetComponent<Camera>();
+        pCamera->SetFar(farPlane);
         pCamera->SetAspect(1280.0f / 720.0f);
-        pTransform->SetPosition({ 0.0f, 3.0f, -6.0f });
-        pTransform->SetEulerAngle({ 30.0f, 0.0f, 0.0f });
     }
 
     void OnUpdate(float deltaTime) override
     {
+        
+        pCamera->SetFar(farPlane);
         //Get keyboard and mouse input
         //Update camera transform
         if(Input::InputSystem::GetKey(Input::KeyCode::S))
@@ -55,8 +56,14 @@ public:
             pCamera->pTransform->Translate(-Vector3::right * dx * moveSpeed * deltaTime);
         }else if(isMouseRightDown)
         {
+            if(scroll > kEpsilon || scroll < -kEpsilon)
+            {
+                moveSpeed += scroll * 10.0f;
+                moveSpeed = std::clamp(moveSpeed, 0.1f, 1000.0f);
+            }
             auto euler = pCamera->pTransform->GetEulerAngle();
             euler.x -= dy * rotateSpeed;
+            euler.x = std::clamp(euler.x, -89.0f, 89.0f);
             euler.y += dx * rotateSpeed;
             euler.z = 0.0f;
             pCamera->pTransform->SetEulerAngle(euler);
@@ -75,14 +82,9 @@ public:
     {
         GUI::Begin("Camera");
         // move speed
-        GUI::SliderFloat("move speed", &moveSpeed, 0.0f, 100.0f);
+        GUI::SliderFloat("move speed", &moveSpeed, 0.0f, 1000.0f);
         GUI::SliderFloat("rotate speed", &rotateSpeed, 0.0f, 10.0f);
-        auto position = pCamera->pTransform->GetPosition();
-        auto eulerAngle = pCamera->pTransform->GetEulerAngle();
-        auto quat = pCamera->pTransform->GetRotation();
-        GUI::Text("Camera position: %f, %f, %f", position.x, position.y, position.z);
-        GUI::Text("Camera rotation: %f, %f, %f", eulerAngle.x, eulerAngle.y, eulerAngle.z);
-        GUI::Text("Camera Quat: %f, %f, %f, %f", quat.x, quat.y, quat.z, quat.w);
+        GUI::SliderFloat("far plane", &farPlane, 1000.0f, 5000.0f);
         GUI::End();
     }
 
@@ -90,4 +92,5 @@ private:
     Camera * pCamera;
     float moveSpeed = 10.0f;
     float rotateSpeed = 4.0f;
+    float farPlane = 3000.0f;
 };

@@ -21,7 +21,6 @@ namespace TinyEngine
         void processPendingDestroyGameObjects();
         void processPendingCreateGameObjects();
 
-        
     public:
         ~Level();
         void Tick(const float delta_time);
@@ -42,5 +41,6 @@ namespace TinyEngine
         void Save();
 
         void LoadDefault();
+        void LoadSponzaScene();
     };
 } // namespace Pilot

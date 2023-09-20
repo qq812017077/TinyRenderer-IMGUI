@@ -6,7 +6,6 @@
 #include "HLSLShaderHelper.h"
 #include "managers/RenderQueueManager.h"
 #include "Texture.h"
-#include "imgui/backends/imgui_impl_dx11.h"
 #define LOG(X) std::cout << X << std::endl;
 // add ComPtr
 namespace wrl = Microsoft::WRL;
@@ -27,16 +26,9 @@ DirectXGraphics::DirectXGraphics(HWND &hwnd):
     LOG("   Directx Graphics  constructor end")
 }
 
-void DirectXGraphics::BindImgui()
-{
-    ImGui_ImplDX11_Init(pDevice.Get(), pContext.Get());
-    bindedImgui = true;
-}
 
 DirectXGraphics::~DirectXGraphics()
 {
-    if(bindedImgui)
-        ImGui_ImplDX11_Shutdown();
 }
 
 void DirectXGraphics::EndFrame()
@@ -309,6 +301,8 @@ void DirectXGraphics::OnResize(int width, int height)
 #ifdef DEBUG
     std::cout << "OnResize" << std::endl;
 #endif
+    if (width == 0 || height == 0) return;
+    
     CreateBuffers(width, height);
 }
 
@@ -444,6 +438,7 @@ void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, CBuffe
     if(pCBufferData->isDirty)
     {
         pCBufferData->isDirty = false;
+        // float* data = reinterpret_cast<float*>(pCBufferData->pData.get());
         UpdateCBuffer(targetBuf, pCBufferData->pData.get(), pCBufferData->byteWidth);
     }
     BindCBuffer(slot, targetBuf, bindType);

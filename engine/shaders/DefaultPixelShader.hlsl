@@ -1,5 +1,7 @@
 #include "Basic.hlsli"
 
+float4 color = float4(1.0, 1.0, 1.0, 1.0);
+
 Texture2D _MainTex : register(t0);
 SamplerState sampler_MainTex : register(s0);
 float3 get_directional_light(float3 normal, float3 worldPos, DirectionalLight dirLight, float3 texColor)
@@ -42,6 +44,7 @@ float4 main(VS_OUTPUT ps_in) : SV_Target
     // phong shading
     float3 vNormal = normalize(ps_in.normal);
 	float3 texColor = _MainTex.Sample(sampler_MainTex, ps_in.tex);
+    texColor = float3(texColor.r * color.r, texColor.g * color.g, texColor.b * color.b);
     // directional light
     float3 dir_color = get_directional_light(vNormal, ps_in.worldPos, g_DirLight, texColor);
     // point light

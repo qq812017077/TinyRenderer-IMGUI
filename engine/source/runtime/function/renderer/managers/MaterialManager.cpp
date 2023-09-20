@@ -4,18 +4,32 @@ namespace fs = std::filesystem;
 
 MaterialManager::MaterialManager()
 {
-    uniqueCodeByMaterial = std::unordered_map<std::shared_ptr<Material>,unsigned int>();
+    MaterialByInstanceID = std::unordered_map<size_t, std::shared_ptr<Material>>();
 }
 
 MaterialManager::~MaterialManager()
 {
-    uniqueCodeByMaterial.clear();
+    MaterialByInstanceID.clear();
 }
 
 void MaterialManager::AddMaterial(std::shared_ptr<Material> pMaterial)
 {
-    auto& CodeByMaterial = MaterialManager::Get().uniqueCodeByMaterial;
-    auto code = pMaterial->GetUniqueCode();
-    CodeByMaterial[pMaterial] = code;
+    auto& matByID = MaterialManager::Get().MaterialByInstanceID;
+    auto id = pMaterial->GetInstanceID();
+    matByID[id] = pMaterial;
     return;
+}
+
+bool MaterialManager::HasExist(std::string& name)
+{
+    auto& matByID = MaterialManager::Get().MaterialByInstanceID;
+    for (auto& [id, pMat] : matByID)
+    {
+        if (pMat->GetName() == name) return true;
+    }
+    return false;
+}
+size_t MaterialManager::GetNextID()
+{
+    return MaterialManager::Get().globalMaterialID++;
 }

@@ -69,7 +69,7 @@ GameObject* Light::CreateDirectionalLight(std::string name)
 {
     auto pGo = GameObject::CreateGameObject(name);
     auto light = pGo->AddComponent<Light>();
-    pGo->transform.SetEulerAngle({ 50.0f, -30.0f, 0.0f });
+    pGo->transform().SetEulerAngle({ 50.0f, -30.0f, 0.0f });
     return pGo;
 
 }
@@ -90,7 +90,7 @@ GameObject* Light::CreateSpotLight(std::string name)
     light->type = Type::Spot;
     dirLightMap.erase(light);
     spotLightMap.emplace(light, true);
-    pGo->transform.SetEulerAngle({ -90.0f, 0.0f, 0.0f });
+    pGo->transform().SetEulerAngle({ -90.0f, 0.0f, 0.0f });
     return pGo;
 }
 

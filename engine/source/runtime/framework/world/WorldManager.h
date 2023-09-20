@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "Level.h"
+#include <memory>
 
 namespace TinyEngine
 {
@@ -37,5 +38,6 @@ namespace TinyEngine
         
         std::vector<Level*> m_levels;
         Level*              m_current_active_level {nullptr};
+
     };
 }

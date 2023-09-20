@@ -13,7 +13,9 @@ public:
     ~MaterialManager();
     
     static void AddMaterial(std::shared_ptr<Material> pMaterial);
-
+    static bool HasExist(std::string& name);
+    static size_t GetNextID();
 private:
-    std::unordered_map<std::shared_ptr<Material>,unsigned int> uniqueCodeByMaterial;
+    std::unordered_map<size_t, std::shared_ptr<Material>> MaterialByInstanceID;
+    size_t globalMaterialID = 0;
 };

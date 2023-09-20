@@ -3,6 +3,7 @@
 #include "geometry/Model.h"
 #include "world/WorldManager.h"
 #include "res_type/common.h"
+#include "Material.h"
 
 // GameObject::GameObject(std::string name):
 //     name(name),
@@ -12,17 +13,16 @@
 // }
 
 GameObject::GameObject(size_t instanceId):
-    instanceId(instanceId),
-    transform()
+    instanceId(instanceId)
 {
-    componentsToInit.push_back(&transform);
+    pTransform = AddComponent<Transform>();
 }
 
 GameObject::~GameObject()
 {
     RemoveAllComponents();
 #if DEBUG
-    std::cout << "GameObject[" << name << "] destroyed at " << this << std::endl;
+    // std::cout << "GameObject[" << name << "] destroyed at " << this << std::endl;
 #endif
 }
 
@@ -30,10 +30,7 @@ GameObject::~GameObject()
 void GameObject::Init()
 {
     // init all components
-    if(!initialized)
-    {
-        initialized = true;
-    }
+    if(!initialized) initialized = true;
 
     for(auto& pComp : componentsToInit)
     {
@@ -51,6 +48,7 @@ void GameObject::OnPreUpdate()
 {
     if (!isActived) return;
     // update all components
+    std::vector<Component*> comps;
     for(auto& comp : components)
     {
         if(comp.second == nullptr)
@@ -98,6 +96,12 @@ void GameObject::OnGUI()
 // Components
 void GameObject::RemoveAllComponents()
 {
+    for(auto& comp : components)
+    {
+        if(comp.second == nullptr)
+            continue;
+        delete comp.second;
+    }
     components.clear();
 }
 
@@ -182,7 +186,7 @@ bool GameObject::loadres(const TinyEngine::GameObjectRes& go_instance_res)
     name = go_instance_res.m_name;
 
     // load transform component
-    transform = go_instance_res.m_transform;
+    *pTransform = go_instance_res.m_transform;
     // load other components
     for(auto& comp_res : go_instance_res.m_components)
     {
@@ -195,12 +199,12 @@ bool GameObject::loadres(const TinyEngine::GameObjectRes& go_instance_res)
     return true;
 }
 
-void ParseNode(Model& model, Model::Node* pNode, Transform & parent)
+void ParseNode(Model& model, std::vector<std::shared_ptr<Material>>& materials, Model::Node* pNode, Transform & parent)
 {
     // create gameobject
     auto pGo = GameObject::CreateGameObject(pNode->name);
     // set parent
-    pGo->transform.SetParent(parent);
+    pGo->transform().SetParent(parent);
 
     // TODO: set transform
     // pGo->transform.SetPosition(node.transform.GetPosition());
@@ -213,14 +217,13 @@ void ParseNode(Model& model, Model::Node* pNode, Transform & parent)
         int idx = pNode->meshIndices[0];
         auto pRenderer = pGo->AddComponent<Renderer>(model.meshdatas[idx].mesh);
         pRenderer->SetMesh(model.meshdatas[idx].mesh);
-        // auto matdata = model.materialdatas[model.meshdatas[idx].m_MaterialIndex];
-        //TODO: set material properties
+        pRenderer->SetSharedMaterial(materials[model.meshdatas[idx].m_MaterialIndex]);
     }
 
     // add children
     for(auto& child : pNode->children)
     {
-        ParseNode(model, child.get(), pGo->transform);
+        ParseNode(model, materials, child.get(), pGo->transform());
     }
 }
 GameObject* GameObject::ParseModel(Model & model)
@@ -229,18 +232,19 @@ GameObject* GameObject::ParseModel(Model & model)
     if(root == nullptr) return nullptr;
     // create gameobject
     auto pGo = CreateGameObject(root->name);
+    // we need to generate all needed textures and materials and set values for them. then set them to
+    std::vector<std::shared_ptr<Material>>& materials = model.GenerateMaterials();
     if(root->meshIndices.size() > 0)
     {
         // TODO: here we only use the first mesh, need to support multiple meshes.
         int idx = root->meshIndices[0];
         auto pRenderer = pGo->AddComponent<Renderer>(model.meshdatas[idx].mesh);
-        // auto matdata = model.materialdatas[model.meshdatas[idx].m_MaterialIndex];
-        //TODO: set material properties
+        pRenderer->SetSharedMaterial(materials[model.meshdatas[idx].m_MaterialIndex]);
     }
     // add children
     for(auto& child : root->children)
     {
-        ParseNode(model, child.get(), pGo->transform);
+        ParseNode(model, materials, child.get(), *(pGo->pTransform));
     }
     return pGo;
 }

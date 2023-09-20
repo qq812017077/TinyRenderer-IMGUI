@@ -12,6 +12,7 @@ Window::Window(int width, int height, const wchar_t *name)
     auto inputPtr = Input::InputSystem::GetPtr().get();
     registerOnKeyFunc(std::bind(&Input::InputSystem::OnKey, inputPtr, std::placeholders::_1, std::placeholders::_2));
     registerOnCursorPosFunc(std::bind(&Input::InputSystem::OnCursorPos, inputPtr, std::placeholders::_1, std::placeholders::_2));
+    registerOnMouseDeltaFunc(std::bind(&Input::InputSystem::OnMouseMoveDelta, inputPtr, std::placeholders::_1, std::placeholders::_2));
 }
 
 Window::~Window()
@@ -48,6 +49,12 @@ void Window::OnChar(unsigned char character) noexcept
 void Window::OnMouseMove(int x, int y) noexcept { 
     mouse.OnMouseMove(x, y); 
     for(auto& func : m_onCursorPosFunc)
+        func(x, y);
+}
+
+void Window::OnMouseMoveDelta(int x, int y) noexcept { 
+    mouse.OnMouseMoveDelta(x, y); 
+    for(auto& func : m_onMouseMoveDeltaFunc)
         func(x, y);
 }
 void Window::OnMouseLeave() noexcept { 

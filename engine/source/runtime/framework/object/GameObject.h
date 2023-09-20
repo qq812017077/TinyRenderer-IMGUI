@@ -21,6 +21,7 @@ class GameObject
         // Setters
         void SetName(std::string name) { this->name = name; }
 
+        inline Transform& transform() const { return *pTransform; }
         void Init();
         bool IsInitialized() const;
         bool IsActived() const { return isActived; }
@@ -39,9 +40,11 @@ class GameObject
             if(pCom != nullptr) return pCom;
 
             static_assert (std::is_base_of<Component, T>::value, "type parameter of this class must derive from Component");
-            auto & pComp = std::make_unique<T>(std::forward<Args>(args)...);
-            pCom = pComp.get();
-            components[compName] = std::move(pComp);
+            pCom = new T(std::forward<Args>(args)...);
+            components[compName] = pCom;
+            // auto & pComp = std::make_unique<T>(std::forward<Args>(args)...);
+            // pCom = pComp.get();
+            // components[compName] = std::move(pComp);
             pCom->SetGameObject(this);
             componentsToInit.push_back(pCom);
             return pCom;
@@ -55,6 +58,7 @@ class GameObject
             // if components has this component, remove it
             if(components.find(compName) != components.end())
             {
+                delete components[compName];
                 components.erase(compName);
             }
         }
@@ -63,8 +67,10 @@ class GameObject
         T* GetComponent()
         {
             auto compName = std::string(typeid(T).name());
+            // if is Transform, return transform
             if(components.find(compName) == components.end()) return nullptr;
-            return static_cast<T*>(components[compName].get());
+            // return static_cast<T*>(components[compName].get());
+            return static_cast<T*>(components[compName]);
         }
 
         static GameObject* Find(const char* name);
@@ -73,7 +79,6 @@ class GameObject
         static void Destroy(GameObject& gameObject);
         static void Destroy(GameObject* pGameObject);
         
-        Transform transform;
 
     private:
         GameObject() = delete;
@@ -88,12 +93,13 @@ class GameObject
         static GameObject* ParseModel(Model & model);
         
     private:
-
+        Transform* pTransform;
         size_t instanceId   = 0;
         bool initialized = false;
         bool isActived{true};
         std::string name = "New GameObject";
-        std::unordered_map<std::string, std::unique_ptr<Component>> components;
+        std::unordered_map<std::string, Component*> components;
+        // std::unordered_map<std::string, std::unique_ptr<Component>> components;
         std::vector<Component*> componentsToInit;
         
 };

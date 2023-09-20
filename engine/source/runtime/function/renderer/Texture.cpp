@@ -14,6 +14,8 @@ Texture::Texture(int width, int height, ETextureFormat textureFormat, int mipCou
     m_FilterMode = EFilterMode::Bilinear;
     m_WrapMode = EWrapMode::Repeat;
     m_Anisolevel = 1;
+    m_MipChain.resize(m_MipCount);
+    m_MipChain[0] = &m_Surface;
 }
 Texture::Texture(Surface&& surface):
     Texture(std::move(surface), ETextureFormat::RGBA32, 1, true)
@@ -27,6 +29,7 @@ Texture::Texture(Surface&& surface, ETextureFormat textureFormat, int mipCount, 
 
 Texture::~Texture()
 {
+    
 }
 
 void Texture::LoadImageFrom(const char* path)
@@ -74,6 +77,10 @@ int Texture::GetAnisoLevel() const
 {
     return m_Anisolevel;
 }
+bool Texture::UseMipMap() const
+{
+    return m_MipCount > 1 || m_MipCount == 0;
+}
 int Texture::GetMipMapLevels() const
 {
     return m_MipCount;
@@ -107,6 +114,8 @@ void Texture::SetAnisoLevel(int anisoLevel)
 void Texture::SetMipMapLevel(int mipMapLevel)
 {
     m_MipCount = mipMapLevel;
+    // releaseMipChain();
+    // m_MipChain.resize(m_MipCount);
 }
 
 void Texture::Clear(Color c)
@@ -131,4 +140,43 @@ Texture * Texture::GetDefaultTexturePtr()
         pDefaultTexture->Clear(Color::DarkGray());
     }
     return pDefaultTexture.get();
+}
+
+void Texture::releaseMipChain()
+{
+    for(int i = 1; i < m_MipCount; ++i)
+    {
+        if (m_MipChain[i] != nullptr)
+            delete m_MipChain[i];
+    }
+    m_MipChain.clear();
+}
+
+
+void Texture::generateMipChain()
+{
+    m_MipChain.resize(m_MipCount);
+    m_MipChain[0] = &m_Surface;
+    for(int i = 1; i < m_MipCount; ++i)
+    {
+        m_MipChain[i] = new Surface(m_MipChain[i-1]->GetWidth()/2, m_MipChain[i-1]->GetHeight()/2);
+        for(int y = 0; y < m_MipChain[i]->GetHeight(); ++y)
+        {
+            for(int x = 0; x < m_MipChain[i]->GetWidth(); ++x)
+            {
+                Color c = m_MipChain[i-1]->GetPixel(x*2, y*2);
+                Color c1 = m_MipChain[i-1]->GetPixel(x*2+1, y*2);
+                Color c2 = m_MipChain[i-1]->GetPixel(x*2, y*2+1);
+                Color c3 = m_MipChain[i-1]->GetPixel(x*2+1, y*2+1);
+                m_MipChain[i]->PutPixel(x, y, 
+                    Color(
+                        (c.GetR() + c1.GetR() + c2.GetR() + c3.GetR()) / 4,
+                        (c.GetG() + c1.GetG() + c2.GetG() + c3.GetG()) / 4,
+                        (c.GetB() + c1.GetB() + c2.GetB() + c3.GetB()) / 4,
+                        (c.GetA() + c1.GetA() + c2.GetA() + c3.GetA()) / 4
+                    )
+                );
+            }
+        }
+    }
 }

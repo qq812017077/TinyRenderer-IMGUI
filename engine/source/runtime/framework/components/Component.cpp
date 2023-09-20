@@ -19,6 +19,6 @@ GameObject* Component::GetGameObject() const
 void Component::SetGameObject(GameObject* owner)
 {
     this->pGameObject = owner;
-    this->pTransform = &owner->transform;
+    this->pTransform = &(owner->transform());
 }
 

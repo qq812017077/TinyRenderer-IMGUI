@@ -27,11 +27,12 @@ private:
     };
 
     Material() = delete;
-    Material(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName);
+    Material(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName, size_t mat_id);
+    Material(const Material&);
 public:
     ~Material();
     
-    int GetUniqueCode() const;
+    size_t GetInstanceID() const;
     std::string GetVertexShaderPath() const;
     std::string GetPixelShaderPath() const;
     
@@ -40,6 +41,7 @@ public:
     std::shared_ptr<VertexShader> GetVertexShader() const;
     std::shared_ptr<PixelShader> GetPixelShader() const;
 
+    std::string GetName() const { return materialName; }
     // Renderer 
     void Bind(Renderer * pRenderer);
     void UnBind(Renderer * pRenderer);
@@ -58,7 +60,8 @@ public:
     std::string GetSamplerNameByTexName(std::string& texName) const;
     static int GetRefCount(std::shared_ptr<Material> pMaterial);
     static std::shared_ptr<Material> CreateInstance(std::shared_ptr<Material> pMaterial);
-    static std::shared_ptr<Material> Load(std::string vertexShaderPath, std::string pixelShaderPath);
+    static std::shared_ptr<Material> CreateDefault(std::string materialName = "New Material");
+    static std::shared_ptr<Material> Create(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName = "");
     static std::shared_ptr<Material> GetDefaultMaterialPtr();
 private:
     // if loaded shader, return true
@@ -82,6 +85,6 @@ private:
     std::map<std::string, Matrix4x4> matrixMap;
     std::unordered_map<Renderer*, bool> rendererRefCountMap;
 
-    unsigned int uniqueCode;
+    size_t instanceId;
     static std::shared_ptr<Material> pDefaultMaterial;
 };
