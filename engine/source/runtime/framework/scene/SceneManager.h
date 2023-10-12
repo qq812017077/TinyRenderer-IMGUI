@@ -2,15 +2,21 @@
 #include "core/Singleton.h"
 #include <unordered_map>
 #include <vector>
+#include <map>
+#include <set>
 #include "SceneObject.h"
 #include "core/math/Vector.h"
 
 class Material;
 class Renderer;
+class GameObject;
+class Camera;
 namespace TinyEngine
 {
     class Scene;
     class FrameBuffer;
+    class Effect;
+
     class SceneManager final : public Singleton<SceneManager>
     {
     public:
@@ -28,16 +34,21 @@ namespace TinyEngine
         void SyncSceneObjects();
 
         void AddRenderer(Renderer * pRenderer);
+
+        void SetSelectedGameObject(GameObject * pGameObject);
     protected:
         std::shared_ptr<Scene>             m_scene = std::make_shared<Scene>();
         std::unordered_map<size_t, size_t> m_mesh_id_gobejct_id_map;
-    
+
+        GameObject * m_selected_object = nullptr;
     private:
         std::vector<GameObjectDesc> m_go_descs;
-        std::unordered_map<Material *, std::vector<Renderer*>> renderQueue;
+        
+        Camera* m_actived_camera{nullptr};
+        std::map<int, std::set<Effect *>> effectQueueByPriority;
+        std::map<Effect*, std::vector<Renderer*>> rendererQueue;
         void setSceneOnce();
 
-        
         Vector2 m_window_size;
     };
 } // namespace TinyEngine

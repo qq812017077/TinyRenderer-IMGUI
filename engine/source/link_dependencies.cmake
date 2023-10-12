@@ -52,6 +52,7 @@ target_include_directories(
         PUBLIC $<BUILD_INTERFACE:${SOURCE_DIR}/runtime/core/math>
         PUBLIC $<BUILD_INTERFACE:${SOURCE_DIR}/runtime/function>
         PUBLIC $<BUILD_INTERFACE:${SOURCE_DIR}/runtime/function/renderer>
+        PUBLIC $<BUILD_INTERFACE:${SOURCE_DIR}/runtime/function/graphics>
         PUBLIC $<BUILD_INTERFACE:${SOURCE_DIR}/runtime/framework>
         PUBLIC $<BUILD_INTERFACE:${SOURCE_DIR}/runtime/resource>
         $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${TARGET_VERSION}>

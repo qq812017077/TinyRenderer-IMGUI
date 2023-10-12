@@ -2,7 +2,6 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include "surfaces/Surface.h"
 #include "Color.h"
 #include "TextureFormat.h"
 #include "SampleMode.h"
@@ -29,13 +28,9 @@ public:
 public:
     Texture(int width, int height);
     Texture(int width, int height, ETextureFormat textureFormat, int mipCount, bool linear);
-    Texture(Surface&& surface);
-    Texture(Surface&& surface, ETextureFormat textureFormat, int mipCount, bool linear);
-    Texture(Surface& surface) = delete;
+    Texture(Texture&& texture) noexcept;
     ~Texture();
-    
     void LoadImageFrom(const char* path);
-
     int GetWidth() const;
     int GetHeight() const;
     int GetPitch() const;
@@ -45,8 +40,8 @@ public:
     int GetMipMapLevels() const;
     bool UseMipMap() const;
     bool IsLinear() const;
+    bool HasAlphaChannel() const;
     Color * GetImageData() const;
-
 
     EFilterMode GetFilterMode() const;
     EWrapMode GetWrapMode() const;
@@ -63,9 +58,40 @@ public:
     static Texture* GetDefaultTexturePtr();
 
 private:
+    class Surface
+    {
+    public:
+        Surface( unsigned int width, unsigned int height, int channels=3):
+            Surface(width, height, std::make_unique<Color[]>(width * height), channels)
+        {}
+        Surface(Surface && source ) noexcept : Surface( source.width,source.height,std::move( source.pBuffer ), source.channels )
+        {}
+
+        Surface( unsigned int width,unsigned int height,std::unique_ptr<Color[]> pBufferParam, int channels) noexcept:
+            width( width ), height( height ), pBuffer( std::move( pBufferParam)), channels(channels){}
+        Surface::~Surface() {}
+        Surface( Surface& ) = delete;
+        Surface& operator=( Surface&& donor ) noexcept = default;
+        Surface& operator=( const Surface& ) = delete;
+
+        bool AlphaLoaded() const noexcept {return channels == 4;}
+        // virtual void Copy( const Surface& src ) noexcept(!IS_DEBUG);
+
+        std::string path;
+        std::unique_ptr<Color[]> pBuffer;
+        unsigned int width;
+        unsigned int height;
+        unsigned int pitch;
+        int channels;
+    };
+    Texture(Surface&& surface);
+    Texture(Surface&& surface, ETextureFormat textureFormat, int mipCount, bool linear);
+
     void releaseMipChain();
     void generateMipChain();
 private:
+    
+
     std::string name;
     Surface m_Surface;
     std::vector<Surface *> m_MipChain;
@@ -73,7 +99,7 @@ private:
     EFilterMode m_FilterMode;
     EWrapMode m_WrapMode;
     int m_Anisolevel;
-    int m_MipCount;
+    int m_MipLevel;
     bool m_Linear;
     static std::shared_ptr<Texture> pDefaultTexture;
 };

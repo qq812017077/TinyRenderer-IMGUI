@@ -12,7 +12,7 @@ public:
 
     void Init() override
     {
-        auto pMat = Material::Create("shaders/DefaultVertexShader.hlsl", "shaders/UnlitPixelShader.hlsl", "Unlit-Material");
+        auto pMat = Material::Create("Unlit", "Unlit-Material");
         pLightGO = Light::CreateDirectionalLight("dirLight");
         pPointLightGO = Light::CreatePointLight("pointLight");
         if(pLightGO) pLight = pLightGO->GetComponent<Light>();
@@ -34,8 +34,9 @@ public:
             pWhiteLittleCube->transform().SetParent(pPointLightGO->transform());
             pWhiteLittleCube->transform().SetLocalPosition({ 0.0f, 0.0f, 0.0f });
             pointLightPos = { 0.3f, 1.5f, 0.0f };
-            pPointLight->pTransform->SetPosition({ 0.0f, 100.f, 0.0f });
-            pPointLight->SetIntensity(0.5f);
+            pPointLight->pTransform->SetPosition({ 0.0f, 120.f, 0.0f });
+            pPointLight->SetIntensity(0.8f);
+            pPointLight->SetRange(500.0f);
         }
     }
 

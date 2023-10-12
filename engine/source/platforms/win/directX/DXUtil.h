@@ -14,6 +14,10 @@
 #include "ShaderDesc.h"
 #include "TextureFormat.h"
 #include "SampleMode.h"
+
+
+class Texture;
+
 // ------------------------------
 // Shader函数
 // CreateShaderFromFile函数:
@@ -36,7 +40,6 @@ HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength,ID3D11Sh
 // HRESULT GetShaderInfo(const void* shaderBytecode, size_t bytecodeLength, std::vector<UniformVar>* pUniformVars, 
 // std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed, std::map<std::string, int> * pTextureSlotMap);
 void GetInputLayoutInfo(ID3D11ShaderReflection* pReflection, std::vector<D3D11_INPUT_ELEMENT_DESC>* pLed);
-void LoadShaderDescInfo(ID3D11ShaderReflection* pReflection, ShaderDesc * pShaderDesc);
 
 // ------------------------------
 // Buffer函数
@@ -59,3 +62,7 @@ UINT GetDataStride(DXGI_FORMAT format);
 DXGI_FORMAT GetTextureFormat(ETextureFormat textureFormat, bool islinear=false);
 D3D11_FILTER GetTextureFilterMode(EFilterMode filterMode);
 D3D11_TEXTURE_ADDRESS_MODE GetTextureWrapMode(EWrapMode wrapMode);
+
+HRESULT CreateTexture2DView(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pContext,  
+    Texture* pInputTex, ID3D11ShaderResourceView ** ppOutputTextureView);
+HRESULT CreateSampler(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice,  Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler);

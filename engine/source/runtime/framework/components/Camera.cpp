@@ -76,17 +76,17 @@ void Camera::LookAt(Vector3 target)
     pTransform->SetRotation(Quaternion::LookRotation(forward, up));
 }
 
-void Camera::UpdateCameraBuffer(IShaderHelper& shaderHelper)
-{
-    if(pActivedCamera == nullptr)
-    {
-        throw std::exception("No camera is actived!");
-    }else
-    {
-        const Matrix4x4 viewMatrix = pActivedCamera->GetViewMatrix();
-        const Matrix4x4 projMatrix = pActivedCamera->GetProjectionMatrix();
-        shaderHelper.SetGlobalMatrix("g_View", pActivedCamera->GetViewMatrix());
-        shaderHelper.SetGlobalMatrix("g_Proj", pActivedCamera->GetProjectionMatrix());
-        shaderHelper.SetGlobalVector("g_EyePos", pActivedCamera->pTransform->GetPosition());
-    }
-}
+// void Camera::UpdateCameraBuffer(IShaderHelper& shaderHelper)
+// {
+//     if(pActivedCamera == nullptr)
+//     {
+//         throw std::exception("No camera is actived!");
+//     }else
+//     {
+//         const Matrix4x4 viewMatrix = pActivedCamera->GetViewMatrix();
+//         const Matrix4x4 projMatrix = pActivedCamera->GetProjectionMatrix();
+//         shaderHelper.SetGlobalMatrix("g_View", pActivedCamera->GetViewMatrix());
+//         shaderHelper.SetGlobalMatrix("g_Proj", pActivedCamera->GetProjectionMatrix());
+//         shaderHelper.SetGlobalVector("g_EyePos", pActivedCamera->pTransform->GetPosition());
+//     }
+// }

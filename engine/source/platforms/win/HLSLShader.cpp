@@ -4,9 +4,7 @@
 #include "HLSLShaderHelper.h"
 #include "Mesh.h"
 #include "Texture.h"
-
-static HRESULT CreateTexture2DView(DirectXGraphics& directXGfx, Texture* pInputTex, 
-    ID3D11ShaderResourceView ** ppOutputTextureView);
+#include "Material.h"
 
 HLSLVertexShader::HLSLVertexShader(DirectXGraphics& gfx, const std::wstring& path):
     HLSLVertexShader(gfx, path, "main", "vs_5_0")
@@ -58,27 +56,6 @@ ID3D11VertexShader* HLSLVertexShader::Get() const
 }
 
 
-bool HLSLVertexShader::CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler)
-{
-    if(pInputTex == nullptr) return false;
-    HRESULT hr;
-#ifndef NDEBUG
-    auto & infoManager = directXGfx.infoManager;
-#endif
-    D3D11_SAMPLER_DESC samplerDesc = {};
-    samplerDesc.Filter = GetTextureFilterMode(pInputTex->GetFilterMode()); 
-    auto wrapmode = GetTextureWrapMode(pInputTex->GetWrapMode());
-    samplerDesc.AddressU = wrapmode; 
-    samplerDesc.AddressV = wrapmode; 
-    samplerDesc.AddressW = wrapmode; 
-    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    samplerDesc.MipLODBias = 0.0f;
-    samplerDesc.MinLOD = 0;
-    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-    GFX_THROW_INFO(directXGfx.pDevice->CreateSamplerState(&samplerDesc, ppOutputSampler));
-    return true;
-}
-
 void HLSLVertexShader::SetInputLayout()
 {
     if(pInputLayout == nullptr)
@@ -96,41 +73,68 @@ void HLSLVertexShader::SetInputLayout()
     directXGfx.pContext->IASetInputLayout(pInputLayout.Get());
 }
 
-void HLSLVertexShader::UpdateConstantBuffer()
+void HLSLVertexShader::LoadMaterialResource(Material * pMat)
 {
-    for(auto & pair: shaderDescInfo.GetCBuffers())
+    auto shaderResource = pMat->GetUpdatedShaderResourcePtr(this);
+
+    for(auto & pair: shaderResource->CBufferBySlot)
     {
         unsigned int slot = pair.first;
         if(slot <= DirectXGraphics::MaxCommonSlot) continue;
-        directXGfx.UpdateCBuffer(pConstantBuffersBySlot[slot], pair.second.get(),Graphics::EBindType::ToVS);
+        directXGfx.UpdateCBuffer(pConstantBuffersByID[pair.second->uniqueID], pair.second.get(),Graphics::EBindType::ToVS);
     }
-}
-
-void HLSLVertexShader::UpdateTexture()
-{
+    
     HRESULT hr;
     #ifndef NDEBUG
         auto & infoManager = directXGfx.infoManager;
     #endif
-    for(auto & pair: shaderDescInfo.GetTextures())
+    for(auto & pair: shaderResource->textures)
     {
         auto & name = pair.first;
         TextureVariable * pTexVariable = pair.second.get();
+        size_t texId = pTexVariable->uniqueID;
         unsigned int slot = pTexVariable->slot;
-        SamplerInfo samplerInfo = GetSamplerInfoByName(pTexVariable->samplerName.c_str(), (int)slot);
+        SamplerInfo& samplerInfo = shaderResource->GetSamplerInfoByName(pTexVariable->samplerName.c_str(), (int)slot);
+        size_t samplerId = samplerInfo.uniqueID;
         if(pTexVariable->isDirty)
         {
             pTexVariable->isDirty = false;
             //Update
             auto pTexture = pTexVariable->pTexture.get();
             if(pTexture == nullptr) pTexture = Texture::GetDefaultTexturePtr();
-            CreateSampler(pTexture, &pSamplerStateBySlot[samplerInfo.slot]);
-            GFX_THROW_INFO(CreateTexture2DView(directXGfx, pTexture, &pTextureViewBySlot[slot]));
+            GFX_THROW_INFO(CreateSampler(directXGfx.pDevice, pTexture, &pSamplerStateByID[samplerId]));
+            GFX_THROW_INFO(CreateTexture2DView(directXGfx.pDevice, directXGfx.pContext, pTexture, &pTextureViewByID[texId]));
         }
-        directXGfx.BindTexture(slot, pTextureViewBySlot[slot], Graphics::EBindType::ToVS);
-        directXGfx.BindSampler(samplerInfo.slot, pSamplerStateBySlot[samplerInfo.slot], Graphics::EBindType::ToVS);
+        directXGfx.BindTexture(slot, pTextureViewByID[texId], Graphics::EBindType::ToVS);
+        directXGfx.BindSampler(samplerInfo.bindPoint, pSamplerStateByID[samplerId], Graphics::EBindType::ToVS);
     }
 }
+
+// void HLSLVertexShader::UpdateTexture(Material * pMat)
+// {
+//     HRESULT hr;
+//     #ifndef NDEBUG
+//         auto & infoManager = directXGfx.infoManager;
+//     #endif
+//     for(auto & pair: shaderDescInfo.GetTextures())
+//     {
+//         auto & name = pair.first;
+//         TextureVariable * pTexVariable = pair.second.get();
+//         unsigned int slot = pTexVariable->slot;
+//         SamplerInfo samplerInfo = GetSamplerInfoByName(pTexVariable->samplerName.c_str(), (int)slot);
+//         if(pTexVariable->isDirty)
+//         {
+//             pTexVariable->isDirty = false;
+//             //Update
+//             auto pTexture = pTexVariable->pTexture.get();
+//             if(pTexture == nullptr) pTexture = Texture::GetDefaultTexturePtr();
+//             GFX_THROW_INFO(CreateSampler(directXGfx, pTexture, &pSamplerStateBySlot[samplerInfo.slot]));
+//             GFX_THROW_INFO(CreateTexture2DView(directXGfx, pTexture, &pTextureViewBySlot[slot]));
+//         }
+//         directXGfx.BindTexture(slot, pTextureViewBySlot[slot], Graphics::EBindType::ToVS);
+//         directXGfx.BindSampler(samplerInfo.slot, pSamplerStateBySlot[samplerInfo.slot], Graphics::EBindType::ToVS);
+//     }
+// }
 
 UINT HLSLVertexShader::UpdateVertexBuffers(Mesh& mesh, ID3D11Buffer**& pVertexBuffers,UINT*& strides,UINT*& offsets)
 {
@@ -209,119 +213,41 @@ ID3D11PixelShader* HLSLPixelShader::Get() const
     return pPixelShader.Get();
 }
 
-bool HLSLPixelShader::CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler)
-{
-    if(pInputTex == nullptr) return false;
-    HRESULT hr;
-#ifndef NDEBUG
-    auto & infoManager = directXGfx.infoManager;
-#endif
-    D3D11_SAMPLER_DESC samplerDesc = {};
-    samplerDesc.Filter = GetTextureFilterMode(pInputTex->GetFilterMode()); 
-    auto wrapmode = GetTextureWrapMode(pInputTex->GetWrapMode());
-    samplerDesc.AddressU = wrapmode; 
-    samplerDesc.AddressV = wrapmode; 
-    samplerDesc.AddressW = wrapmode; 
-    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    samplerDesc.MinLOD = 0;
-    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-    GFX_THROW_INFO(directXGfx.pDevice->CreateSamplerState(&samplerDesc, ppOutputSampler));
-    return true;
-}
 
 
-void HLSLPixelShader::UpdateConstantBuffer()
+void HLSLPixelShader::LoadMaterialResource(Material * pMat)
 {
-    for(auto & pair: shaderDescInfo.GetCBuffers())
+    auto shaderResource = pMat->GetUpdatedShaderResourcePtr(this);
+
+    for(auto & pair: shaderResource->CBufferBySlot)
     {
         unsigned int slot = pair.first;
         if(slot <= DirectXGraphics::MaxCommonSlot) continue;
-        directXGfx.UpdateCBuffer(pConstantBuffersBySlot[slot], pair.second.get(), Graphics::EBindType::ToPS);
+        directXGfx.UpdateCBuffer(pConstantBuffersByID[pair.second->uniqueID], pair.second.get(),Graphics::EBindType::ToPS);
     }
-}
-
-void HLSLPixelShader::UpdateTexture()
-{
+    
     HRESULT hr;
     #ifndef NDEBUG
         auto & infoManager = directXGfx.infoManager;
     #endif
-    for(auto & pair: shaderDescInfo.GetTextures())
+    for(auto & pair: shaderResource->textures)
     {
         auto & name = pair.first;
         TextureVariable * pTexVariable = pair.second.get();
+        size_t texId = pTexVariable->uniqueID;
         unsigned int slot = pTexVariable->slot;
-        SamplerInfo samplerInfo = GetSamplerInfoByName(pTexVariable->samplerName.c_str(), (int)slot);
+        SamplerInfo& samplerInfo = shaderResource->GetSamplerInfoByName(pTexVariable->samplerName.c_str(), (int)slot);
+        size_t samplerId = samplerInfo.uniqueID;
         if(pTexVariable->isDirty)
         {
             pTexVariable->isDirty = false;
             //Update
-            Microsoft::WRL::ComPtr<ID3D11Texture2D> pTexture2D;
             auto pTexture = pTexVariable->pTexture.get();
             if(pTexture == nullptr) pTexture = Texture::GetDefaultTexturePtr();
-            // CreateTexture2D(pTexture, &pTexture2D);
-            CreateSampler(pTexture, &pSamplerStateBySlot[samplerInfo.slot]);
-            GFX_THROW_INFO(CreateTexture2DView(directXGfx, pTexture, &pTextureViewBySlot[slot]));
-            // directXGfx.pDevice->CreateShaderResourceView(pTexture2D.Get(), nullptr, &pTextureViewBySlot[slot]);
+            GFX_THROW_INFO(CreateSampler(directXGfx.pDevice, pTexture, &pSamplerStateByID[samplerId]));
+            GFX_THROW_INFO(CreateTexture2DView(directXGfx.pDevice, directXGfx.pContext, pTexture, &pTextureViewByID[texId]));
         }
-        directXGfx.BindTexture(slot, pTextureViewBySlot[slot], Graphics::EBindType::ToPS);
-        directXGfx.BindSampler(samplerInfo.slot, pSamplerStateBySlot[samplerInfo.slot], Graphics::EBindType::ToPS);
+        directXGfx.BindTexture(slot, pTextureViewByID[texId], Graphics::EBindType::ToPS);
+        directXGfx.BindSampler(samplerInfo.bindPoint, pSamplerStateByID[samplerId], Graphics::EBindType::ToPS);
     }
-}
-
-static HRESULT CreateTexture2DView(DirectXGraphics& directXGfx, Texture* pInputTex, ID3D11ShaderResourceView ** ppOutputTextureView)
-{
-    HRESULT hr = E_FAIL;
-    if(pInputTex == nullptr) return hr;
-    auto pDevice = directXGfx.GetDevice();
-    auto pContext = directXGfx.GetContext();
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> pTexture2D;
-    D3D11_TEXTURE2D_DESC ImageTextureDesc = {};
-    
-    ImageTextureDesc.Width = pInputTex->GetWidth();
-    ImageTextureDesc.Height = pInputTex->GetHeight();
-    ImageTextureDesc.MipLevels = pInputTex->GetMipMapLevels();
-    ImageTextureDesc.ArraySize = 1;
-    
-    ImageTextureDesc.Format = GetTextureFormat(pInputTex->GetTextureFormat(), pInputTex->IsLinear());
-    ImageTextureDesc.SampleDesc.Count = 1;
-    ImageTextureDesc.SampleDesc.Quality = 0;
-    ImageTextureDesc.Usage = D3D11_USAGE_IMMUTABLE;
-    ImageTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    ImageTextureDesc.MiscFlags = 0;
-    
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = GetTextureFormat(pInputTex->GetTextureFormat(), pInputTex->IsLinear());
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels = 1;
-    srvDesc.Texture2D.MostDetailedMip = 0;
-
-    if(pInputTex->UseMipMap())
-    {
-        ImageTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-        ImageTextureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
-        ImageTextureDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
-        // we just want to write into first mip level, rest will be generated automatically
-        srvDesc.Texture2D.MipLevels = -1;
-        // we cannot use subresource data here, because we only have original image data.
-        hr = pDevice->CreateTexture2D(&ImageTextureDesc, nullptr, &pTexture2D);
-        if(FAILED(hr)) return hr;
-        pContext->UpdateSubresource(pTexture2D.Get(), 0, nullptr, pInputTex->GetImageData(), pInputTex->GetPitch(), 0);
-
-        hr = pDevice->CreateShaderResourceView(pTexture2D.Get(), &srvDesc, ppOutputTextureView);
-        if(FAILED(hr)) return hr;
-        pContext->GenerateMips(*ppOutputTextureView);
-
-    }
-    else{
-        D3D11_SUBRESOURCE_DATA ImageSubresourceData = {};
-        ImageSubresourceData.pSysMem = pInputTex->GetImageData();
-        ImageSubresourceData.SysMemPitch = pInputTex->GetPitch();
-        hr = pDevice->CreateTexture2D(&ImageTextureDesc, &ImageSubresourceData, &pTexture2D);
-        if(FAILED(hr)) return hr;
-        
-        hr = pDevice->CreateShaderResourceView(pTexture2D.Get(), &srvDesc, ppOutputTextureView);
-    }
-    return hr;
 }

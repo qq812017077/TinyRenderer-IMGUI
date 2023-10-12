@@ -9,34 +9,36 @@
 #include "core/math/Matrix.h"
 namespace fs = std::filesystem;
 
-std::shared_ptr<Material> Material::pDefaultMaterial = nullptr;
+// 12 bit- 111111111111
+#define ID_LENGTH 12
+#define RENDERING_QUEUE_LENGTH 13
+#define RENDERING_QUEUE_SHIFT ID_LENGTH
+uint64_t const_ID_MASK = (1 << ID_LENGTH) - 1;
+#define ID_MASK const_ID_MASK
+uint64_t const_RENDERING_QUEUE_MASK = ((1 << (RENDERING_QUEUE_LENGTH + ID_LENGTH)) - 1) & (~ID_MASK);
+#define RENDERING_QUEUE_MASK const_RENDERING_QUEUE_MASK
 
-static bool ExistShader(std::string vertexShaderPath, std::string pixelShaderPath)
-{
-    if (vertexShaderPath == "" || pixelShaderPath == "")
-        return false;
-    // check file exist
-    if (!fs::exists(vertexShaderPath) || !fs::exists(pixelShaderPath))
-        return false;
-    return true;
-}
+std::shared_ptr<Material> Material::pDefaultStandardMaterial = nullptr;
+std::shared_ptr<Material> Material::pDefaultCutoutMaterial = nullptr;
+std::shared_ptr<Material> Material::pDefaultTransparentMaterial = nullptr;
 
-Material::Material(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName, size_t mat_id)
-{
-    this->vertexShaderPath = vertexShaderPath;
-    this->pixelShaderPath = pixelShaderPath;
-    // set name is vertexShaderPath + pixelShaderPath
-    this->materialName = materialName;
-    instanceId = mat_id;
-    Graphics::AddMaterial(this);
-}
+
 Material::Material(const Material& mat)
 {
-    this->vertexShaderPath = mat.vertexShaderPath;
-    this->pixelShaderPath = mat.pixelShaderPath;
+    this->pEffect = mat.pEffect;
     this->materialName = mat.materialName;
-    instanceId = MaterialManager::GetNextID();
-    Graphics::AddMaterial(this);
+    instanceId |= MaterialManager::GetNextID() & ID_MASK;
+    this->variableMap = mat.variableMap;
+    this->queuePriority = mat.queuePriority;
+    this->shaderResourceMap = mat.shaderResourceMap;
+}
+
+Material::Material(std::shared_ptr<Effect> pEffect, std::string materialName, size_t mat_id)
+{
+    this->pEffect = pEffect;
+    this->materialName = materialName;
+    instanceId &= ~ID_MASK;
+    instanceId |= mat_id & ID_MASK;
 }
 
 Material::~Material()
@@ -50,48 +52,11 @@ size_t Material::GetInstanceID() const
 }
 
 /*********************************************************/
-/*                  shader operation                     */
+/*                  Effect operation                     */
 /*********************************************************/
-std::string Material::GetVertexShaderPath() const
+void Material::SetupEffect(std::string effectName)
 {
-    return vertexShaderPath;
-}
-
-std::string Material::GetPixelShaderPath() const
-{
-    return pixelShaderPath;
-}
-
-void Material::SetVertexShader(const std::shared_ptr<VertexShader>& pVertexShader)
-{
-    this->pVertexShader = pVertexShader;
-}
-
-void Material::SetPixelShader(const std::shared_ptr<PixelShader>& pPixelShader)
-{
-    this->pPixelShader = pPixelShader;
-}
-
-std::shared_ptr<VertexShader> Material::GetVertexShader() const
-{
-    return pVertexShader;
-}
-
-std::shared_ptr<PixelShader> Material::GetPixelShader() const
-{
-    return pPixelShader;
-}
-
-
-bool Material::HasLoadedShader() const
-{
-    return pVertexShader != nullptr && pPixelShader != nullptr;
-}
-
-void Material::LoadShader(Graphics& gfx)
-{
-    pVertexShader = gfx.CreateVertexShader(vertexShaderPath);
-    pPixelShader = gfx.CreatePixelShader(pixelShaderPath);
+    pEffect = TinyEngine::EffectManager::Get().FindEffect(effectName);
 }
 
 // Renderer
@@ -108,74 +73,99 @@ void Material::UnBind(Renderer * pRenderer)
     rendererRefCountMap.erase(pRenderer);
 }
 
+void Material::SetRenderQueuePriority(uint16_t priority)
+{
+    queuePriority = priority;
+    instanceId &= ~RENDERING_QUEUE_MASK;
+    instanceId |= (queuePriority << RENDERING_QUEUE_SHIFT) & RENDERING_QUEUE_MASK;
+}
+
+
 
 /*********************************************************/
 /*                  uniform buffer operation             */
 /*********************************************************/
 
-void Material::UpdateBuffer()
+std::shared_ptr<ShaderResource> Material::GetUpdatedShaderResourcePtr(ShaderBase* shader)
 {
-    if(pPixelShader== nullptr || pVertexShader== nullptr) return ;
-    for(auto & pair: integerMap)
+    // get shader resource
+    std::shared_ptr<ShaderResource> pShaderResource = nullptr;
+    if(shaderResourceMap.find(shader) == shaderResourceMap.end())
     {
-        pPixelShader->SetInteger(pair.first.c_str(), pair.second);
-        pVertexShader->SetInteger(pair.first.c_str(), pair.second);
-    }
+        pShaderResource = shader->CreateShaderResource();
+        shaderResourceMap.emplace(shader, pShaderResource);
+    }else
+        pShaderResource = shaderResourceMap[shader];
 
-    for(auto & pair: floatMap)
+    // update shader resource
+    for(auto & pair : pShaderResource->variables)
     {
-        pPixelShader->SetFloat(pair.first.c_str(), pair.second);
-        pVertexShader->SetFloat(pair.first.c_str(), pair.second);
-    }
+        auto bufferVariable = pair.second;
+        if(variableMap.find(pair.first) == variableMap.end()) continue;
 
-    for(auto & pair: colorMap)
-    {
-        pPixelShader->SetColor(pair.first.c_str(), pair.second);
-        pVertexShader->SetColor(pair.first.c_str(), pair.second);
-    }
-    for(auto & pair: matrixMap)
-    {
-        pPixelShader->SetMatrix(pair.first.c_str(), pair.second);
-        pVertexShader->SetMatrix(pair.first.c_str(), pair.second);
-    }
-
-    for(auto & pair: textureMap)
-    {
-        auto pTex = pPixelShader->GetTextureByName(pair.first.c_str());
-        if(pTex != nullptr)
-            pTex->Set(pair.first, pair.second.pTexture, pair.second.samplerName);
-
-        pTex = pVertexShader->GetTextureByName(pair.first.c_str());
-        if(pTex != nullptr)
-            pTex->Set(pair.first, pair.second.pTexture, pair.second.samplerName);
+        auto & varName = pair.first;
+        auto & variable = variableMap[pair.first];
+        if(variable.IsDirty())
+        {
+            switch (variable.GetType())
+            {
+            case EVarType::Integer:
+                bufferVariable->SetInt(variable);
+                break;
+            case EVarType::Float:
+                bufferVariable->SetFloat(variable);
+                break;
+            case EVarType::Color:
+                bufferVariable->SetColor(variable);
+                break;
+            case EVarType::Matrix4x4:
+                bufferVariable->SetMatrix(variable);
+                break;
+            }
+        }
     }
     
-    integerMap.clear();
-    floatMap.clear();
-    matrixMap.clear();
-    textureMap.clear();
-    colorMap.clear();
+    for(auto & pair : pShaderResource->textures)
+    {
+        auto TexVariable = pair.second;
+        if(variableMap.find(pair.first) == variableMap.end()) continue;
+
+        auto & varName = pair.first;
+        auto & variable = variableMap[pair.first];
+        if(variable.IsDirty())
+        {
+            switch (variable.GetType())
+            {
+            case EVarType::Texture:
+                TextureInfo& info = variable;
+                TexVariable->Set(varName, info.pTexture, info.samplerName);
+                break;
+            }
+        }
+    }
+    return pShaderResource;
 }
+
 
 /*********************************************************/
 /*                set/get operation                      */
 /*********************************************************/
 void Material::SetInteger(const char * name, int value)
 {
-    integerMap[name] = value;
+    variableMap[name] = value;
 }
 
 void Material::SetFloat(const char * name, float value)
 {
-    floatMap[name] = value;
+    variableMap[name] = value;
 }
 void Material::SetColor(const char * name, Color value)
 {
-    colorMap[name] = value;
+    variableMap[name] = value;
 }
 void Material::SetMatrix(const char * name, Matrix4x4& value)
 {
-    matrixMap[name] = value;
+    variableMap[name] = value;
 }
 
 void Material::SetTexture(const char * name, std::shared_ptr<Texture> pTexture, const char * samplerName)
@@ -186,87 +176,91 @@ void Material::SetTexture(const char * name, std::shared_ptr<Texture> pTexture, 
         info.samplerName = "sampler" + std::string(name);
     else
         info.samplerName = samplerName;
-    textureMap[name] = info;
+    variableMap[name] = info;
 }
 
 bool Material::GetInteger(const char * name, int* result)
 {
-    if(pPixelShader != nullptr)
-    {
-        auto & pVar = pPixelShader->GetVariableByName(name);
-        if(pVar != nullptr)
-            return pVar->GetRaw(result, 0, sizeof(int));
-    }
-    if(pVertexShader != nullptr)
-    {
-        auto & pVar = pVertexShader->GetVariableByName(name);
-        if(pVar != nullptr)
-            return pVar->GetRaw(result, 0, sizeof(int));
-    }
+    // if(pPixelShader != nullptr)
+    // {
+    //     auto & pVar = pPixelShader->GetVariableByName(name);
+    //     if(pVar != nullptr)
+    //         return pVar->GetRaw(result, 0, sizeof(int));
+    // }
+
+    // if(pVertexShader != nullptr)
+    // {
+    //     auto & pVar = pVertexShader->GetVariableByName(name);
+    //     if(pVar != nullptr)
+    //         return pVar->GetRaw(result, 0, sizeof(int));
+    // }
     return false;
 }
 
 bool Material::GetFloat(const char * name, float* result)
 {
-    if(pPixelShader != nullptr)
-    {
-        auto & pVar = pPixelShader->GetVariableByName(name);
-        if(pVar != nullptr)
-            return pVar->GetRaw(result, 0, sizeof(float));
-    }
+    // if(pPixelShader != nullptr)
+    // {
+    //     auto & pVar = pPixelShader->GetVariableByName(name);
+    //     if(pVar != nullptr)
+    //         return pVar->GetRaw(result, 0, sizeof(float));
+    // }
     
-    if(pVertexShader != nullptr)
-    {
-        auto & pVar = pVertexShader->GetVariableByName(name);
-        if(pVar != nullptr)
-            return pVar->GetRaw(result, 0, sizeof(float));
-    }
+    // if(pVertexShader != nullptr)
+    // {
+    //     auto & pVar = pVertexShader->GetVariableByName(name);
+    //     if(pVar != nullptr)
+    //         return pVar->GetRaw(result, 0, sizeof(float));
+    // }
     return false;
 }
 
 bool Material::GetMatrix4x4(const char * name, float* result, int size)
 {
-    if(pPixelShader != nullptr)
-    {
-        auto & pVar = pPixelShader->GetVariableByName(name);
-        if(pVar != nullptr)
-            return pVar->GetRaw(&result, 0, size);
-    }
-    if(pVertexShader != nullptr)
-    {
-        auto & pVar = pVertexShader->GetVariableByName(name);
-        if(pVar != nullptr)
-            return pVar->GetRaw(&result, 0, size);
-    }
+    // if(pPixelShader != nullptr)
+    // {
+    //     auto & pVar = pPixelShader->GetVariableByName(name);
+    //     if(pVar != nullptr)
+    //         return pVar->GetRaw(&result, 0, size);
+    // }
+    // if(pVertexShader != nullptr)
+    // {
+    //     auto & pVar = pVertexShader->GetVariableByName(name);
+    //     if(pVar != nullptr)
+    //         return pVar->GetRaw(&result, 0, size);
+    // }
     return false;
 }
 
 Texture* Material::GetTexturePtr(const char * name)
 {
-    if (textureMap.find(name) == textureMap.end())
+    if (variableMap.find(name) == variableMap.end())
         return Texture::GetDefaultTexturePtr();
-    return textureMap[name].pTexture.get();
+    
+    TextureInfo & texInfo = variableMap[name];
+    return texInfo.pTexture.get();
 
-    if(pPixelShader != nullptr)
-    {
-        auto & pTex = pPixelShader->GetTextureByName(name);
-        if(pTex != nullptr)
-            return pTex->GetTexturePtr();
-    }
-    if(pVertexShader != nullptr)
-    {
-        auto & pTex = pVertexShader->GetTextureByName(name);
-        if(pTex != nullptr)
-            return pTex->GetTexturePtr();
-    }
+    // if(pPixelShader != nullptr)
+    // {
+    //     auto & pTex = pPixelShader->GetTextureByName(name);
+    //     if(pTex != nullptr)
+    //         return pTex->GetTexturePtr();
+    // }
+    // if(pVertexShader != nullptr)
+    // {
+    //     auto & pTex = pVertexShader->GetTextureByName(name);
+    //     if(pTex != nullptr)
+    //         return pTex->GetTexturePtr();
+    // }
     return nullptr;
 }
 
 std::string Material::GetSamplerNameByTexName(std::string& texName) const
 {
-    if (textureMap.find(texName) == textureMap.end())
+    if (variableMap.find(texName) == variableMap.end())
         return "sampler" + texName;
-    return textureMap.at(texName).samplerName;
+    TextureInfo texInfo = variableMap.at(texName);
+    return texInfo.samplerName;
 }
 /*********************************************************/
 /*                  static function                      */
@@ -286,44 +280,64 @@ std::shared_ptr<Material> Material::CreateInstance(std::shared_ptr<Material> pMa
 }
 
 
-std::shared_ptr<Material> Material::CreateDefault(std::string materialName)
+std::shared_ptr<Material> Material::CreateDefault(std::string materialName, ERenderingMode renderingMode)
 {
-    std::string vertexShaderPath = "shaders/DefaultVertexShader.hlsl";
-    std::string pixelShaderPath = "shaders/DefaultPixelShader.hlsl";
+    std::shared_ptr<TinyEngine::Effect> pEffect = TinyEngine::EffectManager::Get().FindDefaultEffect(renderingMode);
+    if(pEffect == nullptr || !pEffect->IsValid())
+        throw EngineException(__LINE__, __FILE__, "Effect is not valid");
 
-    if(!ExistShader(vertexShaderPath, pixelShaderPath))
-        throw EngineException(__LINE__, __FILE__, "Default material not exist");
-    // if materialName is exist, make new name
-    if(materialName == "")
-        materialName = "New Material";
+    if(materialName == "") materialName = "New Material (" + pEffect->GetName() + ")";
     int i = 1;
-    while(MaterialManager::HasExist(materialName)) materialName = "New Material (" + std::to_string(i) + ")";
-    auto pMat = Create(vertexShaderPath, pixelShaderPath, materialName);
+    while(MaterialManager::HasExist(materialName)) materialName = materialName + " (" + std::to_string(i++) + ")";
+    auto pMat = Create(pEffect, materialName);
     pMat->SetColor("color", Color::LightGray());
     return pMat;
 }
 
-
-std::shared_ptr<Material> Material::Create(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName)
+std::shared_ptr<Material> Material::Create(std::string effectName, std::string materialName)
 {
-    if(!ExistShader(vertexShaderPath, pixelShaderPath))
-        return Material::GetDefaultMaterialPtr();
+    auto pEffect = TinyEngine::EffectManager::Get().FindEffect(effectName);
+    if(pEffect == nullptr || !pEffect->IsValid())
+        throw EngineException(__LINE__, __FILE__, "Effect is not valid");
     
-    auto vertexShaderFileName = vertexShaderPath.substr(vertexShaderPath.find_last_of("/\\") + 1);
-    auto pixelShaderFileName = pixelShaderPath.substr(pixelShaderPath.find_last_of("/\\") + 1);
-    vertexShaderFileName = vertexShaderFileName.substr(0, vertexShaderFileName.find_last_of("."));
-    pixelShaderFileName = pixelShaderFileName.substr(0, pixelShaderFileName.find_last_of("."));
-    if(materialName == "")
-        materialName = "Material-VS[" + vertexShaderFileName + "]-PS[" + pixelShaderFileName + "]";
-    
-    auto pMat = std::shared_ptr<Material>(new Material(vertexShaderPath, pixelShaderPath, materialName, MaterialManager::GetNextID()));
+    if(materialName == "") materialName = "New Material (" + effectName + ")";
+    int i = 1;
+    while(MaterialManager::HasExist(materialName)) materialName = materialName + " (" + std::to_string(i++) + ")";
+
+    return Create(pEffect, materialName);
+}
+
+std::shared_ptr<Material> Material::Create(std::shared_ptr<Effect> pEffect, std::string materialName)
+{
+    auto pMat = std::shared_ptr<Material>(new Material(pEffect, materialName, MaterialManager::GetNextID()));
     MaterialManager::AddMaterial(pMat);
     return pMat;
 }
 
-std::shared_ptr<Material> Material::GetDefaultMaterialPtr()
+std::shared_ptr<Material> Material::GetDefaultMaterialPtr(ERenderingMode renderingMode)
 {
-    if (pDefaultMaterial == nullptr) pDefaultMaterial = CreateDefault("Default-Material");
-    return pDefaultMaterial;
+    switch (renderingMode)
+    {
+    case ERenderingMode::Opaque:
+        if (pDefaultStandardMaterial == nullptr) 
+            pDefaultStandardMaterial = CreateDefault("Default-Opaque-Material", ERenderingMode::Opaque);
+        return pDefaultStandardMaterial;
+        break;
+    case ERenderingMode::Cutout:
+        if (pDefaultCutoutMaterial == nullptr) 
+            pDefaultCutoutMaterial = CreateDefault("Default-Cutout-Material", ERenderingMode::Cutout);
+        return pDefaultCutoutMaterial;
+        break;
+    case ERenderingMode::Transparent:
+        if (pDefaultTransparentMaterial == nullptr) 
+            pDefaultTransparentMaterial = CreateDefault("Default-Transparent-Material", ERenderingMode::Transparent);
+        return pDefaultTransparentMaterial;
+        break;
+    default:
+        break;
+    }
+    
+    if (pDefaultStandardMaterial == nullptr) pDefaultStandardMaterial = CreateDefault("Default-Material", ERenderingMode::Opaque);
+    return pDefaultStandardMaterial;
 }
 /*********************************************************/

@@ -58,3 +58,5 @@ cbuffer LightingCBuf : register(b2) // 160 because of float4 alignment
     SpotLight g_SpotLight;          // 64
     float3 g_EyePos;                // 16
 };                                  // 32 + 48 + 64 + 16 = 160
+
+

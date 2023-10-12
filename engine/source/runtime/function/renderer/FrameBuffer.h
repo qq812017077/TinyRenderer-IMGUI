@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 
+class GameObject;
 namespace TinyEngine
 {
     class Scene;
@@ -39,5 +40,6 @@ namespace TinyEngine
         PRenderPath              m_renderpath {PRenderPath::Forward};
         std::shared_ptr<Scene>   m_scene;
         std::unique_ptr<UIState> m_uistate;
+        GameObject*             m_selectedObject {nullptr};
     };
 }

@@ -3,7 +3,7 @@
 #include "managers/MaterialManager.h"
 #include "managers/RenderQueueManager.h"
 #include "scene/SceneManager.h"
-#include "renderer/Graphics.h"
+#include "graphics/Graphics.h"
 #include "Material.h"
 #include "Shader.h"
 Renderer::Renderer(Mesh mesh)

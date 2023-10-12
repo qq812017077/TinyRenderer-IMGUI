@@ -93,7 +93,7 @@ HRESULT HLSLShaderHelper::LoadShaderInfo(ID3D11ShaderReflection* pShaderReflecti
                         }
                     }else
                     {
-                        pShaderDesc->AddConstantBufferInfo(cbufferDesc.Name, bindDesc.BindPoint, cbufferDesc.Size);
+                        CBufferDesc buffDesc = {bindDesc.BindPoint, cbufferDesc.Name, cbufferDesc.Size};
                         for (UINT j = 0; j < cbufferDesc.Variables; ++j)
                         {
                             ID3D11ShaderReflectionVariable* variable = constantBuffer->GetVariableByIndex(j);
@@ -104,22 +104,20 @@ HRESULT HLSLShaderHelper::LoadShaderInfo(ID3D11ShaderReflection* pShaderReflecti
                             ID3D11ShaderReflectionType* variableType = variable->GetType();
                             D3D11_SHADER_TYPE_DESC stDesc;
                             variableType->GetDesc(&stDesc);
-                            pShaderDesc->AddVariable(bindDesc.BindPoint, variableDesc.Name, variableDesc.StartOffset, variableDesc.Size);
+                            buffDesc.variables.emplace_back(variableDesc.Name, variableDesc.StartOffset, variableDesc.Size);
                         }
+                        pShaderDesc->cbuffers.emplace_back(buffDesc);
                     }
                 }
                 break;
             case D3D_SIT_TEXTURE:
                 {
-                    pShaderDesc->AddTexture(bindDesc.BindPoint, bindDesc.Name);
+                    pShaderDesc->textures.emplace_back(bindDesc.BindPoint, bindDesc.Name);
                 }
                 break;
             case D3D_SIT_SAMPLER:
                 {
-                    SamplerInfo samplerInfo;
-                    samplerInfo.slot = bindDesc.BindPoint;
-                    samplerInfo.name = bindDesc.Name;
-                    pShaderDesc->AddSamplerInfo(samplerInfo);
+                    pShaderDesc->samplers.emplace_back(bindDesc.BindPoint, bindDesc.Name);
                 }
                 break;
             case D3D_SIT_STRUCTURED:

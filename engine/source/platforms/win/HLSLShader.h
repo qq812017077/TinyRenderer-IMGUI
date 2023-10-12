@@ -6,7 +6,7 @@
 #include <vector>
 #include <map>
 #include "DirectXGraphics.h"
-
+#include "Shader.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -16,6 +16,26 @@ using string = std::string;
 
 class Texture;
 class Mesh;
+class Material;
+
+// class HLSLShader : public VertexShader, public PixelShader
+// {
+// public:
+//     HLSLShader() = delete;
+//     HLSLShader(DirectXGraphics& gfx, const std::wstring& path);
+//     HLSLShader(DirectXGraphics& gfx, const std::wstring& path, LPCSTR entryPoint);
+//     HLSLShader(DirectXGraphics& gfx, const std::wstring& path, LPCSTR entryPoint, LPCSTR shaderModel);
+//     ~HLSLShader() ;
+
+//     ID3D11VertexShader* Get() const;
+//     void UpdateConstantBuffer(Material * pMat) override;
+//     void UpdateTexture(Material * pMat) override;
+
+//     UINT UpdateVertexBuffers(Mesh& mesh, ID3D11Buffer **& pVertexBuffers,UINT*& strides,UINT*& offsets);
+// protected:
+
+// };
+
 class HLSLVertexShader : public VertexShader
 {
 public:
@@ -26,12 +46,10 @@ public:
     ~HLSLVertexShader() ;
 
     ID3D11VertexShader* Get() const;
-    bool CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler);
-    void SetInputLayout() override;
+    void SetInputLayout();
     
-
-    void UpdateConstantBuffer() override;
-    void UpdateTexture();
+    void LoadMaterialResource(Material * pMat) override;
+    // void UpdateTexture(Material * pMat) override;
 
     UINT UpdateVertexBuffers(Mesh& mesh, ID3D11Buffer **& pVertexBuffers,UINT*& strides,UINT*& offsets);
 private:
@@ -41,6 +59,10 @@ private:
     std::unordered_map<int, wrl::ComPtr<ID3D11Buffer>> pConstantBuffersBySlot;
     std::unordered_map<int, wrl::ComPtr<ID3D11ShaderResourceView>> pTextureViewBySlot;
     std::unordered_map<int, wrl::ComPtr<ID3D11SamplerState>> pSamplerStateBySlot;
+
+    std::unordered_map<size_t, wrl::ComPtr<ID3D11Buffer>> pConstantBuffersByID;
+    std::unordered_map<size_t, wrl::ComPtr<ID3D11ShaderResourceView>> pTextureViewByID;
+    std::unordered_map<size_t, wrl::ComPtr<ID3D11SamplerState>> pSamplerStateByID;
 
     wrl::ComPtr<ID3D11InputLayout> pInputLayout = nullptr;
     std::vector<D3D11_INPUT_ELEMENT_DESC> inputLayoutDescs;
@@ -62,10 +84,8 @@ public:
     ~HLSLPixelShader() ;
     
     ID3D11PixelShader* Get() const ;
-    bool CreateSampler(Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler);
-    
-    void UpdateConstantBuffer() override;
-    void UpdateTexture();
+    void LoadMaterialResource(Material * pMat) override;
+    // void UpdateTexture(Material * pMat) override;
 private:
     DirectXGraphics& directXGfx;
     wrl::ComPtr<ID3D11PixelShader> pPixelShader = nullptr;
@@ -73,4 +93,8 @@ private:
     std::unordered_map<int, wrl::ComPtr<ID3D11Buffer>> pConstantBuffersBySlot;
     std::unordered_map<int, wrl::ComPtr<ID3D11ShaderResourceView>> pTextureViewBySlot;
     std::unordered_map<int, wrl::ComPtr<ID3D11SamplerState>> pSamplerStateBySlot;
+
+    std::unordered_map<size_t, wrl::ComPtr<ID3D11Buffer>> pConstantBuffersByID;
+    std::unordered_map<size_t, wrl::ComPtr<ID3D11ShaderResourceView>> pTextureViewByID;
+    std::unordered_map<size_t, wrl::ComPtr<ID3D11SamplerState>> pSamplerStateByID;
 };

@@ -17,6 +17,16 @@ std::unique_ptr<Node> ParseNode(const aiNode* node);
 
 Model::Model(): bounds(Vector3::zero,Vector3::zero) {}
 
+std::unordered_map<std::string, std::string> nameMap = {
+            {"$AmbientMap", "_AmbientTex"},
+            {"$DiffuseMap", "_MainTex"},
+            {"$SpecularMap", "_SpecularTex"},
+            {"$NormalMap", "_BumpMap"},
+            {"$AlphaMap", "_AlphaTex"},
+            {"$DisplacementMap", "_ParallaxMap"},
+            {"$ReflectionMap", "_Cube"},
+        };
+
 std::vector<std::shared_ptr<Material>> Model::GenerateMaterials()
 {
     std::vector<std::shared_ptr<Material>> materials;
@@ -24,7 +34,9 @@ std::vector<std::shared_ptr<Material>> Model::GenerateMaterials()
     for(int i = 0; i < materialdatas.size(); ++i)
     {
         auto& matdata = materialdatas[i];
-        auto pMat = Material::CreateDefault(matdata.name);
+        
+        std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
+        ERenderingMode renderingMode = ERenderingMode::Opaque;
         std::cout << "Material[" << i <<"]: *******************************" << std::endl;
         if(matdata.Has<std::string>("$AmbientMap"))
         {
@@ -32,16 +44,18 @@ std::vector<std::shared_ptr<Material>> Model::GenerateMaterials()
         }
         if(matdata.Has<std::string>("$DiffuseMap"))
         {
-            
             std::cout << "DiffuseMap: " << matdata.Get<std::string>("$DiffuseMap") << std::endl;
             auto texPath = model_path + "/" + matdata.Get<std::string>("$DiffuseMap");
             auto pTex = Texture::LoadFrom(texPath);
-            pTex->SetMipMapLevel(0);
-            if(pTex != nullptr) 
-                pMat->SetTexture("_MainTex", pTex);
-            else
+            if(pTex != nullptr){
+                textures.insert(std::make_pair("_MainTex", pTex));
+            }
+            else{
                 std::cout << "Failed to load texture from " << texPath << std::endl;
+            }
+            if(pTex->HasAlphaChannel()) renderingMode = ERenderingMode::Cutout;
         }
+
         if(matdata.Has<std::string>("$SpecularMap"))
         {
             std::cout << "SpecularMap: " << matdata.Get<std::string>("$SpecularMap") << std::endl;
@@ -85,6 +99,12 @@ std::vector<std::shared_ptr<Material>> Model::GenerateMaterials()
         if(matdata.Has<float>("$Opacity"))
         {
             std::cout << "Opacity: " << matdata.Get<float>("$Opacity") << std::endl;
+        }
+
+        auto pMat = Material::CreateDefault(matdata.name, renderingMode);
+        for(auto& [name, pTex] : textures)
+        {
+            pMat->SetTexture(name.c_str(), pTex);
         }
         materials[i] = pMat;
     }

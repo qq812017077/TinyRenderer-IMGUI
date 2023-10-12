@@ -3,6 +3,7 @@
 #include "EngineMath.h"
 #include "core/Singleton.h"
 #include <memory>
+#include <vector>
 #include <unordered_map>
 
 class IShaderHelper;
@@ -21,14 +22,16 @@ public:
 
     Vector4 GetColor() const { return Vector4(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f) * intensity; }
     void SetIntensity(float intensity) { this->intensity = intensity; }
+    void SetRange(float range) { this->range = range; }
     float GetIntensity() { return intensity; }
+    float GetRange() { return range; }
     static GameObject* CreateDirectionalLight(std::string name = "Directional Light");
     static GameObject* CreatePointLight(std::string name = "Point Light");
     static GameObject* CreateSpotLight(std::string name = "Spot Light");
     static Light * GetDirectionalLight();
     static Light * GetPointLight();
+    static std::vector<Light *> GetPointLightList();
     static Light * GetSpotLight();
-    static void UpdateLightBuffer(IShaderHelper& shaderHelper);
 protected:
     void Init() override;
 private:

@@ -20,7 +20,7 @@ public:
     // Projection Matrix
     Matrix4x4 GetProjectionMatrix();
     void LookAt(Vector3 target);
-    static void UpdateCameraBuffer(IShaderHelper& shaderHelper);
+    // static void UpdateCameraBuffer(IShaderHelper& shaderHelper);
     static Camera* pActivedCamera;
 protected:
     void Init() override;

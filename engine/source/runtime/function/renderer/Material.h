@@ -4,16 +4,24 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include "effect/Effect.h"
 #include "Texture.h"
-class Graphics;
-class VertexShader;
-class PixelShader;
-class Renderer;
-struct Matrix4x4;
+#include "effect/Stencil.h"
+#include <variant>
+#include "core/math/Matrix.h"
+#include "Color.h"
+
 struct Vector3;
 struct Vector4;
-struct Color;
-
+class Graphics;
+class ShaderBase;
+class Renderer;
+struct ShaderResource;
+using TinyEngine::Effect;
+using TinyEngine::RenderQueue;
+using TinyEngine::ERenderingMode;
+// using TinyEngine::Rendering::EStencilMode;
+// using TinyEngine::ECullMode;
 
 class Material
 {
@@ -26,25 +34,82 @@ private:
         std::string samplerName;
     };
 
+    enum class EVarType
+    {
+        Integer,
+        Float,
+        Color,
+        Matrix4x4,
+        Texture
+    };
+
+    template<typename T>
+    struct VarMap { using Type = T; };
+    #define VAR_TYPE(type, enumType) template<> struct VarMap<type> { using Type = type; static constexpr EVarType TypeEnum = EVarType::enumType; }
+    VAR_TYPE(int, Integer);
+    VAR_TYPE(float, Float);
+    VAR_TYPE(Color, Color);
+    VAR_TYPE(Matrix4x4, Matrix4x4);
+    VAR_TYPE(TextureInfo, Texture);
+    #undef VAR_TYPE
+
+    class Variable
+    {
+    public:
+        template<typename T>
+        operator T&()
+        {
+            if(type != VarMap<T>::TypeEnum) { throw std::runtime_error("Type mismatch"); }
+            dirty = false;
+            return std::get<T>(variable);
+        }
+
+        template<typename T>
+        operator T() const
+        {
+            return const_cast<Variable&>(*this).operator T&();
+        }
+
+        template<typename T>
+        void operator=(const T& value)
+        {
+            variable = value;
+            type = VarMap<T>::TypeEnum;
+            dirty = true;
+        }
+        bool IsDirty() const { return dirty; }
+        void MakeDirty() { dirty = true; }
+        EVarType GetType() const { return type; }
+    private:
+        using Var = std::variant<int, float, TextureInfo, Matrix4x4, Color>;
+        Var variable;
+        EVarType type;
+        bool dirty;
+    };
+
     Material() = delete;
-    Material(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName, size_t mat_id);
-    Material(const Material&);
+    // Material(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName, size_t mat_id);
+    Material(std::shared_ptr<Effect> pEffect, std::string materialName, size_t mat_id);
 public:
+    Material(const Material&);
     ~Material();
     
+    void SetupEffect(std::string effectName);
+    std::shared_ptr<Effect> GetEffect() const { return pEffect; }
+
     size_t GetInstanceID() const;
-    std::string GetVertexShaderPath() const;
-    std::string GetPixelShaderPath() const;
-    
-    void SetVertexShader(const std::shared_ptr<VertexShader>& pVertexShader);
-    void SetPixelShader(const std::shared_ptr<PixelShader>& pPixelShader);
-    std::shared_ptr<VertexShader> GetVertexShader() const;
-    std::shared_ptr<PixelShader> GetPixelShader() const;
 
     std::string GetName() const { return materialName; }
     // Renderer 
     void Bind(Renderer * pRenderer);
     void UnBind(Renderer * pRenderer);
+    void SetRenderQueuePriority(RenderQueue renderQueue) { SetRenderQueuePriority((uint16_t)renderQueue);}
+    void SetRenderQueuePriority(uint16_t priority);
+    uint16_t GetRenderQueuePriority() const {return queuePriority;}
+
+    // resource operation
+    std::shared_ptr<ShaderResource> GetUpdatedShaderResourcePtr(ShaderBase* shader);
+
     // uniform buffer operation
     void SetInteger(const char * name, int value);
     void SetFloat(const char * name, float value);
@@ -60,31 +125,24 @@ public:
     std::string GetSamplerNameByTexName(std::string& texName) const;
     static int GetRefCount(std::shared_ptr<Material> pMaterial);
     static std::shared_ptr<Material> CreateInstance(std::shared_ptr<Material> pMaterial);
-    static std::shared_ptr<Material> CreateDefault(std::string materialName = "New Material");
-    static std::shared_ptr<Material> Create(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName = "");
-    static std::shared_ptr<Material> GetDefaultMaterialPtr();
+    static std::shared_ptr<Material> CreateDefault(std::string materialName = "New Material", ERenderingMode renderingMode=ERenderingMode::Opaque);
+    static std::shared_ptr<Material> Create(std::string effectName, std::string materialName = "");
+    static std::shared_ptr<Material> Create(std::shared_ptr<Effect> pEffect, std::string materialName = "");
+    static std::shared_ptr<Material> GetDefaultMaterialPtr(ERenderingMode renderingMode=ERenderingMode::Opaque);
 private:
-    // if loaded shader, return true
-    bool HasLoadedShader() const;
-    void LoadShader(Graphics& gfx);
+    
 
-    // uniform buffer operation
-    void UpdateBuffer();
-
+    size_t instanceId{0};
     std::string materialName;
-    std::shared_ptr<VertexShader> pVertexShader;
-    std::shared_ptr<PixelShader> pPixelShader;
-    std::string vertexShaderPath;
-    std::string pixelShaderPath;
+    uint16_t queuePriority;
 
-    // std::unordered_map<std::string, Property> propertyMap;
-    std::map<std::string, TextureInfo> textureMap;
-    std::map<std::string, int> integerMap;
-    std::map<std::string, float> floatMap;
-    std::map<std::string, Color> colorMap;
-    std::map<std::string, Matrix4x4> matrixMap;
+    std::shared_ptr<Effect> pEffect;
+    std::unordered_map<std::string, Variable> variableMap;
+    
     std::unordered_map<Renderer*, bool> rendererRefCountMap;
+    std::map<ShaderBase *, std::shared_ptr<ShaderResource>> shaderResourceMap;
 
-    size_t instanceId;
-    static std::shared_ptr<Material> pDefaultMaterial;
+    static std::shared_ptr<Material> pDefaultStandardMaterial;
+    static std::shared_ptr<Material> pDefaultCutoutMaterial;
+    static std::shared_ptr<Material> pDefaultTransparentMaterial;
 };

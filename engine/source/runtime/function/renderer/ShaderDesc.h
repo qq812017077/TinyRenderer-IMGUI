@@ -1,20 +1,17 @@
 #pragma once
-#include <string>
 #include <map>
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include <string>
+#include "Color.h"
+#include "Matrix.h"
+
 typedef int INT;
 typedef float FLOAT;
 typedef unsigned int UINT;
 typedef unsigned char BYTE;
 typedef unsigned long DWORD;
-
-struct SamplerInfo
-{
-    int slot;
-    std::string name;
-};
 
 struct inputLayoutInfo
 {
@@ -23,23 +20,57 @@ struct inputLayoutInfo
     unsigned int offset;
 };
 
+struct SamplerInfo
+{
+	size_t uniqueID;
+    int bindPoint;
+    std::string name;
+
+	SamplerInfo()
+	{
+		uniqueID = id++;
+	}
+
+	SamplerInfo(std::string name, int bindPoint)
+		:name(name), bindPoint(bindPoint)
+	{
+		uniqueID = id++;
+	}
+
+	static size_t id;
+};
 struct CBufferData
 {
+	size_t uniqueID;
     bool isDirty = true;
 	UINT slot;
 	std::string cbufferName;
 	UINT byteWidth;
     std::unique_ptr<BYTE[]> pData;
 
-    CBufferData() : slot(), byteWidth() {}
+    CBufferData() : slot(), byteWidth() {uniqueID = id++;}
 	CBufferData(const char* name, UINT startSlot, UINT byteWidth, BYTE* initData = nullptr) :
 		cbufferName(name), pData(new BYTE[byteWidth]{}), slot(startSlot),
 		byteWidth(byteWidth)
 	{
 		if (initData)
 			memcpy_s(pData.get(), byteWidth, initData, byteWidth);
+
+		uniqueID = id++;
 	}
+	CBufferData(std::string name, UINT startSlot, UINT byteWidth, BYTE* initData = nullptr) :
+		cbufferName(name), pData(new BYTE[byteWidth]{}), slot(startSlot),
+		byteWidth(byteWidth)
+	{
+		if (initData)
+			memcpy_s(pData.get(), byteWidth, initData, byteWidth);
+
+		uniqueID = id++;
+	}
+	static size_t id;
 };
+
+
 class Texture;
 struct ITextureVariable
 {
@@ -53,7 +84,8 @@ struct ICBufferVariable
 	virtual void SetUInt(UINT val) = 0;
 	virtual void SetInt(INT val) = 0;
 	virtual void SetFloat(FLOAT val) = 0;
-
+	virtual void SetColor(Color color) = 0;
+	virtual void SetMatrix(Matrix4x4 matrix) = 0;
     virtual void SetBoolVector(UINT numComponents, const bool data[4]) = 0;
 	virtual void SetUIntVector(UINT numComponents, const UINT data[4]) = 0;
 	virtual void SetIntVector(UINT numComponents, const INT data[4]) = 0;
@@ -71,20 +103,26 @@ struct ICBufferVariable
 
 struct TextureVariable: public ITextureVariable
 {
+	size_t uniqueID;
 	bool isDirty = true;
 	int slot;
     std::string name;
 	std::shared_ptr<Texture> pTexture = nullptr;
 	std::string samplerName;
-	TextureVariable() = default;
+	TextureVariable()
+	{
+		uniqueID = id++;
+	}
 	TextureVariable(int slot, std::string name)
 		:slot(slot), name(name), pTexture(nullptr)
 	{
 		samplerName = "sampler" + name;
+		uniqueID = id++;
 	}
 	TextureVariable(int slot, std::string name, std::shared_ptr<Texture> pTexture, std::string samplerName)
 		:slot(slot), name(name), pTexture(pTexture), samplerName(samplerName)
 	{
+		uniqueID = id++;
 	}
 	unsigned int GetSlot() const {	return slot; }
 	void Set(const std::string& name, std::shared_ptr<Texture>& pTexture,const  std::string& samplerName) override
@@ -99,10 +137,14 @@ struct TextureVariable: public ITextureVariable
 	{
 		return pTexture == nullptr? nullptr : pTexture.get();
 	}
+
+	static size_t id;
 };
 
 struct CBufferVariable : public ICBufferVariable
 {
+	static float colordata[4];
+
 	UINT startByteOffset = 0;
 	UINT byteWidth = 0;
 	CBufferData* pCBufferData = nullptr;
@@ -120,6 +162,15 @@ struct CBufferVariable : public ICBufferVariable
 	void SetUInt(UINT val) override     { SetRaw(&val, 0, 4); }
 	void SetInt(INT val) override       { SetRaw(&val, 0, 4); }
 	void SetFloat(FLOAT val) override   { SetRaw(&val, 0, 4); }
+	void SetColor(Color color) override {
+		colordata[0] = color.GetR() / 255.0f;
+		colordata[1] = color.GetG() / 255.0f;
+		colordata[2] = color.GetB() / 255.0f;
+		colordata[3] = color.GetA() / 255.0f;
+		SetFloatVector(4, colordata);
+	}
+	void SetMatrix(Matrix4x4 matrix) override { SetFloatMatrix(4, 4, matrix.GetData()); }
+
 
 	void SetBoolVector(UINT numComponents, const bool data[4]) override 
 	{
@@ -225,69 +276,169 @@ struct CBufferVariable : public ICBufferVariable
 
 };
 
-class ShaderDesc
+
+struct ShaderResource
 {
-    friend class ShaderBase;
-public:
-	ShaderDesc() = default;
-	ShaderDesc(const ShaderDesc& desc) = default;
-	~ShaderDesc() = default;
-	
-    void AddConstantBufferInfo(const char * bufName, UINT slot, UINT byteWidth)
-    {
-		CBufferBySlot.emplace(slot, std::make_unique<CBufferData>(bufName, slot, byteWidth));
-    }
-	
-	
-	void AddVariable(UINT slot, const char * varName, UINT startOffset, UINT size)
-	{
-		variables.emplace(varName, std::make_shared<CBufferVariable>(startOffset, size, CBufferBySlot[slot].get()));
-	}
-
-	void AddTexture(UINT slot, const char * name)
-	{
-		textures.emplace(name, std::make_shared<TextureVariable>(slot, name));
-	}
-
-    void AddSamplerInfo(SamplerInfo samplerInfo)
-    {
-        samplers.push_back(samplerInfo);
-        samplerIndexBufBySlot[samplerInfo.slot] = static_cast<int>(samplers.size() - 1);
-        samplerIndexBufByName[samplerInfo.name] = static_cast<int>(samplers.size() - 1);
-    }
-
-    int GetTextureInfoCount() const
-    {
-        return static_cast<int>(textures.size());
-    }
-
-    int GetSamplerInfoCount() const
-    {
-        return static_cast<int>(samplers.size());
-    }
-
-	std::unordered_map<int, std::unique_ptr<CBufferData>>& GetCBuffers()
-	{
-		return CBufferBySlot;
-	}
-	std::unordered_map<std::string, std::shared_ptr<CBufferVariable>>& GetVariables()
-	{
-		return variables;
-	}
-	std::unordered_map<std::string, std::shared_ptr<TextureVariable>> & GetTextures()
-	{
-		return textures;
-	}
-private:
-    std::unordered_map<int, std::unique_ptr<CBufferData>> CBufferBySlot;
+	std::unordered_map<int, std::unique_ptr<CBufferData>> CBufferBySlot;
 	std::unordered_map<std::string, std::shared_ptr<CBufferVariable>> variables;
 	std::unordered_map<std::string, std::shared_ptr<TextureVariable>> textures;
-    std::vector<SamplerInfo> samplers;
-    std::map<int, int> texIndexBufBySlot;
-    std::map<std::string, int> texIndexBufByName;
+	std::vector<SamplerInfo> samplers;
+	std::map<int, int> texIndexBufBySlot;
+	std::map<std::string, int> texIndexBufByName;
+	std::map<int, int> samplerIndexBufBySlot;
+	std::map<std::string, int> samplerIndexBufByName;
 
-    std::map<int, int> samplerIndexBufBySlot;
-    std::map<std::string, int> samplerIndexBufByName;
-
+	SamplerInfo GetSamplerInfoByName(const char * name, int slot)
+	{
+		if (samplerIndexBufByName.find(name) == samplerIndexBufByName.end())
+		{
+			// try to find by slot
+			if (samplerIndexBufBySlot.find(slot) == samplerIndexBufBySlot.end())
+			{
+				return samplers[0];
+			}
+			return samplers[samplerIndexBufBySlot[slot]];
+		}
+		return samplers[samplerIndexBufByName[name]];
+	}
 };
+
+struct VariableDesc
+{
+	std::string varName;
+	unsigned int startOffset;
+	unsigned int size;
+
+	VariableDesc() = default;
+	VariableDesc(const char* name, unsigned int offset, unsigned int size)
+		:varName(name), startOffset(offset), size(size)
+	{
+	}
+
+	VariableDesc(std::string name, unsigned int offset, unsigned int size)
+		:varName(name), startOffset(offset), size(size)
+	{
+		
+	}
+};
+
+struct CBufferDesc
+{
+	unsigned int bindPoint;
+	std::string bufferName;
+	unsigned int bufSize;
+	std::vector<VariableDesc> variables;
+	CBufferDesc() = default;
+
+	CBufferDesc(unsigned int slot, std::string name, unsigned int size)
+		:bindPoint(slot), bufferName(name), bufSize(size)
+	{
+		variables.clear();
+	}
+
+	CBufferDesc(unsigned int slot, const char * name, unsigned int size)
+		:bindPoint(slot), bufferName(name), bufSize(size)
+	{
+		variables.clear();
+	}
+};
+
+struct TextureDesc
+{
+	unsigned int bindPoint;
+	std::string textureName;
+
+	TextureDesc() = default;
+	TextureDesc(unsigned int slot, std::string name)
+		:bindPoint(slot), textureName(name)
+	{
+	}
+};
+
+struct SamplerDesc
+{
+	unsigned int bindPoint;
+	std::string samplerName;
+
+	SamplerDesc() = default;
+	SamplerDesc(unsigned int slot, std::string name)
+		:bindPoint(slot), samplerName(name)
+	{
+	}
+};
+
+struct ShaderDesc
+{
+	std::string shaderPath;
+	std::vector<CBufferDesc> cbuffers;
+	std::vector<TextureDesc> textures;
+	std::vector<SamplerDesc> samplers;
+};
+
+// class ShaderDesc
+// {
+//     friend class ShaderBase;
+// public:
+// 	ShaderDesc() = default;
+// 	ShaderDesc(const ShaderDesc& desc) = default;
+// 	~ShaderDesc() = default;
+	
+//     void AddConstantBufferInfo(const char * bufName, UINT slot, UINT byteWidth)
+//     {
+// 		CBufferBySlot.emplace(slot, std::make_unique<CBufferData>(bufName, slot, byteWidth));
+//     }
+	
+	
+// 	void AddVariable(UINT slot, const char * varName, UINT startOffset, UINT size)
+// 	{
+// 		variables.emplace(varName, std::make_shared<CBufferVariable>(startOffset, size, CBufferBySlot[slot].get()));
+// 	}
+
+// 	void AddTexture(UINT slot, const char * name)
+// 	{
+// 		textures.emplace(name, std::make_shared<TextureVariable>(slot, name));
+// 	}
+
+//     void AddSamplerInfo(SamplerInfo samplerInfo)
+//     {
+//         samplers.push_back(samplerInfo);
+//         samplerIndexBufBySlot[samplerInfo.slot] = static_cast<int>(samplers.size() - 1);
+//         samplerIndexBufByName[samplerInfo.name] = static_cast<int>(samplers.size() - 1);
+//     }
+
+//     int GetTextureInfoCount() const
+//     {
+//         return static_cast<int>(textures.size());
+//     }
+
+//     int GetSamplerInfoCount() const
+//     {
+//         return static_cast<int>(samplers.size());
+//     }
+
+// 	std::unordered_map<int, std::unique_ptr<CBufferData>>& GetCBuffers()
+// 	{
+// 		return CBufferBySlot;
+// 	}
+// 	std::unordered_map<std::string, std::shared_ptr<CBufferVariable>>& GetVariables()
+// 	{
+// 		return variables;
+// 	}
+// 	std::unordered_map<std::string, std::shared_ptr<TextureVariable>> & GetTextures()
+// 	{
+// 		return textures;
+// 	}
+// private:
+//     std::unordered_map<int, std::unique_ptr<CBufferData>> CBufferBySlot;
+// 	std::unordered_map<std::string, std::shared_ptr<CBufferVariable>> variables;
+// 	std::unordered_map<std::string, std::shared_ptr<TextureVariable>> textures;
+//     std::vector<SamplerInfo> samplers;
+//     std::map<int, int> texIndexBufBySlot;
+//     std::map<std::string, int> texIndexBufByName;
+
+//     std::map<int, int> samplerIndexBufBySlot;
+//     std::map<std::string, int> samplerIndexBufByName;
+	
+// 	std::string shaderPath;
+// };
 

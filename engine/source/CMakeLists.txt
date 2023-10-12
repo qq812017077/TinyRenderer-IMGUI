@@ -47,8 +47,9 @@ include(link_dependencies.cmake)
 
 # clear dir and copy shader files
 message(STATUS "Clear dir and copy shader files")
-file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/Debug/shaders)
-file(COPY ${SHADER_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Debug/shaders)
+set(DEBUG_SHADER_DIR ${CMAKE_CURRENT_BINARY_DIR}/Debug/shaders)
+file(REMOVE_RECURSE ${DEBUG_SHADER_DIR})
+file(COPY ${SHADER_DIR}/ DESTINATION ${DEBUG_SHADER_DIR})
 
 
 # copy resources dir and keep directory structure

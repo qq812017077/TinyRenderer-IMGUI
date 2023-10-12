@@ -90,6 +90,8 @@ class GameObject
         GameObject& operator=(const GameObject&) = delete;
         bool loadres(const TinyEngine::GameObjectRes& go_instance_res);
 
+        
+
         static GameObject* ParseModel(Model & model);
         
     private:

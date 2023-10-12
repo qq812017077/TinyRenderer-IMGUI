@@ -6,10 +6,17 @@
 #include "HLSLShaderHelper.h"
 #include "managers/RenderQueueManager.h"
 #include "Texture.h"
+#include "blender/BlenderManager.h"
+#include "stencil/StencilManager.h"
+#include "object/GameObject.h"
+#include "pass/DirectXShadingEffectPass.h"
+
 #define LOG(X) std::cout << X << std::endl;
 // add ComPtr
 namespace wrl = Microsoft::WRL;
 HRESULT hr;
+
+
 
 /****************************************************************************************/
 /*                                      Public Part                                     */
@@ -54,7 +61,7 @@ void DirectXGraphics::ClearBuffer(float red, float green, float blue) noexcept
 {
     const float color[] = { red, green, blue, 1.0f };
     pContext->ClearRenderTargetView(pRenderTargetView.Get(), color);
-    pContext->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
+    pContext->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0u);
     
 }
 
@@ -226,60 +233,99 @@ void DirectXGraphics::DrawTestTriangle(float angle)
  *  2.  Update PerMaterialConstantBuffer(material color, material texture, material sampler)
  *  3.  Update PerObjectConstantBuffer(world matrix)
 */
-void DirectXGraphics::DrawAll()
+void DirectXGraphics::DrawAll(TinyEngine::FrameBuffer * pFrameBuffer)
 {
-    //1. update per frame constant buffer
     auto & helper = HLSLShaderHelper::Get();
-    UpdateCBuffer(pFrameConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerFrameCBufSlot));
+
+    if(m_shading_pass.IsEnabled())
+        m_shading_pass.Apply(this, pFrameBuffer->m_scene);
     
-    UpdateCBuffer(pLightingConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
+    // GameObject* curSelectedGO = pFrameBuffer->m_selectedObject;
+    // if(curSelectedGO)
+    //     drawOutline(curSelectedGO->GetComponent<Renderer>());
+    if(m_mousepicking_pass.IsEnabled())
+        m_mousepicking_pass.Apply(this, pFrameBuffer->m_scene);
+    // multi pass
+}
 
-    //2. update per material constant buffer
-    for(auto & pair : RenderQueueManager::GetRenderQueue())
+
+void DirectXGraphics::Apply(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers)
+{
+    auto pVertexShader = TinyEngine::EffectManager::Get().VSFindShader<HLSLVertexShader>(pass.vsName);
+    auto pPixelShader = TinyEngine::EffectManager::Get().PSFindShader<HLSLPixelShader>(pass.psName);
+    
+    if(pVertexShader == nullptr)
     {
-        auto& mat = pair.first;
-        auto& pRenderers = pair.second;
-        LoadMaterial(*mat);
-        auto pVertexShader = dynamic_cast<HLSLVertexShader*>(mat->GetVertexShader().get());
-        for (auto& pRenderer : pRenderers)
-        {
-            pRenderer->UpdateObjBuffer(helper);
-            UpdateCBuffer(pObjectConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerDrawCBufSlot));
+        throw std::exception("Vertex Shader not found");
+    }
+    else {
+        pContext->VSSetShader(pVertexShader->Get(), nullptr, 0u);
+        // bind input layout
+        pVertexShader->SetInputLayout();
+    }
+    
+    if(pPixelShader == nullptr) pContext->PSSetShader(nullptr, nullptr, 0u);
+    else pContext->PSSetShader(pPixelShader->Get(), nullptr, 0u);
+    
 
-            // bind vertex buffer and index buffer
-            auto & mesh = pRenderer->GetMesh();
+    ID3D11BlendState * targetBlendState = nullptr;
+    GFX_THROW_INFO(TinyEngine::BlenderManager::Get().LoadBlendState(this, pass, &targetBlendState));
+    pContext->OMSetBlendState(targetBlendState, pass.blendFactors, 0xffffffff);
 
-            // BindMesh();
-            // get vertex buffers, strides, offsets from mesh and layout from vertex shader
-            // UINT vbcount = pVertexShader->GetInputLayoutDescs().size();
-            ID3D11Buffer** pVertexBuffers;
-            UINT *strides;
-            UINT *offsets;
-            UINT vbcount = pVertexShader->UpdateVertexBuffers(mesh, pVertexBuffers, strides, offsets);
+    // set stencil state
+    ID3D11DepthStencilState * targetStencilState = nullptr;
+    GFX_THROW_INFO(TinyEngine::StencilManager::Get().LoadStencilState(this, pass.depthStencilDesc, &targetStencilState));
+    pContext->OMSetDepthStencilState(targetStencilState, 0xFF);
 
-            // const UINT stride = mesh.GetVertexStride();
-            // const UINT offset = 0u;
-            // GFX_THROW_INFO(CreateVertexBuffer(pDevice, mesh.GetVertexBufferAddress(), mesh.GetVertexBufferSize(), stride, &pVertexBuffer));
-            GFX_THROW_INFO(CreateIndexBuffer(pDevice, mesh.GetIndexBufferAddress(), mesh.GetIndexBufferSize(), mesh.GetIndexStride(), &pIndexBuffer));
-            
-            // pContext->IASetVertexBuffers(0u, 1u, pVertexBuffer.GetAddressOf(), &stride, &offset);
-            pContext->IASetVertexBuffers(0u, vbcount, pVertexBuffers, strides, offsets);
-            // bind index buffer to pipeline
-            pContext->IASetIndexBuffer(pIndexBuffer.Get(), GetIndexDataFormat(mesh.GetIndexStride()), 0u);
+    setRasterizerState(pass.cullMode);
 
-            // set primitive topology
-            pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-            
-            // bind render target
-            pContext->OMSetRenderTargets(1u, pRenderTargetView.GetAddressOf(), nullptr);
-            // enable depth stencil
-            pContext->OMSetRenderTargets(1u, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
-            // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
-            GFX_THROW_INFO_ONLY(pContext->DrawIndexed(mesh.GetIndexCount(), 0u, 0u));
-        }
+    for(size_t k=0; k < renderers.size(); ++k)
+    {
+        auto pRenderer = renderers[k];
+        if(pRenderer == nullptr) continue;
+        auto pMat = pRenderer->GetMaterialPtr();
+        
+        //update material resource
+        if(pVertexShader)   pVertexShader->LoadMaterialResource(pMat);
+        if(pPixelShader)    pPixelShader->LoadMaterialResource(pMat);
+        
+        // draw
+        drawMesh(pVertexShader, pRenderer);
     }
 }
 
+void DirectXGraphics::drawMesh(HLSLVertexShader* pVertexShader, Renderer* pRenderer)
+{
+    auto & helper = HLSLShaderHelper::Get();
+    pRenderer->UpdateObjBuffer(helper);
+    UpdateCBuffer(pObjectConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerDrawCBufSlot));
+
+    // bind vertex buffer and index buffer
+    auto & mesh = pRenderer->GetMesh();
+    // BindMesh
+    // get vertex buffers, strides, offsets from mesh and layout from vertex shader
+    // UINT vbcount = pVertexShader->GetInputLayoutDescs().size();
+    ID3D11Buffer** pVertexBuffers;
+    UINT *strides;
+    UINT *offsets;
+    UINT vbcount = pVertexShader->UpdateVertexBuffers(mesh, pVertexBuffers, strides, offsets);
+
+    GFX_THROW_INFO(CreateIndexBuffer(pDevice, mesh.GetIndexBufferAddress(), mesh.GetIndexBufferSize(), mesh.GetIndexStride(), &pIndexBuffer));
+    
+    pContext->IASetVertexBuffers(0u, vbcount, pVertexBuffers, strides, offsets);
+    // bind index buffer to pipeline
+    pContext->IASetIndexBuffer(pIndexBuffer.Get(), GetIndexDataFormat(mesh.GetIndexStride()), 0u);
+
+    // set primitive topology
+    pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    
+    // bind render target
+    pContext->OMSetRenderTargets(1u, pRenderTargetView.GetAddressOf(), nullptr);
+    // enable depth stencil
+    pContext->OMSetRenderTargets(1u, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
+    // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
+    GFX_THROW_INFO_ONLY(pContext->DrawIndexed(mesh.GetIndexCount(), 0u, 0u));
+}
 /****************************************************************************************/
 /*                                      Event  Part                                     */
 /****************************************************************************************/
@@ -371,13 +417,13 @@ void DirectXGraphics::CreateBuffers(int width, int height)
     depthStencilDesc.Height = height;
     depthStencilDesc.MipLevels = 1u;
     depthStencilDesc.ArraySize = 1u;
-    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // 24 bit depth, 8 bit stencil
     depthStencilDesc.SampleDesc.Count = 1u;
     depthStencilDesc.SampleDesc.Quality = 0u;
     depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
     depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
     GFX_THROW_INFO(pDevice->CreateTexture2D(&depthStencilDesc, nullptr, &pDepthStencil));
-
+    
     GFX_THROW_INFO(pDevice->CreateDepthStencilView(pDepthStencil.Get(), nullptr, &pDepthStencilView));
 }
 
@@ -395,32 +441,45 @@ std::shared_ptr<PixelShader> DirectXGraphics::CreatePixelShader(const std::strin
 }
 
 /****************************************************************************************/
-/*                                Material Operation                                    */
+/*                               Render State Operation                                 */
 /****************************************************************************************/
 
-/**
- * @brief Load material to GPU
- *          bind vertex shader, pixel shader, constant buffer, texture to pipeline
- * 
- * @param material 
- */
-void DirectXGraphics::LoadMaterial(Material & material)
+void DirectXGraphics::setRasterizerState(const TinyEngine::ECullMode cullMode)
 {
-    Graphics::LoadMaterial(material);
-
-    auto pVertexShader = dynamic_cast<HLSLVertexShader*>(material.GetVertexShader().get());
-    auto pPixelShader = dynamic_cast<HLSLPixelShader*>(material.GetPixelShader().get());
-    pContext->VSSetShader(pVertexShader->Get(), nullptr, 0u);
-    pContext->PSSetShader(pPixelShader->Get(), nullptr, 0u);
-    
-    // bind input layout
-    pVertexShader->SetInputLayout();
-    // update Constant Buffer
-    pVertexShader->UpdateConstantBuffer();
-    pPixelShader->UpdateConstantBuffer();
-    // update texture
-    pVertexShader->UpdateTexture();
-    pPixelShader->UpdateTexture();
+    ID3D11RasterizerState * targetRasterizerState = nullptr;
+    switch (cullMode)
+    {
+        case TinyEngine::ECullMode::Off:
+            if(pCullOffRasterizerState == nullptr)
+            {
+                D3D11_RASTERIZER_DESC rasterizerDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
+                rasterizerDesc.CullMode = D3D11_CULL_NONE;
+                GFX_THROW_INFO(pDevice->CreateRasterizerState(&rasterizerDesc, &pCullOffRasterizerState));
+            }
+            targetRasterizerState = pCullOffRasterizerState.Get();
+            break;
+        case TinyEngine::ECullMode::Front:
+            if(pCullBackRasterizerState == nullptr)
+            {
+                D3D11_RASTERIZER_DESC rasterizerDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
+                rasterizerDesc.CullMode = D3D11_CULL_FRONT;
+                GFX_THROW_INFO(pDevice->CreateRasterizerState(&rasterizerDesc, &pCullBackRasterizerState));
+            }
+            targetRasterizerState = pCullBackRasterizerState.Get();
+            break;
+        case TinyEngine::ECullMode::Back:
+            if(pCullFrontRasterizerState == nullptr)
+            {
+                D3D11_RASTERIZER_DESC rasterizerDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
+                rasterizerDesc.CullMode = D3D11_CULL_BACK;
+                GFX_THROW_INFO(pDevice->CreateRasterizerState(&rasterizerDesc, &pCullFrontRasterizerState));
+            }
+            targetRasterizerState = pCullFrontRasterizerState.Get();
+            break;
+    default:
+        break;
+    }
+    pContext->RSSetState(targetRasterizerState);
 }
 /****************************************************************************************/
 /*                                Constant Buffer Operation                             */
@@ -461,21 +520,6 @@ void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, BYTE *
     }
 }
 
-// void DirectXGraphics::UpdateVBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, BYTE * data, unsigned int bytesize)
-// {
-//     if(targetBuf == nullptr)
-//     {
-//         GFX_THROW_INFO(CreateVertexBuffer(pDevice, data, bytesize, &targetBuf));
-//     }else
-//     {
-//         // update constant buffer by map and unmap
-//         D3D11_MAPPED_SUBRESOURCE msr;
-//         pContext->Map(targetBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
-//         memcpy_s(msr.pData, bytesize, data, bytesize);
-//         pContext->Unmap(targetBuf.Get(), 0);
-//         // pContext->UpdateSubresource(targetBuf.Get(), 0, nullptr, bufData.GetAddress(), 0, 0);
-//     }
-// }
 
 
 void DirectXGraphics::BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& targetBuf, Graphics::EBindType bindType)
@@ -536,3 +580,5 @@ void DirectXGraphics::BindSampler(unsigned int slot, wrl::ComPtr<ID3D11SamplerSt
         pContext->PSSetSamplers(slot, 1u, pSamplerState.GetAddressOf());
     }
 }
+
+

@@ -54,6 +54,20 @@ Light * Light::GetPointLight()
     return nullptr;
 }
 
+
+std::vector<Light *> Light::GetPointLightList()
+{
+    std::vector<Light *> pointLights;
+    for (auto& pair : pointLightMap)
+    {
+        if(pair.first && pair.first->GetGameObject()->IsActived())
+        {
+            pointLights.push_back(pair.first);
+        }
+    }
+    return pointLights;
+}
+
 Light * Light::GetSpotLight()
 {
     for (auto& pair : spotLightMap)
@@ -94,57 +108,57 @@ GameObject* Light::CreateSpotLight(std::string name)
     return pGo;
 }
 
-struct alignas(16) Light::DirectionalLight
-{
-    Vector3 dir;
-    Vector4 color;
-};
-struct alignas(16) Light::PointLight
-{
-    alignas(16) Vector3 pos;
-    Vector4 color;
-    float atten;
-    float range;
-    float kConstant;
-    float kLinear;
-    float kQuadratic;
-};
-struct alignas(16) Light::SpotLight
-{
-    alignas(16) Vector3 pos;
-    alignas(16) Vector3 dir;
-    Vector4 color;
-    float range;
-    float angle;
-};
+// struct alignas(16) Light::DirectionalLight
+// {
+//     Vector3 dir;
+//     Vector4 color;
+// };
+// struct alignas(16) Light::PointLight
+// {
+//     alignas(16) Vector3 pos;
+//     Vector4 color;
+//     float atten;
+//     float range;
+//     float kConstant;
+//     float kLinear;
+//     float kQuadratic;
+// };
+// struct alignas(16) Light::SpotLight
+// {
+//     alignas(16) Vector3 pos;
+//     alignas(16) Vector3 dir;
+//     Vector4 color;
+//     float range;
+//     float angle;
+// };
 
-void Light::UpdateLightBuffer(IShaderHelper& shaderHelper)
-{
-    auto pDirLight = GetDirectionalLight();
-    if(pDirLight != nullptr)
-    {
-        Light::DirectionalLight dirLight;
-        dirLight.dir = pDirLight->pTransform->forward();
-        dirLight.color = pDirLight->GetColor();
-        shaderHelper.SetGlobalVariable("g_DirLight", &dirLight, sizeof(Light::DirectionalLight));
-    }
+// void Light::UpdateLightBuffer(IShaderHelper& shaderHelper)
+// {
+//     auto pDirLight = GetDirectionalLight();
+//     if(pDirLight != nullptr)
+//     {
+//         Light::DirectionalLight dirLight;
+//         dirLight.dir = pDirLight->pTransform->forward();
+//         dirLight.color = pDirLight->GetColor();
+//         shaderHelper.SetGlobalVariable("g_DirLight", &dirLight, sizeof(Light::DirectionalLight));
+//     }
 
-    auto pPointLight = GetPointLight();
-    if(pPointLight != nullptr)
-    {
-        Light::PointLight pointLight;
-        pointLight.pos = pPointLight->pTransform->GetPosition();
-        pointLight.color = pPointLight->GetColor();
-        pointLight.atten = 1.0f;
-        pointLight.range = pPointLight->range;
-        shaderHelper.SetGlobalVariable("g_PointLight", &pointLight, sizeof(Light::PointLight));
-    }else
-    {
-        Light::PointLight pointLight;
-        pointLight.pos = Vector3(0.0f, 0.0f, 0.0f);
-        pointLight.color = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
-        pointLight.atten = 1.0f;
-        pointLight.range = 0.0f;
-        shaderHelper.SetGlobalVariable("g_PointLight", &pointLight, sizeof(Light::PointLight));
-    }
-}
+//     auto pPointLight = GetPointLight();
+//     if(pPointLight != nullptr)
+//     {
+//         Light::PointLight pointLight;
+//         pointLight.pos = pPointLight->pTransform->GetPosition();
+//         pointLight.color = pPointLight->GetColor();
+//         pointLight.atten = 1.0f;
+//         pointLight.range = pPointLight->range;
+//         shaderHelper.SetGlobalVariable("g_PointLight", &pointLight, sizeof(Light::PointLight));
+//     }else
+//     {
+//         Light::PointLight pointLight;
+//         pointLight.pos = Vector3(0.0f, 0.0f, 0.0f);
+//         pointLight.color = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+//         pointLight.atten = 1.0f;
+//         pointLight.range = 0.0f;
+//         shaderHelper.SetGlobalVariable("g_PointLight", &pointLight, sizeof(Light::PointLight));
+//     }
+// }

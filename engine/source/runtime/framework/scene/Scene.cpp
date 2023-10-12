@@ -11,5 +11,7 @@ namespace TinyEngine
     void Scene::Clear()
     {
         m_loaded = false;
+        effectDescs.clear();
+        selectedRenderers.clear();
     }
 }

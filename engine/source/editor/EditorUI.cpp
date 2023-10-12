@@ -7,9 +7,10 @@
 namespace TinyEngine
 {
     
-    std::vector<std::pair<std::string, bool>> g_editor_node_state_array;
-    int                                       g_node_depth = -1;
-
+    std::vector<std::pair<std::string, bool>>   g_editor_node_state_array;
+    int                                         g_node_depth = -1;
+    bool                                        g_mipmap_mode = false;
+    bool                                        g_aniso_mode = true;
     EditorUI::EditorUI(Editor* editor)
     {
         m_editor = editor;
@@ -223,12 +224,12 @@ namespace TinyEngine
         // ImGui::ShowDemoWindow(&show_demo_window);
 
         // for (auto& pGo : GameObject::GetRootGameObjects()) pGo->OnGUI();
-        // if(ImGui::Begin("FPS"))
-        // {
-        //     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 
-        //         1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        // }
-        // ImGui::End();
+        if(ImGui::Begin("FPS"))
+        {
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 
+                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        }
+        ImGui::End();
         m_editor->imgui.Render();
     }
 
@@ -317,7 +318,11 @@ namespace TinyEngine
                 }
                 ImGui::EndMenu();
             }
-            ImGui::EndMenuBar();
+            if (ImGui::BeginMenu("Setting"))
+            {
+                
+            }
+            ImGui::EndMenuBar(); 
         }
         ImGui::End();
     }
@@ -617,6 +622,7 @@ namespace TinyEngine
         auto pLevel = WorldManager::Get().GetCurrentActiveLevel();
         GameObject* selected_gobject = getSelectedGameObject();
 
+        SceneManager::Get().SetSelectedGameObject(selected_gobject);
         // drawSelectedEntityAxis();
 
         if (m_selected_gobject_id != INVALID_GO_ID)
@@ -632,8 +638,8 @@ namespace TinyEngine
     std::string EditorUI::getLeafUINodeParentLabel()
     {
         std::string parent_label;
-        int         array_size = g_editor_node_state_array.size();
-        for (int index = 0; index < array_size; index++)
+        size_t         array_size = g_editor_node_state_array.size();
+        for (size_t index = 0; index < array_size; index++)
         {
             parent_label += g_editor_node_state_array[index].first + "::";
         }

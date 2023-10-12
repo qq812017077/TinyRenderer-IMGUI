@@ -1,6 +1,6 @@
 #include "DXUtil.h"
 #include "EngineWin.h"
-
+#include "Texture.h"
 // COM Release
 #define SAFE_RELEASE(p) { if ((p)) { (p)->Release(); (p) = nullptr; } }
 
@@ -85,52 +85,7 @@ void GetInputLayoutInfo(ID3D11ShaderReflection* pReflection, std::vector<D3D11_I
         pLed->push_back(inputElementDesc);
     }
 }
-void LoadShaderDescInfo(ID3D11ShaderReflection* pReflection, ShaderDesc * pShaderDesc)
-{
-    HRESULT hr;
-    for(UINT i=0; ; ++i)
-    {
-        D3D11_SHADER_INPUT_BIND_DESC bindDesc;
-        hr = pReflection->GetResourceBindingDesc(i, &bindDesc);
-        if(FAILED(hr)) break;
-        switch (bindDesc.Type)
-        {
-            case D3D_SIT_CBUFFER: // constant buffer
-                {
-                    ID3D11ShaderReflectionConstantBuffer* constantBuffer = pReflection->GetConstantBufferByName(bindDesc.Name);
-                    D3D11_SHADER_BUFFER_DESC bufferDesc;
-                    constantBuffer->GetDesc(&bufferDesc);
-                    pShaderDesc->AddConstantBufferInfo(bufferDesc.Name, bindDesc.BindPoint, bufferDesc.Size);
-                    for (UINT j = 0; j < bufferDesc.Variables; ++j)
-                    {
-                        ID3D11ShaderReflectionVariable* variable = constantBuffer->GetVariableByIndex(j);
-                        // get variable slot number
-                        D3D11_SHADER_VARIABLE_DESC variableDesc;
-                        variable->GetDesc(&variableDesc);
 
-                        ID3D11ShaderReflectionType* variableType = variable->GetType();
-                        D3D11_SHADER_TYPE_DESC stDesc;
-                        variableType->GetDesc(&stDesc);
-                        pShaderDesc->AddVariable(bindDesc.BindPoint, variableDesc.Name, variableDesc.StartOffset, variableDesc.Size);
-                    }
-                }
-                break;
-            case D3D_SIT_TEXTURE: // texture
-                {
-                    pShaderDesc->AddTexture(bindDesc.BindPoint, bindDesc.Name);
-                }
-                break;
-            case D3D_SIT_SAMPLER: // sampler
-                {
-                    SamplerInfo samplerInfo;
-                    samplerInfo.slot = bindDesc.BindPoint;
-                    samplerInfo.name = bindDesc.Name;
-                    pShaderDesc->AddSamplerInfo(samplerInfo);
-                }
-                break;
-        }
-    }
-}
 
 
 //--------------------------------------------------------------------------------------
@@ -295,12 +250,8 @@ UINT GetDataStride(DXGI_FORMAT format)
 
 DXGI_FORMAT GetTextureFormat(ETextureFormat textureFormat, bool islinear)
 {
-    if(textureFormat == ETextureFormat::ARGB32)
-        return islinear? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    else if(textureFormat == ETextureFormat::ARGB4444)
-    {
-        return DXGI_FORMAT_B4G4R4A4_UNORM;
-    }
+    if(textureFormat == ETextureFormat::RGBA4444) return DXGI_FORMAT_B4G4R4A4_UNORM;
+
 
     return islinear? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 }
@@ -337,4 +288,81 @@ D3D11_TEXTURE_ADDRESS_MODE GetTextureWrapMode(EWrapMode wrapMode)
             return D3D11_TEXTURE_ADDRESS_BORDER;
     }
     return D3D11_TEXTURE_ADDRESS_WRAP;
+}
+
+HRESULT CreateTexture2DView(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pContext,  
+Texture* pInputTex, ID3D11ShaderResourceView ** ppOutputTextureView)
+{
+    HRESULT hr = E_FAIL;
+    if(pInputTex == nullptr) return hr;
+    // auto pDevice = directXGfx.GetDevice();
+    // auto pContext = directXGfx.GetContext();
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> pTexture2D;
+    D3D11_TEXTURE2D_DESC ImageTextureDesc = {};
+    
+    ImageTextureDesc.Width = pInputTex->GetWidth();
+    ImageTextureDesc.Height = pInputTex->GetHeight();
+    ImageTextureDesc.MipLevels = pInputTex->GetMipMapLevels();
+    ImageTextureDesc.ArraySize = 1;
+    
+    ImageTextureDesc.Format = GetTextureFormat(pInputTex->GetTextureFormat(), pInputTex->IsLinear());
+    ImageTextureDesc.SampleDesc.Count = 1;
+    ImageTextureDesc.SampleDesc.Quality = 0;
+    ImageTextureDesc.Usage = D3D11_USAGE_IMMUTABLE;
+    ImageTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    ImageTextureDesc.MiscFlags = 0;
+    
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = GetTextureFormat(pInputTex->GetTextureFormat(), pInputTex->IsLinear());
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+
+    if(pInputTex->UseMipMap())
+    {
+        ImageTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+        ImageTextureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+        ImageTextureDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
+        // we just want to write into first mip level, rest will be generated automatically
+        srvDesc.Texture2D.MipLevels = -1;
+        // we cannot use subresource data here, because we only have original image data.
+        hr = pDevice->CreateTexture2D(&ImageTextureDesc, nullptr, &pTexture2D);
+        if(FAILED(hr)) return hr;
+        pContext->UpdateSubresource(pTexture2D.Get(), 0, nullptr, pInputTex->GetImageData(), pInputTex->GetPitch(), 0);
+
+        hr = pDevice->CreateShaderResourceView(pTexture2D.Get(), &srvDesc, ppOutputTextureView);
+        if(FAILED(hr)) return hr;
+        pContext->GenerateMips(*ppOutputTextureView);
+
+    }
+    else{
+        D3D11_SUBRESOURCE_DATA ImageSubresourceData = {};
+        ImageSubresourceData.pSysMem = pInputTex->GetImageData();
+        ImageSubresourceData.SysMemPitch = pInputTex->GetPitch();
+        hr = pDevice->CreateTexture2D(&ImageTextureDesc, &ImageSubresourceData, &pTexture2D);
+        if(FAILED(hr)) return hr;
+        
+        hr = pDevice->CreateShaderResourceView(pTexture2D.Get(), &srvDesc, ppOutputTextureView);
+    }
+    return hr;
+}
+
+HRESULT CreateSampler(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler)
+{
+    HRESULT hr = E_FAIL;
+    if(pInputTex == nullptr) return hr;
+    D3D11_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.Filter = GetTextureFilterMode(pInputTex->GetFilterMode()); 
+    auto wrapmode = GetTextureWrapMode(pInputTex->GetWrapMode());
+    samplerDesc.AddressU = wrapmode; 
+    samplerDesc.AddressV = wrapmode; 
+    samplerDesc.AddressW = wrapmode;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MipLODBias = 0.0f;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    samplerDesc.MaxAnisotropy = pInputTex->GetAnisoLevel() == -1 ? D3D11_REQ_MAXANISOTROPY : pInputTex->GetAnisoLevel();
+    hr = pDevice->CreateSamplerState(&samplerDesc, ppOutputSampler);
+    return hr;
 }

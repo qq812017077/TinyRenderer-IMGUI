@@ -32,8 +32,6 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # specify project name
 set(PROJECT_NAME tinyrenderer)
-# specify C++ standard
-set(CMAKE_CXX_STANDARD 17)
 
 # add #define DEBUG
 add_definitions(-DDEBUG)

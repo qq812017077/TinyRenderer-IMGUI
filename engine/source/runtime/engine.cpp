@@ -1,5 +1,6 @@
 #include "Engine.h"
 #include "scene/SceneManager.h"
+#include "effect/EffectManager.h"
 #include "world/WorldManager.h"
 #include "surfaces/SurfaceUI.h"
 #include "input/Input.h"
@@ -29,6 +30,8 @@ namespace TinyEngine
         SceneManager::Get().Initialize();
         // 5. initialize inputSystem
         Input::InputSystem::Get().Initialize();
+        // 6. Initialize EffectManager
+        EffectManager::Get().Initialize();
 
         // initialize frame buffer
         m_framebuffer = new FrameBuffer();
