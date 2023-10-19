@@ -16,13 +16,11 @@
 namespace wrl = Microsoft::WRL;
 HRESULT hr;
 
-
 /****************************************************************************************/
 /*                                      Public Part                                     */
 /****************************************************************************************/
 
-DirectXGraphics::DirectXGraphics(HWND &hwnd):
-    hWnd(hwnd)
+DirectXGraphics::DirectXGraphics(HWND &hwnd) : hWnd(hwnd)
 {
     LOG("Directx Graphics  constructor begin")
     CreateDevice();
@@ -32,7 +30,6 @@ DirectXGraphics::DirectXGraphics(HWND &hwnd):
     m_pRenderGraph = std::make_unique<TinyEngine::Graph::DXDefaultRenderGraph>(this);
     LOG("   Directx Graphics  constructor end")
 }
-
 
 DirectXGraphics::~DirectXGraphics()
 {
@@ -59,76 +56,86 @@ void DirectXGraphics::EndFrame()
 
 void DirectXGraphics::ClearBuffer(float red, float green, float blue) noexcept
 {
-    const float color[] = { red, green, blue, 1.0f };
-    
+    const float color[] = {red, green, blue, 1.0f};
 }
 
-void DirectXGraphics::ApplyState(TinyEngine::RenderState * pState)
+void DirectXGraphics::ApplyState(TinyEngine::RenderState *pState)
 {
-    if (pState == nullptr) return;
+    if (pState == nullptr)
+        return;
     // check pState type : TinyEngine::CullMode or TinyEngine::Blend or TinyEngine::DepthStencil
-    TinyEngine::CullState * pCullState = dynamic_cast<TinyEngine::CullState*>(pState);
-    if(pCullState != nullptr)
+    TinyEngine::RasterState *pRasterState = dynamic_cast<TinyEngine::RasterState *>(pState);
+    if (pRasterState != nullptr)
     {
-        setRasterizerState(pCullState->cullMode);
+        setRasterizerState(pRasterState->rasterDesc);
         return;
     }
 
-    TinyEngine::BlendState * pBlend = dynamic_cast<TinyEngine::BlendState*>(pState);
-    if(pBlend != nullptr)
+    TinyEngine::BlendState *pBlend = dynamic_cast<TinyEngine::BlendState *>(pState);
+    if (pBlend != nullptr)
     {
-        ID3D11BlendState * targetBlendState = nullptr;
+        ID3D11BlendState *targetBlendState = nullptr;
         GFX_THROW_INFO(TinyEngine::BlenderManager::Get().LoadBlendState(this, pBlend->blendDesc, &targetBlendState));
         pContext->OMSetBlendState(targetBlendState, pBlend->blendDesc.blendFactors, 0xffffffff);
         return;
     }
 
-    TinyEngine::DepthStencilState * pDepthStencil = dynamic_cast<TinyEngine::DepthStencilState*>(pState);
-    if(pDepthStencil != nullptr)
+    TinyEngine::DepthStencilState *pDepthStencil = dynamic_cast<TinyEngine::DepthStencilState *>(pState);
+    if (pDepthStencil != nullptr)
     {
-        ID3D11DepthStencilState * targetStencilState = nullptr;
+        ID3D11DepthStencilState *targetStencilState = nullptr;
         GFX_THROW_INFO(TinyEngine::StencilManager::Get().LoadStencilState(this, pDepthStencil->depthStencilDesc, &targetStencilState));
         pContext->OMSetDepthStencilState(targetStencilState, 0xFF);
         return;
     }
-    
 }
-void DirectXGraphics::Apply(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers)
+
+void DirectXGraphics::ApplyPass(TinyEngine::ShaderPass &pass)
 {
-    auto & helper = HLSLShaderHelper::Get();
     auto pVertexShader = TinyEngine::EffectManager::Get().VSFindShader<HLSLVertexShader>(pass.vsName);
     auto pPixelShader = TinyEngine::EffectManager::Get().PSFindShader<HLSLPixelShader>(pass.psName);
-    
-    if(pVertexShader == nullptr) throw std::exception("Vertex Shader not found");
-    else {
+
+    if (pVertexShader == nullptr)
+        throw std::exception("Vertex Shader not found");
+    else
+    {
         pContext->VSSetShader(pVertexShader->Get(), nullptr, 0u);
         pVertexShader->SetInputLayout(); // bind input layout
     }
-    
-    if(pPixelShader == nullptr) pContext->PSSetShader(nullptr, nullptr, 0u);
-    else pContext->PSSetShader(pPixelShader->Get(), nullptr, 0u);
-    
-    ID3D11BlendState * targetBlendState = nullptr;
+
+    if (pPixelShader == nullptr)
+        pContext->PSSetShader(nullptr, nullptr, 0u);
+    else
+        pContext->PSSetShader(pPixelShader->Get(), nullptr, 0u);
+
+    ID3D11BlendState *targetBlendState = nullptr;
     GFX_THROW_INFO(TinyEngine::BlenderManager::Get().LoadBlendState(this, pass.blendDesc, &targetBlendState));
     pContext->OMSetBlendState(targetBlendState, pass.blendDesc.blendFactors, 0xffffffff);
 
     // set stencil state
-    ID3D11DepthStencilState * targetStencilState = nullptr;
+    ID3D11DepthStencilState *targetStencilState = nullptr;
     GFX_THROW_INFO(TinyEngine::StencilManager::Get().LoadStencilState(this, pass.depthStencilDesc, &targetStencilState));
     pContext->OMSetDepthStencilState(targetStencilState, 0xFF);
 
-    setRasterizerState(pass.cullMode);
-
-    for(size_t k=0; k < renderers.size(); ++k)
+    setRasterizerState(pass.rasterDesc);
+}
+void DirectXGraphics::ApplyPassToRenderList(TinyEngine::ShaderPass &pass, std::vector<Renderer *> &renderers)
+{
+    ApplyPass(pass);
+    auto pVertexShader = TinyEngine::EffectManager::Get().VSFindShader<HLSLVertexShader>(pass.vsName);
+    auto pPixelShader = TinyEngine::EffectManager::Get().PSFindShader<HLSLPixelShader>(pass.psName);
+    auto &helper = HLSLShaderHelper::Get();
+    
+    for (size_t k = 0; k < renderers.size(); ++k)
     {
         auto pRenderer = renderers[k];
-        if(pRenderer == nullptr) continue;
+        if (pRenderer == nullptr) continue;
+        
         auto pMat = pRenderer->GetMaterialPtr();
-        
-        //update material resource
-        if(pVertexShader)   pVertexShader->LoadMaterialResource(pMat);
-        if(pPixelShader)    pPixelShader->LoadMaterialResource(pMat);
-        
+        // update material resource
+        if (pVertexShader) pVertexShader->LoadMaterialResource(pMat);
+        if (pPixelShader) pPixelShader->LoadMaterialResource(pMat);
+
         // draw
         pRenderer->UpdateObjBuffer(helper);
         UpdateCBuffer(pObjectConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerDrawCBufSlot));
@@ -136,38 +143,28 @@ void DirectXGraphics::Apply(TinyEngine::ShaderPass & pass, std::vector<Renderer*
     }
 }
 
-void DirectXGraphics::ApplyToRenderTarget(TinyEngine::ShaderPass & pass, TinyEngine::RenderTarget * pRenderTarget)
+void DirectXGraphics::ApplyPassToRenderTarget(TinyEngine::ShaderPass &pass, TinyEngine::RenderTarget *pRenderTarget)
 {
-    auto pDXRenderTarget = reinterpret_cast<TinyEngine::DirectXRenderTarget*>(pRenderTarget);
-    if(pDXRenderTarget == nullptr) return;
+    auto pDXRenderTarget = reinterpret_cast<TinyEngine::DirectXRenderTarget *>(pRenderTarget);
+    if (pDXRenderTarget == nullptr)
+        return;
     else
         BindTexture(0, pDXRenderTarget->pTextureView, Graphics::EBindType::ToPS);
+
     
+    ApplyPass(pass);
     auto pVertexShader = TinyEngine::EffectManager::Get().VSFindShader<HLSLVertexShader>(pass.vsName);
-    auto pPixelShader = TinyEngine::EffectManager::Get().PSFindShader<HLSLPixelShader>(pass.psName);
-    
-    if(pVertexShader == nullptr) throw std::exception("Vertex Shader not found");
-    else {
-        pContext->VSSetShader(pVertexShader->Get(), nullptr, 0u);
-        pVertexShader->SetInputLayout(); // bind input layout
-    }
-    
-    if(pPixelShader == nullptr) pContext->PSSetShader(nullptr, nullptr, 0u);
-    else pContext->PSSetShader(pPixelShader->Get(), nullptr, 0u);
-    
-    ID3D11BlendState * targetBlendState = nullptr;
-    GFX_THROW_INFO(TinyEngine::BlenderManager::Get().LoadBlendState(this, pass.blendDesc, &targetBlendState));
-    pContext->OMSetBlendState(targetBlendState, pass.blendDesc.blendFactors, 0xffffffff);
 
-    // set stencil state
-    ID3D11DepthStencilState * targetStencilState = nullptr;
-    GFX_THROW_INFO(TinyEngine::StencilManager::Get().LoadStencilState(this, pass.depthStencilDesc, &targetStencilState));
-    pContext->OMSetDepthStencilState(targetStencilState, 0xFF);
-    
-    setRasterizerState(pass.cullMode);
-
-    if(quad == nullptr) quad = Primitive::CreateQuadMesh();
+    if (quad == nullptr) quad = Primitive::CreateQuadMeshPtr();
     drawMesh(pVertexShader, *quad);
+}
+
+void DirectXGraphics::ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh)
+{
+    if(pMesh == nullptr) THROW_ENGINE_EXCEPTION("Mesh should not be nullptr");
+    ApplyPass(pass);
+    auto pVertexShader = TinyEngine::EffectManager::Get().VSFindShader<HLSLVertexShader>(pass.vsName);
+    drawMesh(pVertexShader, *pMesh);
 }
 
 std::shared_ptr<TinyEngine::RenderTarget> DirectXGraphics::CreateRenderTarget()
@@ -178,22 +175,22 @@ std::shared_ptr<TinyEngine::DepthStencil> DirectXGraphics::CreateDepthStencil()
 {
     return std::make_shared<TinyEngine::DirectXDepthStencil>(this, m_width, m_height);
 }
-void DirectXGraphics::BindRenderTarget(TinyEngine::RenderTarget* pRenderTarget, TinyEngine::DepthStencil * pDepthStencil)
+void DirectXGraphics::BindRenderTarget(TinyEngine::RenderTarget *pRenderTarget, TinyEngine::DepthStencil *pDepthStencil)
 {
-    internalBindRenderTarget(reinterpret_cast<TinyEngine::DirectXRenderTarget*>(pRenderTarget) ,
-        reinterpret_cast<TinyEngine::DirectXDepthStencil*>(pDepthStencil));
+    internalBindRenderTarget(reinterpret_cast<TinyEngine::DirectXRenderTarget *>(pRenderTarget),
+                             reinterpret_cast<TinyEngine::DirectXDepthStencil *>(pDepthStencil));
 }
 void DirectXGraphics::BindDefaultRenderTarget()
 {
     pContext->RSSetViewports(1u, &editorViewPort);
     // pContext->OMSetRenderTargets(1u, pPresentRenderTarget->pTargetView.GetAddressOf(), pDepthStencil->Get());
 }
-void DirectXGraphics::internalBindRenderTarget(TinyEngine::DirectXRenderTarget* pRenderTarget, TinyEngine::DirectXDepthStencil * pDepthStencil)
+void DirectXGraphics::internalBindRenderTarget(TinyEngine::DirectXRenderTarget *pRenderTarget, TinyEngine::DirectXDepthStencil *pDepthStencil)
 {
     pContext->RSSetViewports(1u, &fullViewPort);
-    if(pRenderTarget == nullptr)
+    if (pRenderTarget == nullptr)
         pContext->OMSetRenderTargets(0u, nullptr, pDepthStencil->Get());
-    else if(pDepthStencil == nullptr)
+    else if (pDepthStencil == nullptr)
         pContext->OMSetRenderTargets(1u, pRenderTarget->pTargetView.GetAddressOf(), nullptr);
     else
         pContext->OMSetRenderTargets(1u, pRenderTarget->pTargetView.GetAddressOf(), pDepthStencil->Get());
@@ -219,7 +216,8 @@ void DirectXGraphics::OnResize(int width, int height)
 #ifdef DEBUG
     std::cout << "OnResize" << std::endl;
 #endif
-    if (width == 0 || height == 0) return;
+    if (width == 0 || height == 0)
+        return;
     m_width = width;
     m_height = height;
 
@@ -242,31 +240,31 @@ wrl::ComPtr<ID3D11Texture2D> DirectXGraphics::GetBackBuffer()
 /***********************************************************************************************************/
 /*                                            Protected Part                                               */
 /***********************************************************************************************************/
-void DirectXGraphics::drawMesh(HLSLVertexShader* pVertexShader, Mesh & mesh)
+void DirectXGraphics::drawMesh(HLSLVertexShader *pVertexShader, Mesh &mesh)
 {
     // BindMesh
     // get vertex buffers, strides, offsets from mesh and layout from vertex shader
     // UINT vbcount = pVertexShader->GetInputLayoutDescs().size();
-    ID3D11Buffer** pVertexBuffers;
+    ID3D11Buffer **pVertexBuffers;
     wrl::ComPtr<ID3D11Buffer> pIndexBuffer;
     UINT *strides;
     UINT *offsets;
     UINT vbcount = pVertexShader->UpdateVertexBuffers(mesh, pVertexBuffers, strides, offsets);
 
     GFX_THROW_INFO(CreateIndexBuffer(pDevice, mesh.GetIndexBufferAddress(), mesh.GetIndexBufferSize(), mesh.GetIndexStride(), &pIndexBuffer));
-    
+
     pContext->IASetVertexBuffers(0u, vbcount, pVertexBuffers, strides, offsets);
     // bind index buffer to pipeline
     pContext->IASetIndexBuffer(pIndexBuffer.Get(), GetIndexDataFormat(mesh.GetIndexStride()), 0u);
 
     // set primitive topology
     pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    
+
     // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
     GFX_THROW_INFO_ONLY(pContext->DrawIndexed(mesh.GetIndexCount(), 0u, 0u));
 }
 
-void DirectXGraphics::CreateDevice() 
+void DirectXGraphics::CreateDevice()
 {
     LOG("CreateDevice begin")
     DXGI_SWAP_CHAIN_DESC sd = {};
@@ -289,25 +287,25 @@ void DirectXGraphics::CreateDevice()
     sd.SampleDesc.Quality = 0u; // (HWND)1234567;
     sd.Windowed = TRUE;
     sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-    
+
 #ifndef NDEBUG
     creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
     GFX_THROW_INFO(
         D3D11CreateDeviceAndSwapChain(
-        nullptr,                    // default adapter
-        D3D_DRIVER_TYPE_HARDWARE,   // use hardware graphics driver
-        nullptr,                    // no software device
-        creationFlags,              // no flags
-        nullptr,                    // default feature level array
-        0u,                         // default feature level array size
-        D3D11_SDK_VERSION,          // SDK version
-        &sd,                        // swap chain description
-        &pSwap,                     // swap chain
-        &pDevice,                   // device
-        nullptr,                    // supported feature level
-        &pContext                   // device context
-    ));
+            nullptr,                  // default adapter
+            D3D_DRIVER_TYPE_HARDWARE, // use hardware graphics driver
+            nullptr,                  // no software device
+            creationFlags,            // no flags
+            nullptr,                  // default feature level array
+            0u,                       // default feature level array size
+            D3D11_SDK_VERSION,        // SDK version
+            &sd,                      // swap chain description
+            &pSwap,                   // swap chain
+            &pDevice,                 // device
+            nullptr,                  // supported feature level
+            &pContext                 // device context
+            ));
 
     LOG("   CreateDevice end")
 }
@@ -316,26 +314,25 @@ void DirectXGraphics::CreateBuffers(int width, int height)
     // !!!!!!!!!!!!!!!!!!!!!
     // pPresentRenderTarget = nullptr; // we must release render target view before resize buffers, otherwise we will get error
     // !!!!!!!!!!!!!!!!!!!!!
-    
+
     // wrl::ComPtr<ID3D11Texture2D> pBackBuffer = nullptr;
     // pSwap->ResizeBuffers(0u, width, height, DXGI_FORMAT_UNKNOWN, 0u);
     // GFX_THROW_INFO(pSwap->GetBuffer(0u, __uuidof(ID3D11Texture2D), &pBackBuffer));
-     
+
     // // GFX_THROW_INFO(pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &pRenderTargetView));
     // pPresentRenderTarget = std::make_shared<TinyEngine::DirectXRenderTarget>(this, pBackBuffer.Get());
 
     // pDepthStencil = std::make_shared<TinyEngine::DirectXDepthStencil>(this, width, height);
 }
 
-
-std::shared_ptr<VertexShader> DirectXGraphics::CreateVertexShader(const std::string& path)
+std::shared_ptr<VertexShader> DirectXGraphics::CreateVertexShader(const std::string &path)
 {
     std::shared_ptr<HLSLVertexShader> pShader(new HLSLVertexShader(*this, std::wstring(path.begin(), path.end())));
     return pShader;
 }
 
-std::shared_ptr<PixelShader> DirectXGraphics::CreatePixelShader(const std::string& path)
-{   
+std::shared_ptr<PixelShader> DirectXGraphics::CreatePixelShader(const std::string &path)
+{
     std::shared_ptr<HLSLPixelShader> pShader(new HLSLPixelShader(*this, std::wstring(path.begin(), path.end())));
     return pShader;
 }
@@ -344,38 +341,38 @@ std::shared_ptr<PixelShader> DirectXGraphics::CreatePixelShader(const std::strin
 /*                               Render State Operation                                 */
 /****************************************************************************************/
 
-void DirectXGraphics::setRasterizerState(const TinyEngine::ECullMode cullMode)
+void DirectXGraphics::setRasterizerState(const TinyEngine::RasterDesc rasterDesc)
 {
-    ID3D11RasterizerState * targetRasterizerState = nullptr;
-    switch (cullMode)
+    ID3D11RasterizerState *targetRasterizerState = nullptr;
+    switch (rasterDesc.cullMode)
     {
-        case TinyEngine::ECullMode::Off:
-            if(pCullOffRasterizerState == nullptr)
-            {
-                D3D11_RASTERIZER_DESC rasterizerDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
-                rasterizerDesc.CullMode = D3D11_CULL_NONE;
-                GFX_THROW_INFO(pDevice->CreateRasterizerState(&rasterizerDesc, &pCullOffRasterizerState));
-            }
-            targetRasterizerState = pCullOffRasterizerState.Get();
-            break;
-        case TinyEngine::ECullMode::Front:
-            if(pCullBackRasterizerState == nullptr)
-            {
-                D3D11_RASTERIZER_DESC rasterizerDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
-                rasterizerDesc.CullMode = D3D11_CULL_FRONT;
-                GFX_THROW_INFO(pDevice->CreateRasterizerState(&rasterizerDesc, &pCullBackRasterizerState));
-            }
-            targetRasterizerState = pCullBackRasterizerState.Get();
-            break;
-        case TinyEngine::ECullMode::Back:
-            if(pCullFrontRasterizerState == nullptr)
-            {
-                D3D11_RASTERIZER_DESC rasterizerDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
-                rasterizerDesc.CullMode = D3D11_CULL_BACK;
-                GFX_THROW_INFO(pDevice->CreateRasterizerState(&rasterizerDesc, &pCullFrontRasterizerState));
-            }
-            targetRasterizerState = pCullFrontRasterizerState.Get();
-            break;
+    case TinyEngine::ECullMode::Off:
+        if (pCullOffRasterizerState == nullptr)
+        {
+            D3D11_RASTERIZER_DESC rasterizerDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
+            rasterizerDesc.CullMode = D3D11_CULL_NONE;
+            GFX_THROW_INFO(pDevice->CreateRasterizerState(&rasterizerDesc, &pCullOffRasterizerState));
+        }
+        targetRasterizerState = pCullOffRasterizerState.Get();
+        break;
+    case TinyEngine::ECullMode::Front:
+        if (pCullBackRasterizerState == nullptr)
+        {
+            D3D11_RASTERIZER_DESC rasterizerDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
+            rasterizerDesc.CullMode = D3D11_CULL_FRONT;
+            GFX_THROW_INFO(pDevice->CreateRasterizerState(&rasterizerDesc, &pCullBackRasterizerState));
+        }
+        targetRasterizerState = pCullBackRasterizerState.Get();
+        break;
+    case TinyEngine::ECullMode::Back:
+        if (pCullFrontRasterizerState == nullptr)
+        {
+            D3D11_RASTERIZER_DESC rasterizerDesc = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
+            rasterizerDesc.CullMode = D3D11_CULL_BACK;
+            GFX_THROW_INFO(pDevice->CreateRasterizerState(&rasterizerDesc, &pCullFrontRasterizerState));
+        }
+        targetRasterizerState = pCullFrontRasterizerState.Get();
+        break;
     default:
         break;
     }
@@ -384,17 +381,17 @@ void DirectXGraphics::setRasterizerState(const TinyEngine::ECullMode cullMode)
 /****************************************************************************************/
 /*                                Constant Buffer Operation                             */
 /****************************************************************************************/
-void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, CBufferData* pCBufferData, Graphics::EBindType bindType)
+void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer> &targetBuf, CBufferData *pCBufferData, Graphics::EBindType bindType)
 {
-    if(pCBufferData == nullptr)
+    if (pCBufferData == nullptr)
     {
-        LOG("pCBufferData is empty." <<__FILE__ << "[" << __LINE__  << "]");
-        return ;
+        LOG("pCBufferData is empty." << __FILE__ << "[" << __LINE__ << "]");
+        return;
     }
     int slot = pCBufferData->slot;
     // if(targetBuf == nullptr)
     //     GFX_THROW_INFO(CreateConstantBuffer(pDevice, pCBufferData->pData.get(), pCBufferData->byteWidth, &targetBuf));
-    if(pCBufferData->isDirty)
+    if (pCBufferData->isDirty)
     {
         pCBufferData->isDirty = false;
         // float* data = reinterpret_cast<float*>(pCBufferData->pData.get());
@@ -403,13 +400,13 @@ void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, CBuffe
     BindCBuffer(slot, targetBuf, bindType);
 }
 
-
-void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, BYTE * data, unsigned int bytesize)
+void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer> &targetBuf, BYTE *data, unsigned int bytesize)
 {
-    if(targetBuf == nullptr)
+    if (targetBuf == nullptr)
     {
         GFX_THROW_INFO(CreateConstantBuffer(pDevice, data, bytesize, &targetBuf));
-    }else
+    }
+    else
     {
         // update constant buffer by map and unmap
         D3D11_MAPPED_SUBRESOURCE msr;
@@ -420,20 +417,18 @@ void DirectXGraphics::UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, BYTE *
     }
 }
 
-
-
-void DirectXGraphics::BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& targetBuf, Graphics::EBindType bindType)
+void DirectXGraphics::BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer> &targetBuf, Graphics::EBindType bindType)
 {
-    if(targetBuf == nullptr)
+    if (targetBuf == nullptr)
     {
         // LOG("targetBuf is empty." <<__FILE__ << "[" << __LINE__  << "]");
-        return ;
+        return;
     }
-    if(bindType == Graphics::EBindType::ToVS)
+    if (bindType == Graphics::EBindType::ToVS)
         pContext->VSSetConstantBuffers(slot, 1u, targetBuf.GetAddressOf());
-    else if(bindType == Graphics::EBindType::ToPS)
+    else if (bindType == Graphics::EBindType::ToPS)
         pContext->PSSetConstantBuffers(slot, 1u, targetBuf.GetAddressOf());
-    else if(bindType == Graphics::EBindType::ToAll)
+    else if (bindType == Graphics::EBindType::ToAll)
     {
         pContext->VSSetConstantBuffers(slot, 1u, targetBuf.GetAddressOf());
         pContext->PSSetConstantBuffers(slot, 1u, targetBuf.GetAddressOf());
@@ -444,41 +439,39 @@ void DirectXGraphics::BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& 
 /*                                Texture Operation                                     */
 /****************************************************************************************/
 
-void DirectXGraphics::BindTexture(unsigned int slot, wrl::ComPtr<ID3D11ShaderResourceView>& pTextureView, Graphics::EBindType bindType)
+void DirectXGraphics::BindTexture(unsigned int slot, wrl::ComPtr<ID3D11ShaderResourceView> &pTextureView, Graphics::EBindType bindType)
 {
-    if(pTextureView == nullptr)
+    if (pTextureView == nullptr)
     {
-        LOG("targetBuf is empty." <<__FILE__ << "[" << __LINE__  << "]");
-        return ;
+        LOG("targetBuf is empty." << __FILE__ << "[" << __LINE__ << "]");
+        return;
     }
 
-    if(bindType == Graphics::EBindType::ToVS)
+    if (bindType == Graphics::EBindType::ToVS)
         pContext->VSSetShaderResources(slot, 1u, pTextureView.GetAddressOf());
-    else if(bindType == Graphics::EBindType::ToPS)
+    else if (bindType == Graphics::EBindType::ToPS)
         pContext->PSSetShaderResources(slot, 1u, pTextureView.GetAddressOf());
-    else if(bindType == Graphics::EBindType::ToAll)
+    else if (bindType == Graphics::EBindType::ToAll)
     {
         pContext->VSSetShaderResources(slot, 1u, pTextureView.GetAddressOf());
         pContext->PSSetShaderResources(slot, 1u, pTextureView.GetAddressOf());
     }
 }
-void DirectXGraphics::BindSampler(unsigned int slot, wrl::ComPtr<ID3D11SamplerState>& pSamplerState, Graphics::EBindType bindType)
+void DirectXGraphics::BindSampler(unsigned int slot, wrl::ComPtr<ID3D11SamplerState> &pSamplerState, Graphics::EBindType bindType)
 {
-    if(pSamplerState == nullptr)
+    if (pSamplerState == nullptr)
     {
-        LOG("pSamplerState is empty." <<__FILE__ << "[" << __LINE__  << "]");
-        return ;
+        LOG("pSamplerState is empty." << __FILE__ << "[" << __LINE__ << "]");
+        return;
     }
 
-    if(bindType == Graphics::EBindType::ToVS)
+    if (bindType == Graphics::EBindType::ToVS)
         pContext->VSSetSamplers(slot, 1u, pSamplerState.GetAddressOf());
-    else if(bindType == Graphics::EBindType::ToPS)
+    else if (bindType == Graphics::EBindType::ToPS)
         pContext->PSSetSamplers(slot, 1u, pSamplerState.GetAddressOf());
-    else if(bindType == Graphics::EBindType::ToAll)
+    else if (bindType == Graphics::EBindType::ToAll)
     {
         pContext->VSSetSamplers(slot, 1u, pSamplerState.GetAddressOf());
         pContext->PSSetSamplers(slot, 1u, pSamplerState.GetAddressOf());
     }
 }
-
-

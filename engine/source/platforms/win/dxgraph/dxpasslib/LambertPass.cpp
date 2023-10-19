@@ -24,6 +24,7 @@ namespace TinyEngine::Graph
         auto & helper = HLSLShaderHelper::Get();
         helper.SetGlobalMatrix("g_View", scene->m_main_camera->GetViewMatrix());
         helper.SetGlobalMatrix("g_Proj", scene->m_main_camera->GetProjectionMatrix());
+        helper.SetGlobalMatrix("g_ViewProj", scene->m_main_camera->GetProjectionMatrix() * scene->m_main_camera->GetViewMatrix());
         helper.SetGlobalVector("g_EyePos", scene->m_main_camera->pTransform->GetPosition());
 
         // get directional light
@@ -34,7 +35,9 @@ namespace TinyEngine::Graph
         {
             helper.SetGlobalVariable("g_PointLight", &scene->m_point_lights[i], sizeof(TinyEngine::PointLight));
         }
+
         shadowMap->BindAsTexture(pGfx, HLSLShaderHelper::ShadowMapSlot);
+        
         pGfx->UpdateCBuffer(graph.GetFrameConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerFrameCBufSlot));
         pGfx->UpdateCBuffer(graph.GetLightingConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
         for(size_t i=0; i < scene->effectDescs.size(); ++i)
@@ -47,7 +50,7 @@ namespace TinyEngine::Graph
             {
                 auto pass = pEffect->GetPass(j);
                 if(pass.lightMode == ELightMode::ShadowCaster) continue;
-                pGfx->Apply(pass, renderers); // load shader and render state
+                pGfx->ApplyPassToRenderList(pass, renderers); // load shader and render state
             }
         }
     }

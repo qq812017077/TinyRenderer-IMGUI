@@ -4,9 +4,9 @@ namespace TinyEngine::Rendering
 {
     enum class EStencilMode
     {
-        Off,
-        WriteMask,
-        ReadMask
+        Off = 0,
+        WriteMask = 1,
+        ReadMask = 2
     };
     enum class EStencilOp
     {

@@ -54,7 +54,7 @@ namespace TinyEngine
     {
         for(int i = 0; i < m_Passes.size(); ++i)
         {
-            m_Passes[i].cullMode = mode;
+            m_Passes[i].rasterDesc.cullMode = mode;
         }
     }
 

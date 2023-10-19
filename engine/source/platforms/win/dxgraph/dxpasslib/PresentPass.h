@@ -36,7 +36,7 @@ namespace TinyEngine::Graph
             
             pdxGfx->BindRenderTarget(backbuffer, nullptr);
             pdxGfx->GetContext()->RSSetViewports(1, &pdxGfx->GetEditorViewPort());
-            pdxGfx->ApplyToRenderTarget(fullscreenPass, renderTarget);
+            pdxGfx->ApplyPassToRenderTarget(fullscreenPass, renderTarget);
         }
 
     protected:

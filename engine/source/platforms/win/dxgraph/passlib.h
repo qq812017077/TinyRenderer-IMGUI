@@ -6,3 +6,4 @@
 #include "dxpasslib/PostProcessPass.h"
 #include "dxpasslib/PresentPass.h"
 #include "dxpasslib/ShadowPass.h"
+#include "dxpasslib/SkyBoxPass.h"

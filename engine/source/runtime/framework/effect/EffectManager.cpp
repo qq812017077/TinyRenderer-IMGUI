@@ -53,7 +53,7 @@ namespace TinyEngine
         auto & cutoutPass = (*cutoutEffect)["DefaultCutoutPass"];
         cutoutPass.renderingMode = ERenderingMode::Cutout;
         cutoutPass.lightMode = ELightMode::ForwardBase;
-        cutoutPass.cullMode = ECullMode::Off;
+        cutoutPass.rasterDesc.cullMode = ECullMode::Off;
         cutoutEffect->queuePriority = RenderQueue::AlphaTest;
         
         // add transparent effect
@@ -73,6 +73,10 @@ namespace TinyEngine
         
         auto BlitEffect = Effect::Create("Blit", "shaders/effects/FullScreenVS.hlsl", "shaders/effects/BlitPS.hlsl");
         BlitEffect->queuePriority = RenderQueue::Overlay;
+
+        // skybox effect
+        auto skyboxEffect = Effect::Create("SkyBox", "shaders/SkyBoxVS.hlsl", "shaders/SkyBoxPS.hlsl");
+        
 
         // add error effect
         auto errorEffect = Effect::Create("Error", "shaders/ErrorVertexShader.hlsl", "shaders/ErrorPixelShader.hlsl");

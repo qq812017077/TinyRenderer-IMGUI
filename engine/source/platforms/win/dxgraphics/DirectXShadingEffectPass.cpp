@@ -44,7 +44,7 @@ namespace TinyEngine
             for(size_t j=0; j < pEffect->GetPassCount(); ++j)
             {
                 auto pass = pEffect->GetPass(j);
-                pGfx->Apply(pass, renderers); // load shader and render state
+                pGfx->ApplyPassToRenderList(pass, renderers); // load shader and render state
             }
         }
 

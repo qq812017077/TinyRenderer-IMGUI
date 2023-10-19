@@ -39,10 +39,12 @@ public:
     void ClearBuffer(float red, float green, float blue) noexcept override;
     
     void ApplyState(TinyEngine::RenderState * pState) override;
-    void Apply(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers) override;
-    void ApplyToRenderTarget(TinyEngine::ShaderPass & pass, TinyEngine::RenderTarget * pRenderers) override;
+    void ApplyPass(TinyEngine::ShaderPass & pass) override;
+    void ApplyPassToRenderList(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers) override;
+    void ApplyPassToRenderTarget(TinyEngine::ShaderPass & pass, TinyEngine::RenderTarget * pRenderers) override;
+    void ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh) override;
     
-    void setRasterizerState(const TinyEngine::ECullMode cullMode);
+    void setRasterizerState(const TinyEngine::RasterDesc rasterDesc);
     // Constant Buffer Operation
     std::shared_ptr<TinyEngine::RenderTarget> CreateRenderTarget() override;
     std::shared_ptr<TinyEngine::DepthStencil> CreateDepthStencil() override;

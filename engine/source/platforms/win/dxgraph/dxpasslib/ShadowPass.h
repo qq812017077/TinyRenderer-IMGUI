@@ -1,9 +1,9 @@
 #pragma once
-#include "graph/RenderPass.h"
 #include <d3d11.h>
 #include <wrl.h>
+
+#include "RasterPass.h"
 #include "effect/Pass.h"
-#include "Graphics.h"
 #include "dxgraphics/DirectXRenderTarget.h"
 #include "dxgraphics/DirectXDepthStencil.h"
 #include "DirectXGraphics.h"
@@ -29,6 +29,10 @@ namespace TinyEngine::Graph
 
             shadowPass = EffectManager::Get().FindPass("Default/ShadowCastPass");
             shadowPass.psName = "none";
+            shadowPass.rasterDesc.DepthBias = 40;
+            shadowPass.rasterDesc.SlopeScaledDepthBias =  2.5f;
+            shadowPass.rasterDesc.DepthBiasClamp = 1.00f;
+            
         }
         virtual ~ShadowPass() = default;
 
@@ -50,7 +54,7 @@ namespace TinyEngine::Graph
             {
                 auto & desc = scene->ShadowCastDescs[i];
                 auto & renderers = desc.renderers;
-                pGfx->Apply(shadowPass, renderers); // load shader and render state
+                pGfx->ApplyPassToRenderList(shadowPass, renderers); // load shader and render state
             }
 
             //for points light

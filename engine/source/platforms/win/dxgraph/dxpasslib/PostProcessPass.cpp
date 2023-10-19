@@ -4,6 +4,8 @@
 #include "scene/Scene.h"
 #include "DirectXGraphics.h"
 #include "dxgraph/DirectXRenderGraph.h"
+#include "geometry/Primitive.h"
+#include "Mesh.h"
 
 namespace TinyEngine::Graph
 {
@@ -15,17 +17,19 @@ namespace TinyEngine::Graph
         maskPass.passName = "MaskPass";
         maskPass.depthStencilDesc.depthMode = TinyEngine::EDepthMode::Off;
         maskPass.depthStencilDesc.stencilMode = TinyEngine::Rendering::EStencilMode::WriteMask;
-        maskPass.cullMode = TinyEngine::ECullMode::Off;
+        maskPass.rasterDesc.cullMode = TinyEngine::ECullMode::Off;
         maskPass.psName = "none";
 
         outlinePass = EffectManager::Get().FindPass("Outline/OutlinePass");
         outlinePass.depthStencilDesc.depthMode = TinyEngine::EDepthMode::Off;
         outlinePass.depthStencilDesc.stencilMode = TinyEngine::Rendering::EStencilMode::ReadMask;
-        outlinePass.cullMode = TinyEngine::ECullMode::Off;
+        outlinePass.rasterDesc.cullMode = TinyEngine::ECullMode::Off;
 
         fullscreenPass = EffectManager::Get().FindPass("Blur/BlurPass");
         // outlinePass.depthStencilDesc.depthMode = TinyEngine::EDepthMode::Off;
         fullscreenPass.blendDesc = BlendDesc::BlendOneOne();
+
+        quad = Primitive::CreateQuadMesh();
     }
 
     void PostProcessPass::Execute(Graphics *pGfx, RenderGraph& graph)
@@ -37,12 +41,12 @@ namespace TinyEngine::Graph
     {
         auto * renderTarget = graph.GetBufferResource(renderTargetHandle);
         auto * depthStencil = graph.GetBufferResource(depthStencilHandle);
-        auto * postBuffer = graph.GetBufferResource(postHandle);
+        auto * PostTexture = graph.GetBufferResource(postHandle);
 
-        pGfx->BindRenderTarget(postBuffer, depthStencil);
+        pGfx->BindRenderTarget(PostTexture, depthStencil);
         auto scene = pScene;
         // mask
-        pGfx->Apply(maskPass, scene->selectedRenderers); // load shader and render state
+        pGfx->ApplyPassToRenderList(maskPass, scene->selectedRenderers); // load shader and render state
 
         // outline
         for(auto & renderer : scene->selectedRenderers)
@@ -52,7 +56,7 @@ namespace TinyEngine::Graph
             auto scale = pTransform->GetScale();
             pTransform->SetScale(scale * 1.05f);
         }
-        pGfx->Apply(outlinePass, scene->selectedRenderers);
+        pGfx->ApplyPassToRenderList(outlinePass, scene->selectedRenderers);
         
         // restore scale
         for(auto & renderer : scene->selectedRenderers)
@@ -64,6 +68,8 @@ namespace TinyEngine::Graph
         }
         
         pGfx->BindRenderTarget(renderTarget, depthStencil);
-        pGfx->ApplyToRenderTarget(fullscreenPass, postBuffer);
+        PostTexture->BindAsTexture(pGfx, 0);
+        pGfx->ApplyPassToMesh(fullscreenPass, &quad);
+        // pGfx->ApplyPassToRenderTarget(fullscreenPass, PostTexture);
     }
 }

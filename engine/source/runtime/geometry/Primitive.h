@@ -11,8 +11,9 @@ public:
     static GameObject* CreateSkinedCube(std::string name);
     static GameObject* CreateCube(std::string name);
     static GameObject* CreatePlane(std::string name);
-
     static GameObject* CreateBox(std::string name, float width, float height, float depth);
 
-    static std::shared_ptr<Mesh> CreateQuadMesh();
+    static std::shared_ptr<Mesh> CreateQuadMeshPtr();
+    static Mesh CreateQuadMesh();
+    static Mesh CreateCubeMesh(float scale = 1.0f);
 };

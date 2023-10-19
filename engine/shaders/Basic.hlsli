@@ -49,6 +49,7 @@ cbuffer PerFrameCBuf : register(b0)
 {
 	matrix g_View;
 	matrix g_Proj;
+    matrix g_ViewProj;
 };
 
 cbuffer PerDrawCBuf : register(b1)
@@ -68,4 +69,5 @@ cbuffer LightingCBuf : register(b2) // 160 because of float4 alignment
 
 
 Texture2D _ShadowMap : register(t0);
-SamplerState sampler_ShadowMap : register(s0);
+SamplerComparisonState sampler_ShadowMap : register(s0);
+#define PCF_RANGE 2

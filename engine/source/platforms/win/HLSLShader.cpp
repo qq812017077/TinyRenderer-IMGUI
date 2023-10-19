@@ -110,31 +110,6 @@ void HLSLVertexShader::LoadMaterialResource(Material * pMat)
     }
 }
 
-// void HLSLVertexShader::UpdateTexture(Material * pMat)
-// {
-//     HRESULT hr;
-//     #ifndef NDEBUG
-//         auto & infoManager = directXGfx.infoManager;
-//     #endif
-//     for(auto & pair: shaderDescInfo.GetTextures())
-//     {
-//         auto & name = pair.first;
-//         TextureVariable * pTexVariable = pair.second.get();
-//         unsigned int slot = pTexVariable->slot;
-//         SamplerInfo samplerInfo = GetSamplerInfoByName(pTexVariable->samplerName.c_str(), (int)slot);
-//         if(pTexVariable->isDirty)
-//         {
-//             pTexVariable->isDirty = false;
-//             //Update
-//             auto pTexture = pTexVariable->pTexture.get();
-//             if(pTexture == nullptr) pTexture = Texture::GetDefaultTexturePtr();
-//             GFX_THROW_INFO(CreateSampler(directXGfx, pTexture, &pSamplerStateBySlot[samplerInfo.slot]));
-//             GFX_THROW_INFO(CreateTexture2DView(directXGfx, pTexture, &pTextureViewBySlot[slot]));
-//         }
-//         directXGfx.BindTexture(slot, pTextureViewBySlot[slot], Graphics::EBindType::ToVS);
-//         directXGfx.BindSampler(samplerInfo.slot, pSamplerStateBySlot[samplerInfo.slot], Graphics::EBindType::ToVS);
-//     }
-// }
 
 UINT HLSLVertexShader::UpdateVertexBuffers(Mesh& mesh, ID3D11Buffer**& pVertexBuffers,UINT*& strides,UINT*& offsets)
 {

@@ -18,13 +18,28 @@ namespace TinyEngine
     HRESULT StencilManager::LoadStencilState(DirectXGraphics* pGfx , const DepthStencilDesc& depthStencilDesc, ID3D11DepthStencilState ** pTargetBlendState)
     {
         HRESULT hr = S_OK;
-        size_t uniqueID = 0;
-        uniqueID |= (size_t)(depthStencilDesc.depthMode) << 8;
-        uniqueID |= (size_t)(depthStencilDesc.stencilMode);
+        size_t uniqueID = depthStencilDesc.GetHash();
         if(m_StencilStates.find(uniqueID) == m_StencilStates.end())
         {
             D3D11_DEPTH_STENCIL_DESC desc = CD3D11_DEPTH_STENCIL_DESC(CD3D11_DEFAULT());
             
+            switch (depthStencilDesc.depthMode)
+            {
+            case TinyEngine::EDepthMode::Off:
+                desc.DepthEnable = FALSE;
+                break;
+            case TinyEngine::EDepthMode::On:
+                desc.DepthEnable = TRUE;
+                break;
+            case TinyEngine::EDepthMode::DepthFirst:
+                desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+                desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;  // we dont want to write to the depth buffer
+                desc.DepthEnable = TRUE;
+                break;
+            default:
+                break;
+            }
+
             switch (depthStencilDesc.stencilMode)
             {
             case TinyEngine::Rendering::EStencilMode::WriteMask:
@@ -44,7 +59,6 @@ namespace TinyEngine
                 hr = pGfx->GetDevice()->CreateDepthStencilState(&desc, &pReadDepthStencilState);
                 break;
             default:
-                desc.DepthEnable = depthStencilDesc.depthMode == TinyEngine::EDepthMode::On ? TRUE : FALSE;
                 break;
             }
             hr = pGfx->GetDevice()->CreateDepthStencilState(&desc, &m_StencilStates[uniqueID]);

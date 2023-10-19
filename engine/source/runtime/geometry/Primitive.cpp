@@ -109,125 +109,9 @@ GameObject* Primitive::CreateSkinedCube(std::string name)
 
 GameObject* Primitive::CreateCube(std::string name)
 {
-    constexpr float side = 1.0f;
-    std::vector<Float3> position = {
-            { side, -side, side }, // 0
-            { -side, -side, side}, // 1
-            { side, side , side},  // 2
-
-            { -side, side, side},   // 3
-            { side,  side, -side },
-            { -side, side, -side},
-
-            { side, -side, -side},
-            { -side, -side, -side},
-            { side, side, side},
-
-            { -side, side, side},
-            { side, side, -side},
-            { -side, side, -side},
-
-            { side, -side, -side}, // 12
-            { side, -side, side},
-            { -side, -side, side},
-            
-            { -side, -side, -side}, // 15
-            { -side, -side , side},
-            { -side, side , side},
-
-            { -side, side , -side}, //18
-            { -side, -side , -side},
-            { side, -side , -side},
-
-            { side, side , -side}, //21
-            { side, side , side},
-            { side, -side , side},
-        };
-    std::vector<INDICE_TYPE> indices = {
-                0,2, 3,    0,3,1,
-				8,4, 5,    8,5,9,
-				10,6, 7,  10,7,11,
-				12,13,14, 12,14,15,
-				16,17,18, 16,18,19,
-				20,21,22, 20,22,23
-        };
-        
-    std::vector<Float2> uvs = {
-        { 0.0f,0.0f },  //0
-        { 1.0f,0.0f },
-        { 0.0f,1.0f },
-
-        { 1.0f,1.0f },  //3
-        { 0.0f,1.0f },
-        { 1.0f,1.0f },
-        
-        { 0.0f,1.0f },  //6
-        { 1.0f,1.0f },
-        { 0.0f,0.0f },
-        
-        { 1.0f,0.0f },  //9
-        { 0.0f,0.0f },
-        { 1.0f,0.0f },
-        
-        { 0.0f,0.0f },  //12
-        { 0.0f,1.0f },
-        { 1.0f,1.0f },
-        
-        { 1.0f,0.0f },  //15
-        { 0.0f,0.0f },
-        { 0.0f,1.0f },
-        
-        { 1.0f,1.0f },  //18
-        { 1.0f,0.0f },
-        { 0.0f,0.0f },
-        
-        { 0.0f,1.0f },  //21
-        { 1.0f,1.0f },
-        { 1.0f,0.0f }
-    };
-    // normals for every vertex: 6 faces, 4 vertices per face
-    std::vector<Float3> normals =
-    {
-        { 0.0f,0.0f, 1.0f },// 0 near
-        { 0.0f,0.0f, 1.0f },
-        { 0.0f,0.0f, 1.0f },
-
-        { 0.0f,0.0f, 1.0f },
-        { 0.0f,1.0f,0.0f },// 4 far
-        { 0.0f,1.0f,0.0f },
-        
-        { 0.0f,0.0f,-1.0f },
-        { 0.0f,0.0f,-1.0f },
-        { 0.0f,1.0f,0.0f },// 8 left
-
-        { 0.0f,1.0f,0.0f },
-        { 0.0f,0.0f,-1.0f },
-        { 0.0f,0.0f,-1.0f },
-
-        { 0.0f,-1.0f,0.0f },// 12 right
-        { 0.0f,-1.0f,0.0f },
-        { 0.0f,-1.0f,0.0f },
-
-        { 0.0f,-1.0f,0.0f },
-        { -1.0f,0.0f,0.0f },// 16 bottom
-        { -1.0f,0.0f,0.0f },
-
-        { -1.0f,0.0f,0.0f },
-        { -1.0f,0.0f,0.0f },
-        { 1.0f,0.0f,0.0f },// 20 top
-
-        { 1.0f,0.0f,0.0f },
-        { 1.0f,0.0f,0.0f },
-        { 1.0f,0.0f,0.0f } 
-    };
-    Mesh mesh;
-    mesh.SetVertexPosition(position);
-    mesh.SetVertexIndices(indices);
-    mesh.SetVertexTexCoord(uvs);
-    mesh.SetVertexNormal(normals);
-
+    auto cubeMesh = CreateCubeMesh();
     auto pGO = GameObject::CreateGameObject(name);
-    auto renderer = pGO->AddComponent<Renderer>(mesh);
+    auto renderer = pGO->AddComponent<Renderer>(cubeMesh);
     return pGO;
 }
 
@@ -361,7 +245,7 @@ GameObject* Primitive::CreateBox(std::string name, float width, float height, fl
 }
 
 
-std::shared_ptr<Mesh> Primitive::CreateQuadMesh()
+std::shared_ptr<Mesh> Primitive::CreateQuadMeshPtr()
 {
     auto pMesh = std::make_shared<Mesh>();
     
@@ -381,4 +265,146 @@ std::shared_ptr<Mesh> Primitive::CreateQuadMesh()
     pMesh->SetVertexPosition(position);
     pMesh->SetVertexIndices(indices);
     return pMesh;
+}
+
+Mesh Primitive::CreateQuadMesh()
+{
+    float size = 1;
+    std::vector<Float2> position = {
+        { -size, size }, // 0
+        { size,  size }, // 1
+        { -size, -size}, // 2
+        { size,  -size} // 3
+    };
+
+    std::vector<INDICE_TYPE> indices = {
+        0,1,2,
+        1,3,2
+    };
+
+    Mesh mesh;
+    mesh.SetVertexPosition(position);
+    mesh.SetVertexIndices(indices);
+    return mesh;
+}
+
+Mesh Primitive::CreateCubeMesh(float scale)
+{
+    const float side = 1.0f * scale;
+    std::vector<Float3> position = {
+            { side, -side, side }, // 0
+            { -side, -side, side}, // 1
+            { side, side , side},  // 2
+
+            { -side, side, side},   // 3
+            { side,  side, -side },
+            { -side, side, -side},
+
+            { side, -side, -side},
+            { -side, -side, -side},
+            { side, side, side},
+
+            { -side, side, side},
+            { side, side, -side},
+            { -side, side, -side},
+
+            { side, -side, -side}, // 12
+            { side, -side, side},
+            { -side, -side, side},
+            
+            { -side, -side, -side}, // 15
+            { -side, -side , side},
+            { -side, side , side},
+
+            { -side, side , -side}, //18
+            { -side, -side , -side},
+            { side, -side , -side},
+
+            { side, side , -side}, //21
+            { side, side , side},
+            { side, -side , side},
+        };
+    std::vector<INDICE_TYPE> indices = {
+                0,2, 3,    0,3,1,
+				8,4, 5,    8,5,9,
+				10,6, 7,  10,7,11,
+				12,13,14, 12,14,15,
+				16,17,18, 16,18,19,
+				20,21,22, 20,22,23
+        };
+        
+    std::vector<Float2> uvs = {
+        { 0.0f,0.0f },  //0
+        { 1.0f,0.0f },
+        { 0.0f,1.0f },
+
+        { 1.0f,1.0f },  //3
+        { 0.0f,1.0f },
+        { 1.0f,1.0f },
+        
+        { 0.0f,1.0f },  //6
+        { 1.0f,1.0f },
+        { 0.0f,0.0f },
+        
+        { 1.0f,0.0f },  //9
+        { 0.0f,0.0f },
+        { 1.0f,0.0f },
+        
+        { 0.0f,0.0f },  //12
+        { 0.0f,1.0f },
+        { 1.0f,1.0f },
+        
+        { 1.0f,0.0f },  //15
+        { 0.0f,0.0f },
+        { 0.0f,1.0f },
+        
+        { 1.0f,1.0f },  //18
+        { 1.0f,0.0f },
+        { 0.0f,0.0f },
+        
+        { 0.0f,1.0f },  //21
+        { 1.0f,1.0f },
+        { 1.0f,0.0f }
+    };
+    // normals for every vertex: 6 faces, 4 vertices per face
+    std::vector<Float3> normals =
+    {
+        { 0.0f,0.0f, 1.0f },// 0 near
+        { 0.0f,0.0f, 1.0f },
+        { 0.0f,0.0f, 1.0f },
+
+        { 0.0f,0.0f, 1.0f },
+        { 0.0f,1.0f,0.0f },// 4 far
+        { 0.0f,1.0f,0.0f },
+        
+        { 0.0f,0.0f,-1.0f },
+        { 0.0f,0.0f,-1.0f },
+        { 0.0f,1.0f,0.0f },// 8 left
+
+        { 0.0f,1.0f,0.0f },
+        { 0.0f,0.0f,-1.0f },
+        { 0.0f,0.0f,-1.0f },
+
+        { 0.0f,-1.0f,0.0f },// 12 right
+        { 0.0f,-1.0f,0.0f },
+        { 0.0f,-1.0f,0.0f },
+
+        { 0.0f,-1.0f,0.0f },
+        { -1.0f,0.0f,0.0f },// 16 bottom
+        { -1.0f,0.0f,0.0f },
+
+        { -1.0f,0.0f,0.0f },
+        { -1.0f,0.0f,0.0f },
+        { 1.0f,0.0f,0.0f },// 20 top
+
+        { 1.0f,0.0f,0.0f },
+        { 1.0f,0.0f,0.0f },
+        { 1.0f,0.0f,0.0f } 
+    };
+    Mesh mesh;
+    mesh.SetVertexPosition(position);
+    mesh.SetVertexIndices(indices);
+    mesh.SetVertexTexCoord(uvs);
+    mesh.SetVertexNormal(normals);
+    return mesh;
 }

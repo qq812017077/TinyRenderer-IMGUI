@@ -6,6 +6,9 @@
 #include "TextureFormat.h"
 #include "SampleMode.h"
 
+
+
+
 class Texture
 {
 public:
@@ -102,4 +105,29 @@ private:
     int m_MipLevel;
     bool m_Linear;
     static std::shared_ptr<Texture> pDefaultTexture;
+};
+
+class CubeTexture
+{
+public:
+    CubeTexture() = default;
+// in directx :
+/***
+ *  In directx:
+ *      0: right
+ *      1: left
+ *      2: top
+ *      3: bottom
+ *      4: front
+ *      5: back
+*/
+    std::shared_ptr<Texture> front() const { return textures[4]; }
+    std::shared_ptr<Texture> back() const { return textures[5]; }
+    std::shared_ptr<Texture> left() const { return textures[1]; }
+    std::shared_ptr<Texture> right() const { return textures[0]; }
+    std::shared_ptr<Texture> top() const { return textures[2]; }
+    std::shared_ptr<Texture> bottom() const { return textures[3]; }
+    
+    std::shared_ptr<Texture> textures[6];
+    
 };

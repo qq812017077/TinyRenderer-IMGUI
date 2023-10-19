@@ -77,8 +77,10 @@ namespace TinyEngine
 
             D3D11_SAMPLER_DESC samplerDesc = CD3D11_SAMPLER_DESC(CD3D11_DEFAULT());
             samplerDesc.BorderColor[0] = 1.0f;
+            samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR; // 
             samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
             samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+            samplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;       // if value less than value 's shadow map, pass-> can see
 
             GFX_THROW_INFO(pGfx->GetDevice()->CreateSamplerState(&samplerDesc, &pSamplerState));
         }

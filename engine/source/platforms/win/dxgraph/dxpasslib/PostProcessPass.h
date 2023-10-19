@@ -3,8 +3,10 @@
 #include <d3d11.h>
 #include <wrl.h>
 #include "effect/Pass.h"
+#include "Mesh.h"
 namespace wrl = Microsoft::WRL;
 class DirectXGraphics;
+
 
 namespace TinyEngine::Graph
 {
@@ -22,5 +24,6 @@ namespace TinyEngine::Graph
         ShaderPass maskPass;
         ShaderPass outlinePass;
         ShaderPass fullscreenPass;
+        Mesh quad;
     };
 }

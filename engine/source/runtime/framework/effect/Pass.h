@@ -24,7 +24,8 @@ namespace TinyEngine
     enum class EDepthMode
     {
         Off,
-        On
+        On,
+		DepthFirst
     };
 
 	enum class ECullMode
@@ -44,10 +45,38 @@ namespace TinyEngine
 		ShadowCaster,
 	};
 
-	struct DepthStencilDesc
+	class RenderState{
+		
+		virtual void Apply(Graphics* pGfx);
+
+		template<typename T, typename...Params>
+		static T&& Create(Params&&...p)
+		{
+			T state = T(std::forward<Params>(p)...);
+			states.push_back(std::move(pState));
+			return state;
+		}
+	};
+
+	struct RenderStateDesc
+	{
+		virtual size_t GetHash() const = 0;
+	};
+
+	struct DepthStencilDesc : RenderStateDesc
 	{
 		EDepthMode depthMode{EDepthMode::On};
 		EStencilMode stencilMode{EStencilMode::Off};
+		
+		size_t GetHash() const override
+		{
+			size_t uniqueID = 0;
+			
+			uniqueID |= (size_t)(depthMode);
+			uniqueID |= (size_t)(stencilMode) << 8;
+			return uniqueID;
+			// return std::hash<size_t>()(static_cast<size_t>(depthMode)) ^ std::hash<size_t>()(static_cast<size_t>(stencilMode));
+		}
 	};
 	enum class EBlend
     {
@@ -91,7 +120,7 @@ namespace TinyEngine
         COLOR_WRITE_ENABLE_ALL	= ( ( ( COLOR_WRITE_ENABLE_RED | COLOR_WRITE_ENABLE_GREEN )  | COLOR_WRITE_ENABLE_BLUE )  | COLOR_WRITE_ENABLE_ALPHA ) 
     };
 
-	struct BlendDesc
+	struct BlendDesc : RenderStateDesc
 	{
 		bool BlendEnable{false};
 		EBlend SrcBlend{EBlend::ZERO};
@@ -102,6 +131,29 @@ namespace TinyEngine
 		EBlendOP BlendOpAlpha{EBlendOP::ADD};
 		EBlendWrite RenderTargetWriteMask{EBlendWrite::COLOR_WRITE_ENABLE_ALL};
 		float * blendFactors{nullptr};
+
+		size_t GetHash() const override
+		{
+			size_t uniqueID = 0;
+			uniqueID |= (size_t)(BlendEnable);
+			uniqueID |= (size_t)(SrcBlend) << 1;
+			uniqueID |= (size_t)(DestBlend) << 6;
+			uniqueID |= (size_t)(BlendOp) << 11;
+			uniqueID |= (size_t)(SrcBlendAlpha) << 14;
+			uniqueID |= (size_t)(DestBlendAlpha) << 19;
+			uniqueID |= (size_t)(BlendOpAlpha) << 24;
+			uniqueID |= (size_t)(RenderTargetWriteMask) << 29;
+			
+		// 	return std::hash<size_t>()(BlendEnable) ^ 
+		// 	std::hash<size_t>()(static_cast<size_t>(SrcBlend)) ^ 
+		// 	std::hash<size_t>()(static_cast<size_t>(DestBlend)) ^ 
+		// 	std::hash<size_t>()(static_cast<size_t>(BlendOp)) ^ 
+		// 	std::hash<size_t>()(static_cast<size_t>(SrcBlendAlpha)) ^ 
+		// 	std::hash<size_t>()(static_cast<size_t>(DestBlendAlpha)) ^ 
+		// 	std::hash<size_t>()(static_cast<size_t>(BlendOpAlpha)) ^ 
+		// 	std::hash<size_t>()(static_cast<size_t>(RenderTargetWriteMask));
+			return uniqueID;
+		}
 
 		static BlendDesc Transparent()
 		{
@@ -132,32 +184,44 @@ namespace TinyEngine
 		}
 	};
 
-	class RenderState{
-		
-		virtual void Apply(Graphics* pGfx);
-
-		template<typename T, typename...Params>
-		static T&& Create(Params&&...p)
-		{
-			T state = T(std::forward<Params>(p)...);
-			states.push_back(std::move(pState));
-			return state;
-		}
-	};
-
-	class CullState : RenderState{
-	public:
+	struct RasterDesc : RenderStateDesc
+	{
+		// EFillMode FillMode;
 		ECullMode cullMode{ECullMode::Back};
-	};
+		bool FrontCounterClockwise{false};
+		int DepthBias{0};
+		float DepthBiasClamp{0.0f};
+		float SlopeScaledDepthBias{0.0f};
+		bool DepthClipEnable{true};
+		bool ScissorEnable{false};
+		bool MultisampleEnable{false};
+		bool AntialiasedLineEnable{false};
 
-	class DepthStencilState : RenderState{
-	public:
-		DepthStencilDesc depthStencilDesc;
-	};
-
-	class BlendState : RenderState{
-	public:
-		BlendDesc blendDesc;
+		size_t GetHash() const override
+		{
+			size_t uniqueID = 0;
+			uniqueID |= (size_t)(cullMode);
+			uniqueID |= (size_t)(FrontCounterClockwise) << 2;
+			uniqueID |= (size_t)(DepthClipEnable) << 32;
+			uniqueID |= (size_t)(ScissorEnable) << 33;
+			uniqueID |= (size_t)(MultisampleEnable) << 34;
+			uniqueID |= (size_t)(AntialiasedLineEnable) << 35;
+			return uniqueID;
+		}
+		static RasterDesc Default()
+		{
+			RasterDesc desc;
+			desc.cullMode = ECullMode::Back;
+			desc.FrontCounterClockwise = false;
+			desc.DepthBias = 0;
+			desc.DepthBiasClamp = 0.0f;
+			desc.SlopeScaledDepthBias = 0.0f;
+			desc.DepthClipEnable = true;
+			desc.ScissorEnable = false;
+			desc.MultisampleEnable = false;
+			desc.AntialiasedLineEnable = false;
+			return desc;
+		}
 	};
 
 	struct ShaderPass // like Unity's Pass
@@ -168,7 +232,7 @@ namespace TinyEngine
 		std::string passName;
 		// render state, like unity's pass
 		ERenderingMode renderingMode{ERenderingMode::Opaque};
-		ECullMode cullMode{ECullMode::Back};
+		RasterDesc rasterDesc;
 		DepthStencilDesc depthStencilDesc;
 		ELightMode lightMode{ELightMode::Unlit};
 		BlendDesc blendDesc;
@@ -193,6 +257,21 @@ namespace TinyEngine
 			pass.psName = EffectManager::Get().Load(EShaderType::PS, pixelShaderPath);
 			return pass;
 		}
+	};
+
+	class RasterState : RenderState{
+	public:
+		RasterDesc rasterDesc;
+	};
+
+	class DepthStencilState : RenderState{
+	public:
+		DepthStencilDesc depthStencilDesc;
+	};
+
+	class BlendState : RenderState{
+	public:
+		BlendDesc blendDesc;
 	};
 	
 }   // namespace TinyEngine
