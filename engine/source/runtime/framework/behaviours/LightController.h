@@ -20,7 +20,8 @@ public:
         
         if(pLight)
         {
-            pLight->pTransform->SetEulerAngle({ 90.0f, 0.0f, 0.0f });
+            pLight->pTransform->SetEulerAngle({ 40.0f, 0.0f, 0.0f });
+            pLight->pTransform->SetPosition({ 0.0f, 300.0f, 0.0f });
             pLight->SetIntensity(0.2f);
         }
         

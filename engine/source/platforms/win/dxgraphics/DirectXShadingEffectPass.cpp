@@ -45,7 +45,6 @@ namespace TinyEngine
             {
                 auto pass = pEffect->GetPass(j);
                 pGfx->Apply(pass, renderers); // load shader and render state
-                
             }
         }
 

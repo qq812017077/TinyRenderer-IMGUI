@@ -44,9 +44,12 @@ public:
     static Matrix4x4 Rotation(const Vector3& rotation);
     static Matrix4x4 Rotation(const Quaternion& rotation);
     static Matrix4x4 Scale(const Vector3& scale);
+    static Matrix4x4 LookAt(const Vector3& eye, const Vector3& target, const Vector3& up);
+    static Matrix4x4 LookAt(const Vector3& forward, const Vector3& up);
     static Matrix4x4 TRS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale);
     static Matrix4x4 Perspective(float fov, float aspect, float near, float far);
-    static Matrix4x4 Orthographic(float left, float right, float bottom, float top, float near, float far);
+    static Matrix4x4 OrthographicLH(float viewWidth, float viewHeight, float zNear, float zFar);
+    static Matrix4x4 OrthographicLH(float left, float right, float bottom, float top, float near, float far);
 };
 
 

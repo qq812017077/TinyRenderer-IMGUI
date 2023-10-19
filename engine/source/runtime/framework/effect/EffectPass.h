@@ -1,41 +1,29 @@
 #pragma once
+#include <memory>
+#include <vector>
 #include "Pass.h"
-
+class Graphics;
 namespace TinyEngine
 {
     class Scene;
-
-    class Buffer
-    {
-    public:
-        void Register() {
-
-        }
-
-        void Release() {
-
-        }
-    private:
-        size_t bufferID;
-    };
+    class RenderTarget;
+    class DepthStencil;
 
     class EffectPassBase
     {
         public:
 		EffectPassBase() noexcept {}
-
-		bool IsEnabled() const noexcept { return enabled; }
-		virtual void Apply(Graphics* pGfx, std::shared_ptr<Scene> pFrameBuffer) = 0;
-		virtual ~EffectPassBase() {
+        virtual ~EffectPassBase() {
             
 		}
+        virtual void Initialize(Graphics * pGfx) {}
+		bool IsEnabled() const noexcept { return enabled; }
+		virtual void Apply(Graphics* pGfx, std::shared_ptr<Scene> pFrameBuffer) = 0;
+		
 		
 	protected:
 		std::vector<ShaderPass> m_ShaderPasses;
 		bool enabled;
-
-		ShaderPass maskPass;
-		ShaderPass outlinePass;
     };
 
     /***
@@ -61,8 +49,6 @@ namespace TinyEngine
         void Apply(Graphics* pGfx, std::shared_ptr<Scene> scene) override;
 
         private:
-        Buffer pFrameBuffer;
-        Buffer pLightingBuffer;
     };
 
 
@@ -72,15 +58,18 @@ namespace TinyEngine
 
     class MousePickEffectPass : public EffectPassBase
     {
-        public:
+    public:
         MousePickEffectPass();
-
         ~MousePickEffectPass() override;
 
         void Apply(Graphics* pGfx, std::shared_ptr<Scene> scene) override;
+        
+        std::shared_ptr<RenderTarget> pRenderTarget{nullptr};
+        std::shared_ptr<DepthStencil> pDepthStencil{nullptr};
 
-        private:
+    private:
         ShaderPass maskPass;
         ShaderPass outlinePass;
+        ShaderPass fullscreenPass;
     };
 }

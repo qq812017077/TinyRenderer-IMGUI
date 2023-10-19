@@ -7,6 +7,12 @@ EngineException::EngineException(int line, const char* file, const char* msg) no
     msg(msg)
 {}
 
+
+EngineException::EngineException(int line, const char* file, std::string msg) noexcept
+    :EngineException(line, file, msg.c_str())
+{
+    
+}
 const char* EngineException::what() const noexcept
 {
     std::ostringstream oss;

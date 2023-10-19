@@ -32,7 +32,7 @@ namespace TinyEngine
         ~Effect(){}
 
         bool IsValid();
-        void AddPass(std::string name, ShaderPass pass);
+        void AddPass(ShaderPass pass);
         ShaderPass& FindPass(std::string name);
         std::string GetName() const { return m_EffectName; }
         size_t GetPassCount() const { return m_Passes.size(); }
@@ -44,7 +44,7 @@ namespace TinyEngine
         
         void SetRenderingMode(ERenderingMode renderingMode);
         void SetCullMode(ECullMode mode);
-        
+        bool CastShadow();
         static std::shared_ptr<Effect> Create(std::string name, ShaderPass pass);
         static std::shared_ptr<Effect> Create(std::string name, std::string vertexShaderPath, std::string pixelShaderPath);
 

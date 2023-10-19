@@ -28,6 +28,7 @@ protected:
 private:
     float fov = 60.0f;
     float aspect = 1.0f;
+    float orthSize = 200.0f;
     float nearPlane = 0.1f;
     float farPlane = 100.0f;
 };

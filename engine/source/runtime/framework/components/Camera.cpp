@@ -3,7 +3,8 @@
 #include "core/math/Vector.h"
 #include "components/Transform.h"
 #include "Shader.h"
-#include "d3d11.h"
+#include <d3d11.h>
+#include <DirectXMath.h>
 Camera* Camera::pActivedCamera = nullptr;
 Camera::Camera():
     fov(60.0f),
@@ -62,6 +63,9 @@ Matrix4x4 Camera::GetViewMatrix()
 
 Matrix4x4 Camera::GetProjectionMatrix()
 {
+    orthSize = 100.0f;
+    auto heightSize = orthSize;
+    auto widthSize = orthSize * aspect;
     auto projection = Matrix4x4::Perspective(fov, aspect, nearPlane, farPlane);
     return projection;
 }
@@ -75,18 +79,3 @@ void Camera::LookAt(Vector3 target)
     Vector3 up = Vector3::Normalize(Vector3::Cross(forward, right));
     pTransform->SetRotation(Quaternion::LookRotation(forward, up));
 }
-
-// void Camera::UpdateCameraBuffer(IShaderHelper& shaderHelper)
-// {
-//     if(pActivedCamera == nullptr)
-//     {
-//         throw std::exception("No camera is actived!");
-//     }else
-//     {
-//         const Matrix4x4 viewMatrix = pActivedCamera->GetViewMatrix();
-//         const Matrix4x4 projMatrix = pActivedCamera->GetProjectionMatrix();
-//         shaderHelper.SetGlobalMatrix("g_View", pActivedCamera->GetViewMatrix());
-//         shaderHelper.SetGlobalMatrix("g_Proj", pActivedCamera->GetProjectionMatrix());
-//         shaderHelper.SetGlobalVector("g_EyePos", pActivedCamera->pTransform->GetPosition());
-//     }
-// }

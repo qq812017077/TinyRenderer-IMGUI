@@ -35,8 +35,14 @@ struct VS_OUTPUT
 	float4 pos : SV_Position;
 	float4 color : Color;
     float3 worldPos : POSITION;
+    float4 lightPos : POSITION1;
     float3 normal : NORMAL;
 	float2 tex : TEXCOORD;
+};
+
+struct SHADOW_VS_OUTPUT
+{
+	float4 pos : SV_Position;
 };
 
 cbuffer PerFrameCBuf : register(b0)
@@ -49,6 +55,7 @@ cbuffer PerDrawCBuf : register(b1)
 {
     matrix g_World;
     matrix g_WorldInv;
+    matrix g_LightVP;
 };
 
 cbuffer LightingCBuf : register(b2) // 160 because of float4 alignment
@@ -60,3 +67,5 @@ cbuffer LightingCBuf : register(b2) // 160 because of float4 alignment
 };                                  // 32 + 48 + 64 + 16 = 160
 
 
+Texture2D _ShadowMap : register(t0);
+SamplerState sampler_ShadowMap : register(s0);

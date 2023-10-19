@@ -2,6 +2,7 @@
 #include "object/GameObject.h"
 #include "Shader.h"
 #include "ui/GUI.h"
+#include "core/EngineException.h"
 std::unordered_map<Light*, bool> Light::dirLightMap;
 std::unordered_map<Light*, bool> Light::pointLightMap;
 std::unordered_map<Light*, bool> Light::spotLightMap;
@@ -28,6 +29,33 @@ Light::~Light()
 void Light::Init()
 {
 
+}
+
+Matrix4x4 Light::GetLightVP() const
+{
+    if(type == Type::Directional)
+    {
+        auto position = pTransform->GetPosition();
+        auto rotation = pTransform->GetRotation();
+
+        Matrix4x4 translation = Matrix4x4::Translation(-position);
+        Matrix4x4 Rotation = Matrix4x4::Rotation(rotation).Transpose(); // we want inverse, and for orth matrix : transpose = inverse
+        auto view = Rotation * translation;
+        auto heightSize = 200.0f;
+        auto aspect = 1280.0f / 720.0f;
+        auto widthSize = heightSize * aspect;
+        // light projection matrix
+        Matrix4x4 projection = Matrix4x4::OrthographicLH(-widthSize, widthSize, -heightSize, heightSize, 0.1f, 1000.0f);
+        // projection = Matrix4x4::Perspective(60, 1280.0f / 720.0f, 0.1f, 3000.0f);;
+
+        return projection * view;
+    }else if(type == Type::Point)
+    {
+        THROW_ENGINE_EXCEPTION("Spot light is not implemented yet.");
+    }else if(type == Type::Spot)
+    {
+        THROW_ENGINE_EXCEPTION("Spot light is not implemented yet.");
+    }
 }
 
 Light * Light::GetDirectionalLight()
@@ -107,58 +135,3 @@ GameObject* Light::CreateSpotLight(std::string name)
     pGo->transform().SetEulerAngle({ -90.0f, 0.0f, 0.0f });
     return pGo;
 }
-
-// struct alignas(16) Light::DirectionalLight
-// {
-//     Vector3 dir;
-//     Vector4 color;
-// };
-// struct alignas(16) Light::PointLight
-// {
-//     alignas(16) Vector3 pos;
-//     Vector4 color;
-//     float atten;
-//     float range;
-//     float kConstant;
-//     float kLinear;
-//     float kQuadratic;
-// };
-// struct alignas(16) Light::SpotLight
-// {
-//     alignas(16) Vector3 pos;
-//     alignas(16) Vector3 dir;
-//     Vector4 color;
-//     float range;
-//     float angle;
-// };
-
-// void Light::UpdateLightBuffer(IShaderHelper& shaderHelper)
-// {
-//     auto pDirLight = GetDirectionalLight();
-//     if(pDirLight != nullptr)
-//     {
-//         Light::DirectionalLight dirLight;
-//         dirLight.dir = pDirLight->pTransform->forward();
-//         dirLight.color = pDirLight->GetColor();
-//         shaderHelper.SetGlobalVariable("g_DirLight", &dirLight, sizeof(Light::DirectionalLight));
-//     }
-
-//     auto pPointLight = GetPointLight();
-//     if(pPointLight != nullptr)
-//     {
-//         Light::PointLight pointLight;
-//         pointLight.pos = pPointLight->pTransform->GetPosition();
-//         pointLight.color = pPointLight->GetColor();
-//         pointLight.atten = 1.0f;
-//         pointLight.range = pPointLight->range;
-//         shaderHelper.SetGlobalVariable("g_PointLight", &pointLight, sizeof(Light::PointLight));
-//     }else
-//     {
-//         Light::PointLight pointLight;
-//         pointLight.pos = Vector3(0.0f, 0.0f, 0.0f);
-//         pointLight.color = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
-//         pointLight.atten = 1.0f;
-//         pointLight.range = 0.0f;
-//         shaderHelper.SetGlobalVariable("g_PointLight", &pointLight, sizeof(Light::PointLight));
-//     }
-// }

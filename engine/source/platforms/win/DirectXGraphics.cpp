@@ -4,18 +4,17 @@
 #include "DXUtil.h"
 #include "HLSLShader.h"
 #include "HLSLShaderHelper.h"
-#include "managers/RenderQueueManager.h"
 #include "Texture.h"
-#include "blender/BlenderManager.h"
-#include "stencil/StencilManager.h"
-#include "object/GameObject.h"
-#include "pass/DirectXShadingEffectPass.h"
+#include "dxgraphics/BlenderManager.h"
+#include "dxgraphics/StencilManager.h"
+#include "dxgraphics/DirectXShadingEffectPass.h"
+#include "geometry/Primitive.h"
+#include "dxgraph/DirectXRenderGraph.h"
 
 #define LOG(X) std::cout << X << std::endl;
 // add ComPtr
 namespace wrl = Microsoft::WRL;
 HRESULT hr;
-
 
 
 /****************************************************************************************/
@@ -29,7 +28,8 @@ DirectXGraphics::DirectXGraphics(HWND &hwnd):
     CreateDevice();
     UpdateRenderSceneViewPort(0, 0, 1280, 720);
     OnResize(1280, 720);
-    m_pShaderHelper = HLSLShaderHelper::GetPtr();
+    // m_pShaderHelper = HLSLShaderHelper::GetPtr();
+    m_pRenderGraph = std::make_unique<TinyEngine::Graph::DXDefaultRenderGraph>(this);
     LOG("   Directx Graphics  constructor end")
 }
 
@@ -60,217 +60,57 @@ void DirectXGraphics::EndFrame()
 void DirectXGraphics::ClearBuffer(float red, float green, float blue) noexcept
 {
     const float color[] = { red, green, blue, 1.0f };
-    pContext->ClearRenderTargetView(pRenderTargetView.Get(), color);
-    pContext->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0u);
     
 }
 
-
-void DirectXGraphics::DrawTestTriangle(float angle)
+void DirectXGraphics::ApplyState(TinyEngine::RenderState * pState)
 {
-    struct ConstantBuffer
+    if (pState == nullptr) return;
+    // check pState type : TinyEngine::CullMode or TinyEngine::Blend or TinyEngine::DepthStencil
+    TinyEngine::CullState * pCullState = dynamic_cast<TinyEngine::CullState*>(pState);
+    if(pCullState != nullptr)
     {
-        struct Transform {
-            float emelement[4][4];
-        };
-        Transform rotate;
-        Transform scale;
-    };
+        setRasterizerState(pCullState->cullMode);
+        return;
+    }
 
-    struct Vertex
+    TinyEngine::BlendState * pBlend = dynamic_cast<TinyEngine::BlendState*>(pState);
+    if(pBlend != nullptr)
     {
-        struct
-        {
-            float x;
-            float y;
-        } pos;
-        struct 
-        {
-            unsigned char r;
-            unsigned char g;
-            unsigned char b;
-            unsigned char a;
-        } color;
-    };
+        ID3D11BlendState * targetBlendState = nullptr;
+        GFX_THROW_INFO(TinyEngine::BlenderManager::Get().LoadBlendState(this, pBlend->blendDesc, &targetBlendState));
+        pContext->OMSetBlendState(targetBlendState, pBlend->blendDesc.blendFactors, 0xffffffff);
+        return;
+    }
 
-    const Vertex vertices[] = {
-        { 0.0f, 0.5f, 255u, 0u, 0u, 255u },
-        { 0.5f, -0.5f, 0u, 255u, 0u, 255u },
-        { -0.5f, -0.5f, 0u, 0u, 255u, 255u },
-        { -0.3f, 0.3f, 0u, 0u, 255u, 255u},
-        { 0.3f, 0.3f, 0u, 255u, 0u, 255u },
-        { 0.0f, -0.8f, 255u, 0u, 0u, 255u },
-    };
-
-    const unsigned short indices[] = {
-        0, 1, 2,
-        0, 2, 3,
-        0, 4, 1,
-        2, 1, 5
-    };
-    const ConstantBuffer cb ={
-        {
-            std::cos(angle),    std::sin(angle),    0.0f,   0.0f,
-            -std::sin(angle),   std::cos(angle),    0.0f,   0.0f,
-            0.0f,               0.0f,               1.f,    0.0f,
-            0.0f,               0.0f,               0.0f,   1.f
-        },
-        {
-            1.f,   0.0f,    0.0f,   0.0f,
-            0.0f,   1.0f,    0.0f,   0.0f,
-            0.0f,   0.0f,    1.f,    0.0f,
-            0.0f,   0.0f,    0.0f,   1.f
-        }
-    };
-    // create vertex buffer
-    namespace wrl = Microsoft::WRL;
-    wrl::ComPtr<ID3D11Buffer> pVertexBuffer;
-    D3D11_BUFFER_DESC bd = {};
-    bd.ByteWidth = sizeof(vertices);
-    bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bd.CPUAccessFlags = 0u;
-    bd.MiscFlags = 0u;
-    bd.StructureByteStride = sizeof(Vertex);
+    TinyEngine::DepthStencilState * pDepthStencil = dynamic_cast<TinyEngine::DepthStencilState*>(pState);
+    if(pDepthStencil != nullptr)
+    {
+        ID3D11DepthStencilState * targetStencilState = nullptr;
+        GFX_THROW_INFO(TinyEngine::StencilManager::Get().LoadStencilState(this, pDepthStencil->depthStencilDesc, &targetStencilState));
+        pContext->OMSetDepthStencilState(targetStencilState, 0xFF);
+        return;
+    }
     
-    D3D11_SUBRESOURCE_DATA sd = {};
-    sd.pSysMem = vertices;
-    GFX_THROW_INFO(pDevice->CreateBuffer(&bd, &sd ,&pVertexBuffer));
-    
-    // create index buffer
-    wrl::ComPtr<ID3D11Buffer> pIndexBuffer;
-    D3D11_BUFFER_DESC ibd = {};
-    ibd.ByteWidth = sizeof(indices);
-    ibd.Usage = D3D11_USAGE_DEFAULT;
-    ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    ibd.CPUAccessFlags = 0u;
-    ibd.MiscFlags = 0u;
-    ibd.StructureByteStride = sizeof(unsigned short);
-
-    D3D11_SUBRESOURCE_DATA isd = {};
-    isd.pSysMem = indices;
-    GFX_THROW_INFO(pDevice->CreateBuffer(&ibd, &isd, &pIndexBuffer));
-
-    // bind vertex buffer to pipeline
-    const UINT stride = sizeof(Vertex);
-    const UINT offset = 0u;
-    pContext->IASetVertexBuffers(0u, 1u, pVertexBuffer.GetAddressOf(), &stride, &offset);
-
-    // bind index buffer to pipeline
-    pContext->IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0u);
-
-    // set primitive topology
-    pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    // pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
-
-    // set layout
-    wrl::ComPtr<ID3D11InputLayout> pInputLayout;
-    const D3D11_INPUT_ELEMENT_DESC led[] ={
-        {
-            "Position", 0u, DXGI_FORMAT_R32G32_FLOAT, 
-            0u, 0u, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u
-        },
-        {
-            "Color", 0u, DXGI_FORMAT_R8G8B8A8_UNORM,
-            0u, 8u, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u
-        }
-    };
-
-    // create vertex shader
-    wrl::ComPtr<ID3D11VertexShader> pVertexShader;
-    wrl::ComPtr<ID3DBlob> pBlob;
-
-    GFX_THROW_INFO(CreateShaderFromFile(L"shaders/VertexShader.cso", L"shaders/VertexShader.hlsl","main", "vs_5_0", &pBlob));
-    GFX_THROW_INFO(pDevice->CreateInputLayout(led, (UINT)std::size(led), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &pInputLayout));
-    GFX_THROW_INFO(pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pVertexShader));
-
-    // create constant buffer
-    wrl::ComPtr<ID3D11Buffer> pConstantBuffer;
-    D3D11_BUFFER_DESC cbd = {};
-    cbd.ByteWidth = sizeof(cb);
-    cbd.Usage = D3D11_USAGE_DYNAMIC;
-    cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    cbd.MiscFlags = 0u;
-    cbd.StructureByteStride = 0u;
-    D3D11_SUBRESOURCE_DATA csd = {};
-    csd.pSysMem = &cb;
-    GFX_THROW_INFO(pDevice->CreateBuffer(&cbd, &csd, &pConstantBuffer));
-
-    // bind constant buffer to vertex shader
-    pContext->VSSetConstantBuffers(0u, 1u, pConstantBuffer.GetAddressOf());   
-
-    // create pixel shader
-    wrl::ComPtr<ID3D11PixelShader> pPixelShader;
-    GFX_THROW_INFO(CreateShaderFromFile(L"shaders/PixelShader.cso", L"shaders/PixelShader.hlsl","main", "ps_5_0", &pBlob));
-    GFX_THROW_INFO(pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pPixelShader));
-
-    // bind input layout to pipeline
-    pContext->IASetInputLayout(pInputLayout.Get());
-    // bind pixel and vertex shader to pipeline
-    pContext->VSSetShader(pVertexShader.Get(), nullptr, 0u);
-    pContext->PSSetShader(pPixelShader.Get(), nullptr, 0u);
-    // bind render target
-    pContext->OMSetRenderTargets(1u, pRenderTargetView.GetAddressOf(), nullptr);
-
-    // configure viewport
-    D3D11_VIEWPORT vp;
-    vp.Width = 1280;
-    vp.Height = 720;
-    vp.MinDepth = 0.0f;
-    vp.MaxDepth = 1.0f;
-    vp.TopLeftX = 0;
-    vp.TopLeftY = 0;
-    pContext->RSSetViewports(1u, &vp);
-
-    // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
-    GFX_THROW_INFO_ONLY(pContext->DrawIndexed((UINT)std::size(indices), 0u, 0u));
 }
-
-/***
- * @brief Draw all game objects
- *  1.  Update PerFrameConstantBuffer( view matrix, projection matrix, camera position, light position, light color, light intensity)
- *  2.  Update PerMaterialConstantBuffer(material color, material texture, material sampler)
- *  3.  Update PerObjectConstantBuffer(world matrix)
-*/
-void DirectXGraphics::DrawAll(TinyEngine::FrameBuffer * pFrameBuffer)
-{
-    auto & helper = HLSLShaderHelper::Get();
-
-    if(m_shading_pass.IsEnabled())
-        m_shading_pass.Apply(this, pFrameBuffer->m_scene);
-    
-    // GameObject* curSelectedGO = pFrameBuffer->m_selectedObject;
-    // if(curSelectedGO)
-    //     drawOutline(curSelectedGO->GetComponent<Renderer>());
-    if(m_mousepicking_pass.IsEnabled())
-        m_mousepicking_pass.Apply(this, pFrameBuffer->m_scene);
-    // multi pass
-}
-
-
 void DirectXGraphics::Apply(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers)
 {
+    auto & helper = HLSLShaderHelper::Get();
     auto pVertexShader = TinyEngine::EffectManager::Get().VSFindShader<HLSLVertexShader>(pass.vsName);
     auto pPixelShader = TinyEngine::EffectManager::Get().PSFindShader<HLSLPixelShader>(pass.psName);
     
-    if(pVertexShader == nullptr)
-    {
-        throw std::exception("Vertex Shader not found");
-    }
+    if(pVertexShader == nullptr) throw std::exception("Vertex Shader not found");
     else {
         pContext->VSSetShader(pVertexShader->Get(), nullptr, 0u);
-        // bind input layout
-        pVertexShader->SetInputLayout();
+        pVertexShader->SetInputLayout(); // bind input layout
     }
     
     if(pPixelShader == nullptr) pContext->PSSetShader(nullptr, nullptr, 0u);
     else pContext->PSSetShader(pPixelShader->Get(), nullptr, 0u);
     
-
     ID3D11BlendState * targetBlendState = nullptr;
-    GFX_THROW_INFO(TinyEngine::BlenderManager::Get().LoadBlendState(this, pass, &targetBlendState));
-    pContext->OMSetBlendState(targetBlendState, pass.blendFactors, 0xffffffff);
+    GFX_THROW_INFO(TinyEngine::BlenderManager::Get().LoadBlendState(this, pass.blendDesc, &targetBlendState));
+    pContext->OMSetBlendState(targetBlendState, pass.blendDesc.blendFactors, 0xffffffff);
 
     // set stencil state
     ID3D11DepthStencilState * targetStencilState = nullptr;
@@ -290,22 +130,125 @@ void DirectXGraphics::Apply(TinyEngine::ShaderPass & pass, std::vector<Renderer*
         if(pPixelShader)    pPixelShader->LoadMaterialResource(pMat);
         
         // draw
-        drawMesh(pVertexShader, pRenderer);
+        pRenderer->UpdateObjBuffer(helper);
+        UpdateCBuffer(pObjectConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerDrawCBufSlot));
+        drawMesh(pVertexShader, pRenderer->GetMesh());
     }
 }
 
-void DirectXGraphics::drawMesh(HLSLVertexShader* pVertexShader, Renderer* pRenderer)
+void DirectXGraphics::ApplyToRenderTarget(TinyEngine::ShaderPass & pass, TinyEngine::RenderTarget * pRenderTarget)
 {
-    auto & helper = HLSLShaderHelper::Get();
-    pRenderer->UpdateObjBuffer(helper);
-    UpdateCBuffer(pObjectConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerDrawCBufSlot));
+    auto pDXRenderTarget = reinterpret_cast<TinyEngine::DirectXRenderTarget*>(pRenderTarget);
+    if(pDXRenderTarget == nullptr) return;
+    else
+        BindTexture(0, pDXRenderTarget->pTextureView, Graphics::EBindType::ToPS);
+    
+    auto pVertexShader = TinyEngine::EffectManager::Get().VSFindShader<HLSLVertexShader>(pass.vsName);
+    auto pPixelShader = TinyEngine::EffectManager::Get().PSFindShader<HLSLPixelShader>(pass.psName);
+    
+    if(pVertexShader == nullptr) throw std::exception("Vertex Shader not found");
+    else {
+        pContext->VSSetShader(pVertexShader->Get(), nullptr, 0u);
+        pVertexShader->SetInputLayout(); // bind input layout
+    }
+    
+    if(pPixelShader == nullptr) pContext->PSSetShader(nullptr, nullptr, 0u);
+    else pContext->PSSetShader(pPixelShader->Get(), nullptr, 0u);
+    
+    ID3D11BlendState * targetBlendState = nullptr;
+    GFX_THROW_INFO(TinyEngine::BlenderManager::Get().LoadBlendState(this, pass.blendDesc, &targetBlendState));
+    pContext->OMSetBlendState(targetBlendState, pass.blendDesc.blendFactors, 0xffffffff);
 
-    // bind vertex buffer and index buffer
-    auto & mesh = pRenderer->GetMesh();
+    // set stencil state
+    ID3D11DepthStencilState * targetStencilState = nullptr;
+    GFX_THROW_INFO(TinyEngine::StencilManager::Get().LoadStencilState(this, pass.depthStencilDesc, &targetStencilState));
+    pContext->OMSetDepthStencilState(targetStencilState, 0xFF);
+    
+    setRasterizerState(pass.cullMode);
+
+    if(quad == nullptr) quad = Primitive::CreateQuadMesh();
+    drawMesh(pVertexShader, *quad);
+}
+
+std::shared_ptr<TinyEngine::RenderTarget> DirectXGraphics::CreateRenderTarget()
+{
+    return std::make_shared<TinyEngine::DirectXRenderTarget>(this, m_width, m_height);
+}
+std::shared_ptr<TinyEngine::DepthStencil> DirectXGraphics::CreateDepthStencil()
+{
+    return std::make_shared<TinyEngine::DirectXDepthStencil>(this, m_width, m_height);
+}
+void DirectXGraphics::BindRenderTarget(TinyEngine::RenderTarget* pRenderTarget, TinyEngine::DepthStencil * pDepthStencil)
+{
+    internalBindRenderTarget(reinterpret_cast<TinyEngine::DirectXRenderTarget*>(pRenderTarget) ,
+        reinterpret_cast<TinyEngine::DirectXDepthStencil*>(pDepthStencil));
+}
+void DirectXGraphics::BindDefaultRenderTarget()
+{
+    pContext->RSSetViewports(1u, &editorViewPort);
+    // pContext->OMSetRenderTargets(1u, pPresentRenderTarget->pTargetView.GetAddressOf(), pDepthStencil->Get());
+}
+void DirectXGraphics::internalBindRenderTarget(TinyEngine::DirectXRenderTarget* pRenderTarget, TinyEngine::DirectXDepthStencil * pDepthStencil)
+{
+    pContext->RSSetViewports(1u, &fullViewPort);
+    if(pRenderTarget == nullptr)
+        pContext->OMSetRenderTargets(0u, nullptr, pDepthStencil->Get());
+    else if(pDepthStencil == nullptr)
+        pContext->OMSetRenderTargets(1u, pRenderTarget->pTargetView.GetAddressOf(), nullptr);
+    else
+        pContext->OMSetRenderTargets(1u, pRenderTarget->pTargetView.GetAddressOf(), pDepthStencil->Get());
+}
+
+/****************************************************************************************/
+/*                                      Event  Part                                     */
+/****************************************************************************************/
+void DirectXGraphics::UpdateRenderSceneViewPort(int pos_x, int pos_y, int width, int height)
+{
+    ZeroMemory(&editorViewPort, sizeof(editorViewPort));
+    editorViewPort.Width = static_cast<FLOAT>(width);
+    editorViewPort.Height = static_cast<FLOAT>(height);
+    editorViewPort.MinDepth = 0.0f;
+    editorViewPort.MaxDepth = 1.0f;
+    editorViewPort.TopLeftX = static_cast<FLOAT>(pos_x);
+    editorViewPort.TopLeftY = static_cast<FLOAT>(pos_y);
+    pContext->RSSetViewports(1u, &editorViewPort);
+}
+
+void DirectXGraphics::OnResize(int width, int height)
+{
+#ifdef DEBUG
+    std::cout << "OnResize" << std::endl;
+#endif
+    if (width == 0 || height == 0) return;
+    m_width = width;
+    m_height = height;
+
+    ZeroMemory(&fullViewPort, sizeof(fullViewPort));
+    fullViewPort.Width = static_cast<FLOAT>(width);
+    fullViewPort.Height = static_cast<FLOAT>(height);
+    fullViewPort.MinDepth = 0.0f;
+    fullViewPort.MaxDepth = 1.0f;
+    fullViewPort.TopLeftX = 0.0f;
+    fullViewPort.TopLeftY = 0.0f;
+}
+
+wrl::ComPtr<ID3D11Texture2D> DirectXGraphics::GetBackBuffer()
+{
+    wrl::ComPtr<ID3D11Texture2D> pBackBuffer = nullptr;
+    pSwap->ResizeBuffers(0u, m_width, m_height, DXGI_FORMAT_UNKNOWN, 0u);
+    GFX_THROW_INFO(pSwap->GetBuffer(0u, __uuidof(ID3D11Texture2D), &pBackBuffer));
+    return pBackBuffer;
+}
+/***********************************************************************************************************/
+/*                                            Protected Part                                               */
+/***********************************************************************************************************/
+void DirectXGraphics::drawMesh(HLSLVertexShader* pVertexShader, Mesh & mesh)
+{
     // BindMesh
     // get vertex buffers, strides, offsets from mesh and layout from vertex shader
     // UINT vbcount = pVertexShader->GetInputLayoutDescs().size();
     ID3D11Buffer** pVertexBuffers;
+    wrl::ComPtr<ID3D11Buffer> pIndexBuffer;
     UINT *strides;
     UINT *offsets;
     UINT vbcount = pVertexShader->UpdateVertexBuffers(mesh, pVertexBuffers, strides, offsets);
@@ -319,43 +262,10 @@ void DirectXGraphics::drawMesh(HLSLVertexShader* pVertexShader, Renderer* pRende
     // set primitive topology
     pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     
-    // bind render target
-    pContext->OMSetRenderTargets(1u, pRenderTargetView.GetAddressOf(), nullptr);
-    // enable depth stencil
-    pContext->OMSetRenderTargets(1u, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
     // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
     GFX_THROW_INFO_ONLY(pContext->DrawIndexed(mesh.GetIndexCount(), 0u, 0u));
 }
-/****************************************************************************************/
-/*                                      Event  Part                                     */
-/****************************************************************************************/
-void DirectXGraphics::UpdateRenderSceneViewPort(int pos_x, int pos_y, int width, int height)
-{
-    D3D11_VIEWPORT vp;
-    ZeroMemory(&vp, sizeof(vp));
-    vp.Width = static_cast<FLOAT>(width);
-    vp.Height = static_cast<FLOAT>(height);
-    vp.MinDepth = 0.0f;
-    vp.MaxDepth = 1.0f;
-    vp.TopLeftX = static_cast<FLOAT>(pos_x);
-    vp.TopLeftY = static_cast<FLOAT>(pos_y);
-    pContext->RSSetViewports(1u, &vp);
-}
 
-void DirectXGraphics::OnResize(int width, int height)
-{
-#ifdef DEBUG
-    std::cout << "OnResize" << std::endl;
-#endif
-    if (width == 0 || height == 0) return;
-    
-    CreateBuffers(width, height);
-}
-
-
-/***********************************************************************************************************/
-/*                                            Protected Part                                               */
-/***********************************************************************************************************/
 void DirectXGraphics::CreateDevice() 
 {
     LOG("CreateDevice begin")
@@ -363,7 +273,7 @@ void DirectXGraphics::CreateDevice()
     UINT creationFlags = 0u;
 
     ZeroMemory(&sd, sizeof(sd));
-    sd.BufferCount = 2u;
+    sd.BufferCount = 1u;
     sd.BufferDesc.Width = 0u;
     sd.BufferDesc.Height = 0u;
     sd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -403,28 +313,18 @@ void DirectXGraphics::CreateDevice()
 }
 void DirectXGraphics::CreateBuffers(int width, int height)
 {
-    wrl::ComPtr<ID3D11Texture2D> pBackBuffer = nullptr;
-    pRenderTargetView = nullptr;
-    pSwap->ResizeBuffers(0u, width, height, DXGI_FORMAT_UNKNOWN, 0u);
-    GFX_THROW_INFO(pSwap->GetBuffer(0u, __uuidof(ID3D11Texture2D), &pBackBuffer));
-    GFX_THROW_INFO(pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &pRenderTargetView));
+    // !!!!!!!!!!!!!!!!!!!!!
+    // pPresentRenderTarget = nullptr; // we must release render target view before resize buffers, otherwise we will get error
+    // !!!!!!!!!!!!!!!!!!!!!
     
-    // create depth stencil buffer
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil = nullptr;
-    // pDepthStencilView
-    D3D11_TEXTURE2D_DESC depthStencilDesc = {};
-    depthStencilDesc.Width = width;
-    depthStencilDesc.Height = height;
-    depthStencilDesc.MipLevels = 1u;
-    depthStencilDesc.ArraySize = 1u;
-    depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // 24 bit depth, 8 bit stencil
-    depthStencilDesc.SampleDesc.Count = 1u;
-    depthStencilDesc.SampleDesc.Quality = 0u;
-    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    GFX_THROW_INFO(pDevice->CreateTexture2D(&depthStencilDesc, nullptr, &pDepthStencil));
-    
-    GFX_THROW_INFO(pDevice->CreateDepthStencilView(pDepthStencil.Get(), nullptr, &pDepthStencilView));
+    // wrl::ComPtr<ID3D11Texture2D> pBackBuffer = nullptr;
+    // pSwap->ResizeBuffers(0u, width, height, DXGI_FORMAT_UNKNOWN, 0u);
+    // GFX_THROW_INFO(pSwap->GetBuffer(0u, __uuidof(ID3D11Texture2D), &pBackBuffer));
+     
+    // // GFX_THROW_INFO(pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &pRenderTargetView));
+    // pPresentRenderTarget = std::make_shared<TinyEngine::DirectXRenderTarget>(this, pBackBuffer.Get());
+
+    // pDepthStencil = std::make_shared<TinyEngine::DirectXDepthStencil>(this, width, height);
 }
 
 

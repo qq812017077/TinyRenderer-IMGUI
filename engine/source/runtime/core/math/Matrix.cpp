@@ -342,6 +342,18 @@ Matrix4x4 Matrix4x4::Scale(const Vector3& scale)
     return result;
 }
 
+Matrix4x4 Matrix4x4::LookAt(const Vector3& eye, const Vector3& target, const Vector3& up)
+{
+    Vector3 forward = Vector3::Normalize(target - eye);
+    return LookAt(forward, up);
+}
+
+Matrix4x4 Matrix4x4::LookAt(const Vector3& forward, const Vector3& up)
+{
+    Vector3 right = Vector3::Normalize(Vector3::Cross(up, forward));
+    auto rotation = Matrix4x4::Rotation(Quaternion::LookRotation(forward, up));
+    return rotation;
+}
 Matrix4x4 Matrix4x4::TRS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale)
 {
     auto transMat = Matrix4x4::Translation(translation);
@@ -353,32 +365,43 @@ Matrix4x4 Matrix4x4::TRS(const Vector3& translation, const Quaternion& rotation,
 
 Matrix4x4 Matrix4x4::Perspective(float fov, float aspect, float near, float far)
 {
+    float fRange = 1.0f / (far - near);
     auto fovradian = fov * 3.1415926f / 180.0f;
-    auto bottom = -near * std::tan(fovradian / 2); // notice that the fov is the vertical fov
-    auto top = -bottom;
-    auto right = aspect * top;
-    auto left = -right;
-    auto orth = Matrix4x4::Orthographic(left, right, bottom, top, near, far);
-    
+    float tan_half_fov = std::tan(fovradian / 2);
+    auto height = 2 * near * tan_half_fov;
+    auto width = height * aspect;
+
     float pers2orth[4][4] = {
         {near, 0, 0, 0},
         {0, near, 0, 0},
         {0, 0, near + far, -near * far},
         {0, 0, 1, 0}
     };
-    
-    auto projMatrix = orth * Matrix4x4(pers2orth);
-    // auto test = DirectX::XMMatrixPerspectiveLH( 1.0f, 1 / aspect ,near, far );
+    auto projMatrix = OrthographicLH(width, height, near, far) * Matrix4x4(pers2orth);
     return projMatrix;
 }
 
 
+
+
+Matrix4x4 Matrix4x4::OrthographicLH(float width, float height, float zNear, float zFar)
+{
+    float fRange = 1.0f / (zFar - zNear);
+    float orth[4][4] ={
+        {2.0f / width, 0, 0, 0},
+        {0, 2.0f / height, 0, 0},
+        {0, 0, fRange, -zNear * fRange},
+        {0, 0, 0, 1}
+    };
+
+    return Matrix4x4(orth);
+}
 /**
  * @brief 
- *          if far and near are negative, we use near - far.
+ *  NOTE: it if different to openGL, in D3D, NDC is [0,1], but in openGL, NDC is [-1,1].
+ *         D3D is left-hand, so : 0 is near plane, 1 is far plane.
+ *               near and far are positive.
  *          if far and near are positive, we use far - near.
- *          hear, we assume far and near are positive.(but for D3D, far and near are ?)
- *           
  *          Morth = S * T.
  *              S = (   2/(right-left)  0    00               0                   0
  *                      0               2/(top-bottom)      0                   0
@@ -386,7 +409,7 @@ Matrix4x4 Matrix4x4::Perspective(float fov, float aspect, float near, float far)
  *                      0               0                   0                   1)
  *              T = (   1               0                   0               -(left+right)/2
  *                  0               1                   0                   -(top+bottom)/2
- *                  0               0                   1                   -(near+far)/2
+ *                  0               0                   1                   -near
  *                  0               0                   0                   1)
  * 
  * @param left 
@@ -397,11 +420,36 @@ Matrix4x4 Matrix4x4::Perspective(float fov, float aspect, float near, float far)
  * @param far 
  * @return Matrix4x4 
  */
-Matrix4x4 Matrix4x4::Orthographic(float left, float right, float bottom, float top, float near, float far)
+Matrix4x4 Matrix4x4::OrthographicLH(float left, float right, float bottom, float top, float near, float far)
 {
-    auto trans = Matrix4x4::Translation({-(left+right)/2, -(top+bottom)/2, -(near+far)/2});
-    auto scale = Matrix4x4::Scale({2/(right-left), 2/(top-bottom), 2/(far-near)});
-    return scale * trans;
+    float fRange = 1.0f / (far - near);
+    auto viewWidth = right - left;
+    auto viewHeight = top - bottom;
+    return OrthographicLH(viewWidth, viewHeight, near, far);
+    // XMMATRIX M;
+    // M.m[0][0] = 2.0f / ViewWidth;
+    // M.m[0][1] = 0.0f;
+    // M.m[0][2] = 0.0f;
+    // M.m[0][3] = 0.0f;
+
+    // M.m[1][0] = 0.0f;
+    // M.m[1][1] = 2.0f / ViewHeight;
+    // M.m[1][2] = 0.0f;
+    // M.m[1][3] = 0.0f;
+
+    // M.m[2][0] = 0.0f;
+    // M.m[2][1] = 0.0f;
+    // M.m[2][2] = fRange;
+    // M.m[2][3] = 0.0f;
+
+    // M.m[3][0] = 0.0f;
+    // M.m[3][1] = 0.0f;
+    // M.m[3][2] = -fRange * NearZ;
+    // M.m[3][3] = 1.0f;
+    // return M;0
+    // auto trans = Matrix4x4::Translation({-(left+right)/2, -(top+bottom)/2, -(near+far)/2});
+    // auto scale = Matrix4x4::Scale({2/(right-left), 2/(top-bottom), 2/(far-near)});
+    // return scale * trans;
 }
 
 /**************************************************************************************************/

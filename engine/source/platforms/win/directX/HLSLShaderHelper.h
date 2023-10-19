@@ -30,6 +30,9 @@ public:
     const static unsigned int PerDrawCBufSlot = 1u;
     const static unsigned int PerLightingCBufSlot = 2u;
 
+    
+    const static unsigned int ShadowMapSlot = 0u;
+
     HLSLShaderHelper() = default;
 
     // std::shared_ptr<ICBufferVariable> GetConstantBufferVariable(const char * varName) override;
@@ -63,7 +66,7 @@ private:
 		m_ConstantBufferVariables.emplace(bufName, std::make_shared<CBufferVariable>(startOffset, size, m_CommonCBufferBySlot[slot].get()));
 	}
     std::unordered_map<int, std::unique_ptr<CBufferData>> m_CommonCBufferBySlot; // common cbuffer
-
+    
     std::unordered_map<std::string, std::shared_ptr<CBufferVariable>> m_ConstantBufferVariables;
     std::unordered_map<std::string, std::shared_ptr<VertexShader>> m_VertexShaders;
 	// std::unordered_map<std::string, std::shared_ptr<HullShaderInfo>> m_HullShaders;			

@@ -14,14 +14,25 @@ namespace TinyEngine
     };
     struct DirectionalLight
     {
-        Vector3 m_direction;
-        float padding;
-        Vector3 m_color;
+        struct DirectionalLightBuffer
+        {
+            Vector3 m_direction;
+            float padding;
+            Vector3 m_color;
+            float padding2;
+        };
+        DirectionalLightBuffer m_buffer;
+        Matrix4x4 m_lightVP;
     };
 
     struct EffectDesc
     {
         Effect * pEffect;
+        std::vector<Renderer *> renderers;
+    };
+
+    struct ShadowCastDesc
+    {
         std::vector<Renderer *> renderers;
     };
 
@@ -50,10 +61,10 @@ namespace TinyEngine
         AmbientLight            m_ambient_light;
         DirectionalLight        m_directional_light;
         std::vector<PointLight> m_point_lights;
-
+        
         // all effectDesc
         std::vector<EffectDesc> effectDescs;
-
+        std::vector<ShadowCastDesc> ShadowCastDescs;
         std::vector<Renderer *> selectedRenderers;
         void                        Lock() { m_scene_mutex.lock(); }
         void                        Unlock() { m_scene_mutex.unlock(); }

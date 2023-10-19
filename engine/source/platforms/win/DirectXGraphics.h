@@ -1,21 +1,24 @@
 #pragma once
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include <wrl.h>
+#include <memory>
+#include <unordered_map>
 #ifndef NDEBUG
 #include "DxgiInfoManager.h"
 #endif
-#include <wrl.h>
 #include "Graphics.h"
 #include "EngineWin.h"
-#include <memory>
-#include <unordered_map>
 #include "effect/Stencil.h"
-#include "pass/DirectXShadingEffectPass.h"
+#include "effect/Pass.h"
+#include "dxgraphics/DirectXShadingEffectPass.h"
+#include "dxgraphics/DirectXRenderTarget.h"
+#include "dxgraphics/DirectXDepthStencil.h"
 
 namespace wrl = Microsoft::WRL;
 class Texture;
 struct CBufferData;
-class Renderer;
+class Mesh;
 class DirectXGraphics : public Graphics
 {
     friend class HLSLVertexShader;
@@ -35,57 +38,64 @@ public:
     void EndFrame() override;
     void ClearBuffer(float red, float green, float blue) noexcept override;
     
-    void DrawTestTriangle(float angle=0.0f) override;
-    void DrawAll(TinyEngine::FrameBuffer * pFrameBuffer) override;
+    void ApplyState(TinyEngine::RenderState * pState) override;
     void Apply(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers) override;
+    void ApplyToRenderTarget(TinyEngine::ShaderPass & pass, TinyEngine::RenderTarget * pRenderers) override;
     
-    ID3D11Device* GetDevice() const noexcept { return pDevice.Get(); }
-    ID3D11DeviceContext* GetContext() const noexcept { return pContext.Get(); }
-    //Events
-    virtual void UpdateRenderSceneViewPort(int pos_x, int pos_y, int width, int height) override;
-    virtual void OnResize(int width, int height) override;
-
-    #ifndef NDEBUG
-    DxgiInfoManager& GetInfoManager() { return infoManager; }
-    #endif
-protected:
-    void drawMesh(HLSLVertexShader* pVertexShader, Renderer* pRenderer);
-    void CreateDevice() ;
-    void CreateBuffers(int width, int height);
-
-    std::shared_ptr<VertexShader> CreateVertexShader(const std::string& path) override;
-    std::shared_ptr<PixelShader> CreatePixelShader(const std::string& path) override;
-    
-    // void LoadMaterial(Material * pMat, ShaderBase * pShader);
     void setRasterizerState(const TinyEngine::ECullMode cullMode);
     // Constant Buffer Operation
+    std::shared_ptr<TinyEngine::RenderTarget> CreateRenderTarget() override;
+    std::shared_ptr<TinyEngine::DepthStencil> CreateDepthStencil() override;
     void UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, CBufferData* pCBufferData, Graphics::EBindType bindType = Graphics::EBindType::ToAll);
     void UpdateCBuffer(wrl::ComPtr<ID3D11Buffer>& targetBuf, BYTE * data, unsigned int bytesize);
     void BindCBuffer(unsigned int slot, wrl::ComPtr<ID3D11Buffer>& targetBuf, EBindType bindType = Graphics::EBindType::ToAll);
 
     void BindTexture(unsigned int slot, wrl::ComPtr<ID3D11ShaderResourceView>& pTextureView, EBindType bindType = Graphics::EBindType::ToAll);
     void BindSampler(unsigned int slot, wrl::ComPtr<ID3D11SamplerState>& pTextureView, EBindType bindType = Graphics::EBindType::ToAll);
+    void BindRenderTarget(TinyEngine::RenderTarget* pRenderTarget, TinyEngine::DepthStencil * pDepthStencil) override;
+    void BindDefaultRenderTarget() override;
+
+    ID3D11Device* GetDevice() const noexcept { return pDevice.Get(); }
+    ID3D11DeviceContext* GetContext() const noexcept { return pContext.Get(); }
+    IDXGISwapChain * GetSwap() const noexcept { return pSwap.Get(); }
+    //Events
+    virtual void UpdateRenderSceneViewPort(int pos_x, int pos_y, int width, int height) override;
+    virtual void OnResize(int width, int height) override;
+
+    wrl::ComPtr<ID3D11Texture2D> GetBackBuffer();
+    D3D11_VIEWPORT GetEditorViewPort() const noexcept { return editorViewPort; }
+    D3D11_VIEWPORT GetFullViewPort() const noexcept { return fullViewPort; }
+    #ifndef NDEBUG
+    DxgiInfoManager& GetInfoManager() { return infoManager; }
+    #endif
+protected:
+    void internalBindRenderTarget(TinyEngine::DirectXRenderTarget* pRenderTarget, TinyEngine::DirectXDepthStencil * pDepthStencil);
+    void drawMesh(HLSLVertexShader* pVertexShader, Mesh & mesh);
+    void CreateDevice() ;
+    void CreateBuffers(int width, int height);
+
+    std::shared_ptr<VertexShader> CreateVertexShader(const std::string& path) override;
+    std::shared_ptr<PixelShader> CreatePixelShader(const std::string& path) override;
+    
+    
 private:
+
+
     wrl::ComPtr<ID3D11Device> pDevice= nullptr;
     wrl::ComPtr<ID3D11DeviceContext> pContext = nullptr;
     wrl::ComPtr<IDXGISwapChain> pSwap = nullptr;
-    wrl::ComPtr<ID3D11RenderTargetView> pRenderTargetView = nullptr;
-    wrl::ComPtr<ID3D11DepthStencilView> pDepthStencilView = nullptr;
 
     wrl::ComPtr<ID3D11Buffer> pObjectConstantBuffer = nullptr;
-    wrl::ComPtr<ID3D11Buffer> pIndexBuffer = nullptr;
-
-    wrl::ComPtr<ID3D11BlendState> pDefaultTransparentBlendState = nullptr;
-    wrl::ComPtr<ID3D11BlendState> pDefaultOpaqueBlendState = nullptr;
     //Render State
     wrl::ComPtr<ID3D11RasterizerState> pCullOffRasterizerState = nullptr;
     wrl::ComPtr<ID3D11RasterizerState> pCullBackRasterizerState = nullptr;
     wrl::ComPtr<ID3D11RasterizerState> pCullFrontRasterizerState = nullptr;
 
-    std::shared_ptr<Material> pMaskMat;
-    std::shared_ptr<Material> pOutlineMat;
     //render pass
     TinyEngine::DirectXShadingEffectPass m_shading_pass;
+    
+    D3D11_VIEWPORT editorViewPort;
+    D3D11_VIEWPORT fullViewPort;
 #ifndef NDEBUG
     DxgiInfoManager infoManager;
 #endif

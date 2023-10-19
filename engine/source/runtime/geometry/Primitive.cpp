@@ -359,3 +359,26 @@ GameObject* Primitive::CreateBox(std::string name, float width, float height, fl
     pGO->AddComponent<Renderer>(mesh);
     return pGO;
 }
+
+
+std::shared_ptr<Mesh> Primitive::CreateQuadMesh()
+{
+    auto pMesh = std::make_shared<Mesh>();
+    
+    float size = 1;
+    std::vector<Float2> position = {
+        { -size, size }, // 0
+        { size,  size }, // 1
+        { -size, -size}, // 2
+        { size,  -size} // 3
+    };
+
+    std::vector<INDICE_TYPE> indices = {
+        0,1,2,
+        1,3,2
+    };
+
+    pMesh->SetVertexPosition(position);
+    pMesh->SetVertexIndices(indices);
+    return pMesh;
+}

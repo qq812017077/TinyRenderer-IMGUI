@@ -59,12 +59,17 @@ private:
 #define GFX_EXCEPT_NOINFO(hr) GraphicsException( __LINE__,__FILE__,(hr) )
 #define GFX_THROW_NOINFO(hrcall) if( FAILED( hr = (hrcall) ) ) throw GraphicsException(__LINE__,__FILE__,hr)
 
+ 
+
 #ifndef NDEBUG
+#define INFOMAN(gfx) HRESULT hr; auto& infoManager = (gfx).GetInfoManager();
 #define GFX_EXCEPT(hr) GraphicsException( __LINE__,__FILE__,(hr),infoManager.GetMessages() )
 #define GFX_THROW_INFO(hrcall) infoManager.Set(); if( FAILED( hr = (hrcall) ) ) throw GFX_EXCEPT(hr)
 #define GFX_DEVICE_REMOVED_EXCEPT(hr) DeviceRemovedException( __LINE__,__FILE__,(hr),infoManager.GetMessages() )
 #define GFX_THROW_INFO_ONLY(call) infoManager.Set(); (call); {auto v = infoManager.GetMessages(); if(!v.empty()){throw InfoException(__LINE__,__FILE__,std::move(v));}}
 #else
+#define INFOMAN(gfx) HRESULT hr;
+
 #define GFX_EXCEPT(hr) GraphicsException( __LINE__,__FILE__,(hr) )
 #define GFX_THROW_INFO(hrcall) GFX_THROW_NOINFO(hrcall)
 #define GFX_DEVICE_REMOVED_EXCEPT(hr) DeviceRemovedException( __LINE__,__FILE__,(hr) )

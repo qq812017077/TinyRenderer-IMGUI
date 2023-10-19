@@ -1,10 +1,7 @@
 #pragma once
-
 #include "core/Singleton.h"
 #include "core/math/EngineMath.h"
 #include <memory>
-#pragma once
-
 #include "Window.h"
 #include <memory>
 #include "ImguiManager.h"

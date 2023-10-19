@@ -67,7 +67,7 @@ void HLSLVertexShader::SetInputLayout()
                 static_cast<UINT>(inputLayoutDescs.size()),
                 pBlob->GetBufferPointer(),
                 pBlob->GetBufferSize(),
-                &pInputLayout)); 
+                &pInputLayout));
     }
     // bind input layout to pipeline
     directXGfx.pContext->IASetInputLayout(pInputLayout.Get());
@@ -233,6 +233,7 @@ void HLSLPixelShader::LoadMaterialResource(Material * pMat)
     for(auto & pair: shaderResource->textures)
     {
         auto & name = pair.first;
+        if(name == "_ShadowMap") continue; // skip shadow map
         TextureVariable * pTexVariable = pair.second.get();
         size_t texId = pTexVariable->uniqueID;
         unsigned int slot = pTexVariable->slot;

@@ -24,6 +24,7 @@ namespace TinyEngine
         if(m_StencilStates.find(uniqueID) == m_StencilStates.end())
         {
             D3D11_DEPTH_STENCIL_DESC desc = CD3D11_DEPTH_STENCIL_DESC(CD3D11_DEFAULT());
+            
             switch (depthStencilDesc.stencilMode)
             {
             case TinyEngine::Rendering::EStencilMode::WriteMask:
@@ -43,6 +44,7 @@ namespace TinyEngine
                 hr = pGfx->GetDevice()->CreateDepthStencilState(&desc, &pReadDepthStencilState);
                 break;
             default:
+                desc.DepthEnable = depthStencilDesc.depthMode == TinyEngine::EDepthMode::On ? TRUE : FALSE;
                 break;
             }
             hr = pGfx->GetDevice()->CreateDepthStencilState(&desc, &m_StencilStates[uniqueID]);

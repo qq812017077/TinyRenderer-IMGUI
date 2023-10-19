@@ -13,5 +13,6 @@ namespace TinyEngine
         m_loaded = false;
         effectDescs.clear();
         selectedRenderers.clear();
+        ShadowCastDescs.clear();
     }
 }

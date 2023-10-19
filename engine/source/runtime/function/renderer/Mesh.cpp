@@ -81,7 +81,7 @@ void Mesh::SetVertexIndices(std::vector<uint32_t> indices)
 }
 void Mesh::SetVertexPosition(std::vector<Float3> positions)
 {
-    
+    posType = PositionType::Position3D;
     this->positions = positions;
     vertices = std::vector<Vertex>(positions.size());
     availableVertexType |= VertexDataType::Position;
@@ -95,6 +95,13 @@ void Mesh::SetVertexPosition(std::vector<Float3> positions)
     }
     // update bounds
     bounds.SetMinMax(minPos, maxPos);
+}
+
+void Mesh::SetVertexPosition(std::vector<Float2> positions)
+{
+    posType = PositionType::Position2D;
+    availableVertexType |= VertexDataType::Position;
+    this->positions2D = positions;
 
 }
 
@@ -157,6 +164,11 @@ void* Mesh::GetVertexBuffer(const char * semanticName, unsigned int & bufSize)
 {
     if(STREQUAL(semanticName, "Position")) 
     {
+        if(posType == PositionType::Position2D)
+        {
+            bufSize = static_cast<unsigned int>(positions2D.size() * sizeof(Float2));
+            return positions2D.data();
+        }
         bufSize = static_cast<unsigned int>(positions.size() * sizeof(Float3));
         return positions.data();
     }
@@ -247,32 +259,3 @@ Bounds Mesh::GetBounds()
 {
     return bounds;
 }
-
-// VertexDataType Mesh::GetVertexDataType(const char* semanticName)
-// {
-//     // string compartion in c type
-//     if(STREQUAL(semanticName, "Position")) return VertexDataType::Position;
-//     else if( STREQUAL(semanticName, "Normal")) return VertexDataType::Normal;
-//     else if( STREQUAL(semanticName, "Color")) return VertexDataType::Color;
-//     else if( STREQUAL(semanticName, "Texcoord")) return VertexDataType::TexCoord;
-//     else if( STREQUAL(semanticName, "Tangent")) return VertexDataType::Tangent;
-//     else if( STREQUAL(semanticName, "Binormal")) return VertexDataType::Binormal;
-//     else return VertexDataType::Position;
-// }
-
-
-// unsigned int Mesh::GetAlignedByteOffset(const char * semanticName, int semanticIndex)
-// {
-//     if(STREQUAL(semanticName, "Position")) return offsetof(Vertex, position);
-//     else if(STREQUAL(semanticName, "NORMAL")) return offsetof(Vertex, normal);
-//     else if(STREQUAL(semanticName, "Color")) return offsetof(Vertex, color);
-//     else if(STREQUAL(semanticName, "Texcoord")) return offsetof(Vertex, texCoord);
-//     else if(STREQUAL(semanticName, "Tangent")) return offsetof(Vertex, tangent);
-//     else if(STREQUAL(semanticName, "Binormal")) return offsetof(Vertex, binormal);
-//     #ifdef _DEBUG
-//         std::cout << "unknown semantic name: " << semanticName << " in " << __LINE__ << __FILE__ << std::endl;
-//     #endif
-//     throw EngineException(__LINE__, __FILE__, ("unknown semantic name:" + std::string(semanticName)).c_str());
-//     return 0;
-
-// }

@@ -1,6 +1,7 @@
 #include "Effect.h"
 #include "EffectManager.h"
 #include "EffectPass.h"
+#include "core/EngineException.h"
 
 namespace TinyEngine
 {
@@ -28,10 +29,10 @@ namespace TinyEngine
         return true;
     }
     
-    void Effect::AddPass(std::string name, ShaderPass pass)
+    void Effect::AddPass(ShaderPass pass)
     {
         m_Passes.emplace_back(pass);
-        m_PassIdxByName.emplace(name, m_Passes.size() - 1);
+        m_PassIdxByName.emplace(pass.passName, m_Passes.size() - 1);
     }
     
     ShaderPass& Effect::FindPass(std::string name)
@@ -39,7 +40,7 @@ namespace TinyEngine
         if(m_PassIdxByName.find(name) != m_PassIdxByName.end())
             return m_Passes[m_PassIdxByName[name]];
         else
-            return m_Passes[0];
+            THROW_ENGINE_EXCEPTION("Pass not found: " + name);
     }
 
     void Effect::SetRenderingMode(ERenderingMode renderingMode)
@@ -57,12 +58,21 @@ namespace TinyEngine
         }
     }
 
+    bool Effect::CastShadow()
+    {
+        for(int i = 0; i < m_Passes.size(); ++i)
+        {
+            if(m_Passes[i].lightMode == ELightMode::ShadowCaster)
+                return true;
+        }
+        return false;
+    }
 
 /***************************************************************************************/
     std::shared_ptr<Effect> Effect::Create(std::string effectName, ShaderPass pass)
     {
         auto pEffect = std::make_shared<Effect>(effectName);
-        pEffect->AddPass(pass.passName, pass);
+        pEffect->AddPass(pass);
 
         EffectManager::Get().AddEffect(effectName, pEffect);
         return pEffect;

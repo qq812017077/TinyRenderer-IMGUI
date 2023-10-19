@@ -54,8 +54,9 @@ namespace TinyEngine
         m_scene->m_main_camera = Camera::pActivedCamera;
         
         //directional light
-        m_scene->m_directional_light.m_direction = Light::GetDirectionalLight()->pTransform->forward();
-        m_scene->m_directional_light.m_color = Light::GetDirectionalLight()->GetColor();
+        m_scene->m_directional_light.m_buffer.m_direction = Light::GetDirectionalLight()->pTransform->forward();
+        m_scene->m_directional_light.m_buffer.m_color = Light::GetDirectionalLight()->GetColor();
+        m_scene->m_directional_light.m_lightVP = Light::GetDirectionalLight()->GetLightVP();
         
         // point light
         auto pointLights = Light::GetPointLightList();
@@ -67,7 +68,6 @@ namespace TinyEngine
             pointLight.color = pointLights[i]->GetColor();
             pointLight.atten = 1.0f;
             pointLight.range = pointLights[i]->GetRange();
-            
             m_scene->m_point_lights[i] = pointLight;
         }
 
@@ -77,6 +77,11 @@ namespace TinyEngine
             if(pair.second.size() == 0) continue;
             for(auto & effect : pair.second)
             {
+                if(effect->CastShadow()) 
+                    m_scene->ShadowCastDescs.emplace_back(
+                        ShadowCastDesc{rendererQueue[effect]
+                    });
+                
                 m_scene->effectDescs.emplace_back(
                     EffectDesc{
                         effect,
@@ -98,46 +103,12 @@ namespace TinyEngine
             auto pEffect = pMaterial->GetEffect();
             effectQueueByPriority[pEffect->queuePriority].emplace(pEffect.get());
             rendererQueue[pEffect.get()].push_back(pRenderer);
-            // for(int i = 0, imax = pEffect->GetPassCount(); i < imax; i++)
-            // {
-            //     auto pass = pEffect->GetPass(i);
-            //     switch (pass.lightMode)
-            //     {
-            //     case ELightMode::ForwardBase:
-            //         direct_light_visible_renderers.emplace_back(pRenderer);
-            //         forwardbase_pass[pRenderer].emplace_back(passid);
-            //         break;
-            //     case ELightMode::ForwardAdd:
-            //         point_light_visible_renderers.emplace_back(pRenderer);
-            //         forwardadd_pass[pRenderer].emplace_back(passid);
-            //         break;
-            //     case ELightMode::Unlit:
-            //         unlit_renderers.emplace_back(pRenderer);
-            //         unlit_pass[pRenderer].emplace_back(passid);
-            //         break;
-            //     default:
-            //         break;
-            //     }
-            // }
-            // auto it = renderQueue.find(pMaterial);
-            // if (it == renderQueue.end())
-            // {
-            //     renderQueue[pMaterial] = std::vector<Renderer*>();
-            // }
-            // renderQueue[pMaterial].push_back(pRenderer);
         }
     }
     void SceneManager::SetSelectedGameObject(GameObject * pGameObject) {
         if(m_selected_object == pGameObject) return ;
-        if(m_selected_object != nullptr)
-        {
-            // auto pRenderer = m_selected_object->GetComponent<Renderer>();
-            // if(pRenderer) pRenderer->GetMaterialPtr()->SetStencilMode(TinyEngine::Rendering::EStencilMode::Off);
-        }
         m_selected_object = pGameObject;
         if(m_selected_object == nullptr) return ;
-        // auto pRenderer = m_selected_object->GetComponent<Renderer>();
-        // if(pRenderer) pRenderer->GetMaterialPtr()->SetStencilMode(TinyEngine::Rendering::EStencilMode::WriteMask);
     }
     void SceneManager::setSceneOnce()
     {

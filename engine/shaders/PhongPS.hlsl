@@ -1,7 +1,7 @@
 #include "Basic.hlsli"
 
-Texture2D _MainTex : register(t0);
-SamplerState sampler_MainTex : register(s0);
+Texture2D _MainTex : register(t1);
+SamplerState sampler_MainTex : register(s1);
 float3 get_directional_light(float3 normal, float3 worldPos, DirectionalLight dirLight, float3 texColor)
 {
     float3 lightdir = normalize(dirLight.dir);

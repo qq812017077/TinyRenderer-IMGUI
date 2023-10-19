@@ -38,14 +38,19 @@ namespace TinyEngine
 
         // add default effect
         auto effect = Effect::Create("Default", "shaders/DefaultVertexShader.hlsl", "shaders/DefaultPixelShader.hlsl");
-        auto & defaultPass = (*unlitEffect)["DefaultPass"];
+        auto ShadowPass = ShaderPass::Get("ShadowCastPass", "shaders/effects/ShadowVS.hlsl", "shaders/effects/ShadowPS.hlsl");
+
+        effect->AddPass(ShadowPass);
+        auto & defaultPass = (*effect)["DefaultPass"];
         defaultPass.renderingMode = ERenderingMode::Opaque;
         defaultPass.lightMode = ELightMode::ForwardBase;
         effect->queuePriority = RenderQueue::Geometry;
+        (*effect)["ShadowCastPass"].lightMode = ELightMode::ShadowCaster;
+
 
         // add cutout effect
         auto cutoutEffect = Effect::Create("DefaultCutout", "shaders/DefaultVertexShader.hlsl", "shaders/DefaultCutoutPixelShader.hlsl");
-        auto & cutoutPass = (*unlitEffect)["CutoutPass"];
+        auto & cutoutPass = (*cutoutEffect)["DefaultCutoutPass"];
         cutoutPass.renderingMode = ERenderingMode::Cutout;
         cutoutPass.lightMode = ELightMode::ForwardBase;
         cutoutPass.cullMode = ECullMode::Off;
@@ -54,6 +59,7 @@ namespace TinyEngine
         // add transparent effect
         auto transparentEffect = Effect::Create("DefaultTransparent", "shaders/DefaultVertexShader.hlsl", "shaders/DefaultTransparentPixelShader.hlsl");
         transparentEffect->queuePriority = RenderQueue::Transparent;
+        (*transparentEffect)[0].blendDesc = BlendDesc::Transparent();
         transparentEffect->SetRenderingMode(ERenderingMode::Transparent);
         transparentEffect->SetCullMode(ECullMode::Off);
         
@@ -61,9 +67,18 @@ namespace TinyEngine
         auto outlineEffect = Effect::Create("Outline", "shaders/DefaultVertexShader.hlsl", "shaders/effects/OutlinePS.hlsl");
         outlineEffect->FindPass("OutlinePass").renderingMode = ERenderingMode::PostProcessing;
 
+        // add fullscreen effect
+        auto BlurEffect = Effect::Create("Blur", "shaders/effects/FullScreenVS.hlsl", "shaders/effects/BlurPS.hlsl");
+        BlurEffect->queuePriority = RenderQueue::Overlay;
+        
+        auto BlitEffect = Effect::Create("Blit", "shaders/effects/FullScreenVS.hlsl", "shaders/effects/BlitPS.hlsl");
+        BlitEffect->queuePriority = RenderQueue::Overlay;
+
         // add error effect
         auto errorEffect = Effect::Create("Error", "shaders/ErrorVertexShader.hlsl", "shaders/ErrorPixelShader.hlsl");
         errorEffect->FindPass("ErrorPass").renderingMode = ERenderingMode::PostProcessing;
+
+
     }
 
     std::shared_ptr<Effect> EffectManager::FindEffect(const std::string& name)

@@ -287,7 +287,7 @@ GameObject* Level::addGameObject(GameObject* pGo)
         auto m_main_camera = camGO->AddComponent<Camera>();
         camGO->AddComponent<CamController>();
         
-        camGO->pTransform->SetPosition({ 0.0f, 100.0f, -6.0f });
+        camGO->pTransform->SetPosition({ 0.0f, 100.0f, -10.0f });
         camGO->pTransform->SetEulerAngle({ 30.0f, 0.0f, 0.0f });
 
         auto lightController = CreateGameObject("LightController");
@@ -310,6 +310,11 @@ GameObject* Level::addGameObject(GameObject* pGo)
         pRenderer2->SetSharedMaterial(pMat);
         auto pBrickwallTex = Texture::LoadFrom("res/images/brickwall.jpg");
         pRenderer2->GetMaterial()->SetTexture("_MainTex", pBrickwallTex);   
+
+        
+        auto bcube = addGameObject(Primitive::CreateCube("Big Cube"));
+        bcube->transform().SetPosition({ -100.0f, 60.0f, 200.0f });
+        bcube->transform().SetScale({ 50.0f, 50.0f, 3.0f });
     }
 /************************************************************************************************/
 /*                                         Static Methods                                      */

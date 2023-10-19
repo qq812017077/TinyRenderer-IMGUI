@@ -14,4 +14,5 @@ public:
 
     static GameObject* CreateBox(std::string name, float width, float height, float depth);
 
+    static std::shared_ptr<Mesh> CreateQuadMesh();
 };
