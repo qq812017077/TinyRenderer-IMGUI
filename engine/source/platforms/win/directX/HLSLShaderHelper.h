@@ -32,6 +32,7 @@ public:
 
     
     const static unsigned int ShadowMapSlot = 0u;
+    const static unsigned int ShadowCubeMapSlot = 3u;
 
     HLSLShaderHelper() = default;
 

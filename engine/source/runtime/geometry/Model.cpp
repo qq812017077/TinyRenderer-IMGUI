@@ -31,7 +31,7 @@ std::vector<std::shared_ptr<Material>> Model::GenerateMaterials()
 {
     std::vector<std::shared_ptr<Material>> materials;
     materials.resize(materialdatas.size());
-    for(int i = 0; i < materialdatas.size(); ++i)
+    for(unsigned int i = 0; i < materialdatas.size(); ++i)
     {
         auto& matdata = materialdatas[i];
         

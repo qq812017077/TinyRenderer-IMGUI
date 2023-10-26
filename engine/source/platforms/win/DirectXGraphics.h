@@ -11,7 +11,6 @@
 #include "EngineWin.h"
 #include "effect/Stencil.h"
 #include "effect/Pass.h"
-#include "dxgraphics/DirectXShadingEffectPass.h"
 #include "dxgraphics/DirectXRenderTarget.h"
 #include "dxgraphics/DirectXDepthStencil.h"
 
@@ -23,7 +22,6 @@ class DirectXGraphics : public Graphics
 {
     friend class HLSLVertexShader;
     friend class HLSLPixelShader;
-    friend class TinyEngine::DirectXShadingEffectPass;
 public:
     const static unsigned int MaxCommonSlot = 2u;
     const static unsigned int PerFrameCBufSlot = 0u;
@@ -37,6 +35,8 @@ public:
 
     void EndFrame() override;
     void ClearBuffer(float red, float green, float blue) noexcept override;
+    
+    void SetViewport(ViewPort viewPort) override;
     
     void ApplyState(TinyEngine::RenderState * pState) override;
     void ApplyPass(TinyEngine::ShaderPass & pass) override;
@@ -56,7 +56,6 @@ public:
     void BindSampler(unsigned int slot, wrl::ComPtr<ID3D11SamplerState>& pTextureView, EBindType bindType = Graphics::EBindType::ToAll);
     void BindRenderTarget(TinyEngine::RenderTarget* pRenderTarget, TinyEngine::DepthStencil * pDepthStencil) override;
     void BindDefaultRenderTarget() override;
-
     ID3D11Device* GetDevice() const noexcept { return pDevice.Get(); }
     ID3D11DeviceContext* GetContext() const noexcept { return pContext.Get(); }
     IDXGISwapChain * GetSwap() const noexcept { return pSwap.Get(); }
@@ -92,9 +91,6 @@ private:
     wrl::ComPtr<ID3D11RasterizerState> pCullOffRasterizerState = nullptr;
     wrl::ComPtr<ID3D11RasterizerState> pCullBackRasterizerState = nullptr;
     wrl::ComPtr<ID3D11RasterizerState> pCullFrontRasterizerState = nullptr;
-
-    //render pass
-    TinyEngine::DirectXShadingEffectPass m_shading_pass;
     
     D3D11_VIEWPORT editorViewPort;
     D3D11_VIEWPORT fullViewPort;

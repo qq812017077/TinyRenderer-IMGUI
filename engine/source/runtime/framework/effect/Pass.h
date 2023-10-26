@@ -60,7 +60,7 @@ namespace TinyEngine
 
 	struct RenderStateDesc
 	{
-		virtual size_t GetHash() const = 0;
+		virtual int64_t GetHash() const = 0;
 	};
 
 	struct DepthStencilDesc : RenderStateDesc
@@ -68,12 +68,12 @@ namespace TinyEngine
 		EDepthMode depthMode{EDepthMode::On};
 		EStencilMode stencilMode{EStencilMode::Off};
 		
-		size_t GetHash() const override
+		int64_t GetHash() const override
 		{
-			size_t uniqueID = 0;
+			int64_t uniqueID = 0;
 			
-			uniqueID |= (size_t)(depthMode);
-			uniqueID |= (size_t)(stencilMode) << 8;
+			uniqueID |= (int64_t)(depthMode);
+			uniqueID |= (int64_t)(stencilMode) << 8;
 			return uniqueID;
 			// return std::hash<size_t>()(static_cast<size_t>(depthMode)) ^ std::hash<size_t>()(static_cast<size_t>(stencilMode));
 		}
@@ -132,17 +132,17 @@ namespace TinyEngine
 		EBlendWrite RenderTargetWriteMask{EBlendWrite::COLOR_WRITE_ENABLE_ALL};
 		float * blendFactors{nullptr};
 
-		size_t GetHash() const override
+		int64_t GetHash() const override
 		{
-			size_t uniqueID = 0;
-			uniqueID |= (size_t)(BlendEnable);
-			uniqueID |= (size_t)(SrcBlend) << 1;
-			uniqueID |= (size_t)(DestBlend) << 6;
-			uniqueID |= (size_t)(BlendOp) << 11;
-			uniqueID |= (size_t)(SrcBlendAlpha) << 14;
-			uniqueID |= (size_t)(DestBlendAlpha) << 19;
-			uniqueID |= (size_t)(BlendOpAlpha) << 24;
-			uniqueID |= (size_t)(RenderTargetWriteMask) << 29;
+			int64_t uniqueID = 0;
+			uniqueID |= (int64_t)(BlendEnable);
+			uniqueID |= (int64_t)(SrcBlend) << 1;
+			uniqueID |= (int64_t)(DestBlend) << 6;
+			uniqueID |= (int64_t)(BlendOp) << 11;
+			uniqueID |= (int64_t)(SrcBlendAlpha) << 14;
+			uniqueID |= (int64_t)(DestBlendAlpha) << 19;
+			uniqueID |= (int64_t)(BlendOpAlpha) << 24;
+			uniqueID |= (int64_t)(RenderTargetWriteMask) << 29;
 			
 		// 	return std::hash<size_t>()(BlendEnable) ^ 
 		// 	std::hash<size_t>()(static_cast<size_t>(SrcBlend)) ^ 
@@ -197,15 +197,15 @@ namespace TinyEngine
 		bool MultisampleEnable{false};
 		bool AntialiasedLineEnable{false};
 
-		size_t GetHash() const override
+		int64_t GetHash() const override
 		{
-			size_t uniqueID = 0;
-			uniqueID |= (size_t)(cullMode);
-			uniqueID |= (size_t)(FrontCounterClockwise) << 2;
-			uniqueID |= (size_t)(DepthClipEnable) << 32;
-			uniqueID |= (size_t)(ScissorEnable) << 33;
-			uniqueID |= (size_t)(MultisampleEnable) << 34;
-			uniqueID |= (size_t)(AntialiasedLineEnable) << 35;
+			int64_t uniqueID = 0;
+			uniqueID |= (int64_t)(cullMode);
+			uniqueID |= (int64_t)(FrontCounterClockwise) << 2;
+			uniqueID |= (int64_t)(DepthClipEnable) << 32;
+			uniqueID |= (int64_t)(ScissorEnable) << 33;
+			uniqueID |= (int64_t)(MultisampleEnable) << 34;
+			uniqueID |= (int64_t)(AntialiasedLineEnable) << 35;
 			return uniqueID;
 		}
 		static RasterDesc Default()

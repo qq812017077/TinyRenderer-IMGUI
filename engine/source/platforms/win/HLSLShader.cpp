@@ -30,7 +30,7 @@ HLSLVertexShader::HLSLVertexShader(DirectXGraphics& gfx, const std::wstring& pat
     GetInputLayoutInfo(pReflection.Get(), &inputLayoutDescs);
     HLSLShaderHelper::LoadShaderInfo(pReflection.Get(), &shaderDescInfo);
 
-    for(int i = 0; i < inputLayoutDescs.size(); i++)
+    for(unsigned int i = 0; i < inputLayoutDescs.size(); i++)
     {
         pVertexBuffers.emplace_back(nullptr);
         vertexBufferPtrs.emplace_back(nullptr);
@@ -44,7 +44,7 @@ HLSLVertexShader::HLSLVertexShader(DirectXGraphics& gfx, const std::wstring& pat
 
 HLSLVertexShader::~HLSLVertexShader()
 {
-    for(int i = 0; i < inputLayoutDescs.size(); i++)
+    for(unsigned int i = 0; i < inputLayoutDescs.size(); i++)
     {
         delete inputLayoutDescs[i].SemanticName;
     }
@@ -209,6 +209,7 @@ void HLSLPixelShader::LoadMaterialResource(Material * pMat)
     {
         auto & name = pair.first;
         if(name == "_ShadowMap") continue; // skip shadow map
+        if(name == "_ShadowCubeMap") continue; // skip shadow map
         TextureVariable * pTexVariable = pair.second.get();
         size_t texId = pTexVariable->uniqueID;
         unsigned int slot = pTexVariable->slot;

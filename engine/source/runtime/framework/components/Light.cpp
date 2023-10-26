@@ -31,7 +31,7 @@ void Light::Init()
 
 }
 
-Matrix4x4 Light::GetLightVP() const
+void Light::GetLightVP(Matrix4x4 * vpMatrix) const
 {
     if(type == Type::Directional)
     {
@@ -45,13 +45,84 @@ Matrix4x4 Light::GetLightVP() const
         auto aspect = 1280.0f / 720.0f;
         auto widthSize = heightSize * aspect;
         // light projection matrix
-        Matrix4x4 projection = Matrix4x4::OrthographicLH(-widthSize, widthSize, -heightSize, heightSize, 0.1f, 1000.0f);
+        Matrix4x4 projection = Matrix4x4::OrthographicLH(-widthSize, widthSize, -heightSize, heightSize, 0.1f, 500.0f);
         // projection = Matrix4x4::Perspective(60, 1280.0f / 720.0f, 0.1f, 3000.0f);;
 
-        return projection * view;
+        *vpMatrix = projection * view;
     }else if(type == Type::Point)
     {
+        // get six view matrix
+        auto position = pTransform->GetPosition();
+        Matrix4x4 translation = Matrix4x4::Translation(-position);
+        auto up = Vector3(0, 1, 0);
+        auto right = Vector3(1, 0, 0);
+        auto forward = Vector3(0, 0, 1);
+        Matrix4x4 view[6];
+        view[0] = Matrix4x4::LookAtLH(position, position + Vector3::right, Vector3::up);
+        view[1] = Matrix4x4::LookAtLH(position, position - Vector3::right, Vector3::up);
+        view[2] = Matrix4x4::LookAtLH(position, position + Vector3::up, -Vector3::forward);
+        view[3] = Matrix4x4::LookAtLH(position, position - Vector3::up, Vector3::forward);
+        view[4] = Matrix4x4::LookAtLH(position, position + Vector3::forward, Vector3::up);
+        view[5] = Matrix4x4::LookAtLH(position, position - Vector3::forward, Vector3::up);
+        
+        // get projection matrix
+        auto aspect = 1.0f;
+        auto fov = 90.0f;
+        auto nearPlane = 0.1f;
+        auto farPlane = 1000.0f;
+        Matrix4x4 projection = Matrix4x4::Perspective(fov, aspect, std::min(0.1f,range), range);
+
+        // get view projection matrix
+        for(int i = 0; i < 6; ++i)
+            vpMatrix[i] = projection * view[i];
+    }else if(type == Type::Spot)
+    {
         THROW_ENGINE_EXCEPTION("Spot light is not implemented yet.");
+    }
+}
+
+
+void Light::GetLightView(Matrix4x4 * outputView) const 
+{
+    if(type == Type::Directional)
+    {
+        auto position = pTransform->GetPosition();
+        auto rotation = pTransform->GetRotation();
+
+        Matrix4x4 translation = Matrix4x4::Translation(-position);
+        Matrix4x4 Rotation = Matrix4x4::Rotation(rotation).Transpose(); // we want inverse, and for orth matrix : transpose = inverse
+        *outputView = Rotation * translation;
+    }else if(type == Type::Point)
+    {
+        // get six view matrix
+        auto position = pTransform->GetPosition();
+        outputView[0] = Matrix4x4::LookAtLH(position, position + Vector3::right, Vector3::up);
+        outputView[1] = Matrix4x4::LookAtLH(position, position - Vector3::right, Vector3::up);
+        outputView[2] = Matrix4x4::LookAtLH(position, position + Vector3::up, -Vector3::forward);
+        outputView[3] = Matrix4x4::LookAtLH(position, position - Vector3::up, Vector3::forward);
+        outputView[4] = Matrix4x4::LookAtLH(position, position + Vector3::forward, Vector3::up);
+        outputView[5] = Matrix4x4::LookAtLH(position, position - Vector3::forward, Vector3::up);
+    }else if(type == Type::Spot)
+    {
+        THROW_ENGINE_EXCEPTION("Spot light is not implemented yet.");
+    }
+}
+void Light::GetLightProj(Matrix4x4 * outputProj) const
+{
+    if(type == Type::Directional)
+    {
+        auto heightSize = 200.0f;
+        auto aspect = 1280.0f / 720.0f;
+        auto widthSize = heightSize * aspect;
+        *outputProj = Matrix4x4::OrthographicLH(-widthSize, widthSize, -heightSize, heightSize, 0.1f, 500.0f);
+    }else if(type == Type::Point)
+    {
+        // get six view matrix
+        auto aspect = 1.0f;
+        auto fov = 90.0f;
+        auto nearPlane = 0.1f;
+        auto farPlane = 1000.0f;
+        *outputProj = Matrix4x4::Perspective(fov, aspect, std::min(0.1f,range), range);
     }else if(type == Type::Spot)
     {
         THROW_ENGINE_EXCEPTION("Spot light is not implemented yet.");

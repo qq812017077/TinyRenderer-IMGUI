@@ -36,9 +36,12 @@ public:
         return !(*this == other);
     }
 
+    int MaxExtentDim() ;
+    
     bool Intersects(const Bounds bounds);
     // bool IntersectRay(Ray ray);
     // bool IntersectRay(Ray ray, float &distance);
+    bool IntersectsWithSphere(const Vector3& center, const float& radius);
     
     void Encapsulate(Vector3 point);
     void Encapsulate(Bounds bounds);
@@ -64,6 +67,9 @@ public:
     inline void SetMax(Vector3 max) { SetMinMax(GetMin(), max); }
     void SetMinMax(Vector3 min, Vector3 max) { m_Extents = (max - min) * 0.5f; m_Center = min + m_Extents; }
 
+    Bounds Transform(Matrix4x4 transform);
+    void GetVertices(Vector3* vertices);
+    static Bounds Union(const Bounds& a, const Bounds& b);
     // static bool IntersectRayAABB(Ray ray, Bounds bounds, float &dist);
 private:
     Vector3 m_Center;

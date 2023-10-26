@@ -47,6 +47,7 @@ namespace TinyEngine
         Camera* m_actived_camera{nullptr};
         std::map<int, std::set<Effect *>> effectQueueByPriority;
         std::map<Effect*, std::vector<Renderer*>> rendererQueue;
+        std::vector<Renderer *> m_renderers;
         void setSceneOnce();
 
         Vector2 m_window_size;

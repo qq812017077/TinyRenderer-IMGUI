@@ -21,7 +21,9 @@ public:
     ~Light();
 
     Vector4 GetColor() const { return Vector4(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f) * intensity; }
-    Matrix4x4 GetLightVP() const;
+    void GetLightVP(Matrix4x4 * vpMatrix) const;
+    void GetLightView(Matrix4x4 * outputView) const;
+    void GetLightProj(Matrix4x4 * outputProj) const;
     void SetIntensity(float intensity) { this->intensity = intensity; }
     void SetRange(float range) { this->range = range; }
     float GetIntensity() { return intensity; }

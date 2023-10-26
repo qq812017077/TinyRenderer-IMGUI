@@ -23,7 +23,8 @@ struct alignas(4) Vector3
     Vector3(const Vector3 &v); 
     Vector3(const Vector4 &v);
     ~Vector3();
-    void operator=(const Vector3 &v);  
+    void operator=(const Vector3 &v); 
+    void operator=(const Vector4 &v); 
 
     Vector3 operator+(const Vector3& v) const;
     Vector3 operator+(const Vector3 &v);
@@ -57,7 +58,8 @@ struct alignas(4) Vector3
     }
 
     float& operator[](int index);
-    float dot(const Vector3 &v);  
+    float operator[](int index) const;
+    float dot(const Vector3 &v) const;  
     float length();
     void normalize();
     Vector3 normalized() const;
@@ -70,6 +72,8 @@ struct alignas(4) Vector3
     static const Vector3 up;
     static const Vector3 right;
     static const Vector3 forward;
+    static const Vector3 min;
+    static const Vector3 max;
     static Vector3 Normalize(const Vector3& v);
     static Vector3 Cross(const Vector3& v1, const Vector3& v2);
     static bool Vector3::Approximately(const Vector3& v1, const Vector3& v2);

@@ -32,6 +32,11 @@ Transform& Transform::operator=(const Transform& other) noexcept
     return *this;
 }
 
+bool Transform::IsDirty() const
+{
+    return false;
+}
+
 void Transform::SetPosition(const Vector3& position)
 {
     if(parent)
@@ -298,7 +303,7 @@ Transform* Transform::FindChild(const char * name) const
     return nullptr;
 }
 
-Transform* Transform::GetChild(int index) const
+Transform* Transform::GetChild(unsigned int index) const
 {
     if(index < children.size()) return children[index];
     return nullptr;

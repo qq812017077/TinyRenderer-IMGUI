@@ -76,7 +76,7 @@ namespace TinyEngine::Graph
 		}
 		renderPassMap[pass->GetName()] = pass.get();
 		renderPasses.push_back(std::move(pass));
-		renderPasses.back()->Initialize(*this);
+		renderPasses.back()->Initialize(pGfx, *this);
 		return *this;
 	}
 	

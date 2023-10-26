@@ -53,12 +53,13 @@ void Camera::Init()
 Matrix4x4 Camera::GetViewMatrix()
 {
     auto position = pTransform->GetPosition();
-    auto rotation = pTransform->GetRotation();
+    // auto rotation = pTransform->GetRotation();
 
-    Matrix4x4 translation = Matrix4x4::Translation(-position);
-    Matrix4x4 Rotation = Matrix4x4::Rotation(rotation).Transpose(); // we want inverse, and for orth matrix : transpose = inverse
-    auto viewMatrix = Rotation * translation;
-    return viewMatrix;
+    // Matrix4x4 translation = Matrix4x4::Translation(-position);
+    // Matrix4x4 Rotation = Matrix4x4::Rotation(rotation).Transpose(); // we want inverse, and for orth matrix : transpose = inverse
+    // auto viewMatrix = Rotation * translation;
+
+    return Matrix4x4::LookAtLH(position, position + pTransform->forward(), pTransform->up());
 }
 
 Matrix4x4 Camera::GetProjectionMatrix()

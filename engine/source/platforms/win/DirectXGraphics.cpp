@@ -7,7 +7,6 @@
 #include "Texture.h"
 #include "dxgraphics/BlenderManager.h"
 #include "dxgraphics/StencilManager.h"
-#include "dxgraphics/DirectXShadingEffectPass.h"
 #include "geometry/Primitive.h"
 #include "dxgraph/DirectXRenderGraph.h"
 
@@ -59,6 +58,17 @@ void DirectXGraphics::ClearBuffer(float red, float green, float blue) noexcept
     const float color[] = {red, green, blue, 1.0f};
 }
 
+void DirectXGraphics::SetViewport(ViewPort viewPort)
+{
+    D3D11_VIEWPORT vp;
+    vp.Width = static_cast<FLOAT>(viewPort.width);
+    vp.Height = static_cast<FLOAT>(viewPort.height);
+    vp.MinDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
+    vp.TopLeftX = static_cast<FLOAT>(viewPort.pos_x);
+    vp.TopLeftY = static_cast<FLOAT>(viewPort.pos_y);
+    pContext->RSSetViewports(1u, &vp);
+}
 void DirectXGraphics::ApplyState(TinyEngine::RenderState *pState)
 {
     if (pState == nullptr)

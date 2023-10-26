@@ -18,7 +18,7 @@ namespace TinyEngine::Graph
     public:
         DXRenderPass(std::string name) : RenderPass(name) {}
         virtual ~DXRenderPass() = default;
-        void Initialize(RenderGraph & graph) override{}
+        void Initialize(Graphics* pGfx, RenderGraph & graph) override{}
         void Execute(Graphics *pGfx, RenderGraph& graph) override;
         virtual void internalExecute(DirectXGraphics* pGfx, DXDefaultRenderGraph& graph) = 0;
     };
@@ -31,7 +31,6 @@ namespace TinyEngine::Graph
         
         void Execute(Graphics *pGfx, RenderGraph& graph) override;
         virtual void internalExecute(DirectXGraphics* pGfx, DXDefaultRenderGraph& graph) = 0;
-        void Initialize(RenderGraph & graph) override;
     protected:
         ResourceHandle<TinyEngine::DirectXRenderTarget> renderTargetHandle;
         ResourceHandle<TinyEngine::DirectXDepthStencil> depthStencilHandle;

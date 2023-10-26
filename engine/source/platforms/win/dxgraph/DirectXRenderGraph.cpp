@@ -4,6 +4,8 @@
 #include "graph/Attachment.h"
 #include "graph/RenderResource.h"
 #include "passlib.h"
+#include "dxgraphics/DirectXRenderTarget.h"
+#include "dxgraphics/DirectXDepthStencil.h"
 
 namespace TinyEngine::Graph
 {
@@ -16,19 +18,20 @@ namespace TinyEngine::Graph
         backBufferHandle = CreateResource<DirectXRenderTarget>("backbuffer", ResourceDesc::SwapChain());
         depthStencilHandle = CreateResource<DirectXDepthStencil>("depthstencil", ResourceDesc::DepthStencil());
         shadowMapHandle = CreateResource<DirectXDepthStencil>("shadowmap", ResourceDesc::ShadowMap());
+        shadowCubeHandle = CreateResource<DepthCubeTexture>("shadowcubemap", ResourceDesc::ShadowCubeMap());
+
         AddGlobalSource(backBufferHandle);
         AddGlobalSource(mainRTHandle);
         AddGlobalSource(effectRTHandle);
         AddGlobalSource(depthStencilHandle);
         AddGlobalSource(shadowMapHandle);
+        AddGlobalSource(shadowCubeHandle);
         AddGlobalSink(backBufferHandle);
-        // AddGlobalSource(CreateResource<DirectXRenderTarget>("colorbuffer", ResourceDesc::RenderTarget()));
-        // AddGlobalSource(std::make_shared<RenderResource<DirectXDepthStencil>>("depthstencil", ResourceDesc::DepthStencil()));
-        // AddGlobalSink(std::make_shared<RenderResource<DirectXRenderTarget>>("backbuffer", ResourceDesc::SwapChain()));
         
         auto cleanRTPass = std::make_unique<BufferPass>("cleanRT");
         auto cleanDSPass = std::make_unique<BufferPass>("cleanDS");
         auto cleanSMPass = std::make_unique<BufferPass>("cleanSM");
+        auto cleanSMCubePass = std::make_unique<BufferPass>("cleanSMCube");
         auto shadowPass = std::make_unique<ShadowPass>("shadow-cast");
         auto lightingPass = std::make_unique<LambertPass>("lighting");
         auto skyboxPass = std::make_unique<SkyBoxPass>("skybox");
@@ -37,6 +40,7 @@ namespace TinyEngine::Graph
         AddRenderPass( std::move( cleanRTPass ) );
         AddRenderPass( std::move( cleanDSPass ) );
         AddRenderPass( std::move( cleanSMPass ) );
+        AddRenderPass( std::move( cleanSMCubePass ) );
         AddRenderPass( std::move( shadowPass ) );
         AddRenderPass( std::move( lightingPass ));
         AddRenderPass( std::move( skyboxPass ));
@@ -46,10 +50,13 @@ namespace TinyEngine::Graph
         SetLinkage("$.mainRT", "cleanRT.buffer");
         SetLinkage("$.depthstencil", "cleanDS.buffer");
         SetLinkage("$.shadowmap", "cleanSM.buffer");
+        SetLinkage("$.shadowcubemap", "cleanSMCube.buffer");
 
         SetLinkage("cleanSM.buffer", "shadow-cast.shadowmap");
+        SetLinkage("cleanSMCube.buffer", "shadow-cast.shadowcubemap");
 
         SetLinkage("shadow-cast.shadowmap", "lighting.shadowmap");
+        SetLinkage("shadow-cast.shadowcubemap", "lighting.shadowcubemap");
         SetLinkage("cleanRT.buffer", "lighting.renderTarget");
         SetLinkage("cleanDS.buffer", "lighting.depthStencil");
 

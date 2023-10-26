@@ -10,6 +10,9 @@ const Vector3 Vector3::up = Vector3(0.0f, 1.0f, 0.0f);
 const Vector3 Vector3::right = Vector3(1.0f, 0.0f, 0.0f);
 const Vector3 Vector3::forward = Vector3(0.0f, 0.0f, 1.0f);
 
+const Vector3  Vector3::min = Vector3(FLT_MIN, FLT_MIN, FLT_MIN);
+const Vector3  Vector3::max = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+
 /****************************************************************************************/
 //Vector2.cpp
 /****************************************************************************************/
@@ -46,6 +49,13 @@ void Vector3::operator=(const Vector3 &v)
     y = v.y;  
     z = v.z;  
 }  
+
+void Vector3::operator=(const Vector4 &v)
+{
+    x = v.x;
+    y = v.y;
+    z = v.z;
+}
 
 
 Vector3 Vector3::operator+(const Vector3& v) const { return Vector3(x + v.x, y + v.y, z + v.z); }
@@ -139,7 +149,11 @@ float& Vector3::operator[](int index)
     return (&x)[index];
 }
 
-float Vector3::dot(const Vector3 &v)  
+float Vector3::operator[](int index) const
+{
+    return (&x)[index];
+}
+float Vector3::dot(const Vector3 &v)  const
 {  
     return x*v.x + y*v.y + z*v.z;  
 }  

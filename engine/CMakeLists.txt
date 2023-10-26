@@ -1,6 +1,5 @@
 # specify CMAKE version
 cmake_minimum_required(VERSION 3.10)
-
 project(TinyRenderer_IMGUI VERSION 0.1.0)
 
 if(MSVC)

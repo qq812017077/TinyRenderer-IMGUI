@@ -14,7 +14,8 @@ namespace TinyEngine::Graph
         ShaderResource,     //SR
         RenderTarget,       //RT
         DepthStencil,       //DS
-        ShadowMap
+        ShadowMap,
+        ShadowCubeMap,
     };
     
     using HandleID = uint32_t;
@@ -67,6 +68,7 @@ namespace TinyEngine::Graph
         static ResourceDesc RenderTarget() { return {ResourceType::RenderTarget}; }
         static ResourceDesc DepthStencil() { return {ResourceType::DepthStencil}; }
         static ResourceDesc ShadowMap() { return {ResourceType::ShadowMap}; }
+        static ResourceDesc ShadowCubeMap() { return {ResourceType::ShadowCubeMap}; }
         static ResourceDesc ShaderResource() { return {ResourceType::ShaderResource}; }
         static ResourceDesc SwapChain() { return {ResourceType::SwapChain}; }
         

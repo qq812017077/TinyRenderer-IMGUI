@@ -13,7 +13,7 @@ namespace TinyEngine::Graph
     public:
         BufferPass(std::string name);
         virtual ~BufferPass() = default;
-        void Initialize(RenderGraph & graph) override;
+        void Initialize(Graphics* pGfx, RenderGraph & graph) override{}
         void Execute(Graphics *pGfx, RenderGraph& graph) override;
     private:
         ResourceHandle<TinyEngine::BufferResource> bufferhandle;

@@ -7,7 +7,7 @@ namespace wrl = Microsoft::WRL;
 namespace TinyEngine
 {
     
-    DirectXRenderTarget::DirectXRenderTarget(DirectXGraphics* pGfx, ID3D11Texture2D* pTexture):
+    DirectXRenderTarget::DirectXRenderTarget(DirectXGraphics* pGfx, ID3D11Texture2D* pTexture, std::optional<UINT> face):
         RenderTarget(pGfx, -1, -1)
     {
         INFOMAN(*pGfx);
@@ -16,7 +16,22 @@ namespace TinyEngine
 		pTexture->GetDesc( &textureDesc );
 		m_width = textureDesc.Width;
 		m_height = textureDesc.Height;
-        GFX_THROW_INFO(pGfx->GetDevice()->CreateRenderTargetView(pTexture, nullptr, &pTargetView));
+
+        D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+        rtvDesc.Format = textureDesc.Format;
+        if(face.has_value())
+        {
+            rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+            rtvDesc.Texture2DArray.ArraySize = 1u;
+            rtvDesc.Texture2DArray.FirstArraySlice = face.value();
+            rtvDesc.Texture2DArray.MipSlice = 0u;
+        }else
+        {
+            rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+            rtvDesc.Texture2D = D3D11_TEX2D_RTV{ 0 };
+        }
+
+        GFX_THROW_INFO(pGfx->GetDevice()->CreateRenderTargetView(pTexture, &rtvDesc, &pTargetView));
     }
 
 
@@ -87,5 +102,62 @@ namespace TinyEngine
 
         THROW_ENGINE_EXCEPTION("cannot create render target from resource desc: type mismatch: ");
         
+    }
+
+    DepthCubeTexture::DepthCubeTexture(DirectXGraphics* pGfx, unsigned int texSize): BufferResource(pGfx, texSize, texSize)
+    {
+        INFOMAN(*pGfx);
+
+        D3D11_TEXTURE2D_DESC texDesc = {};
+        texDesc.Width = texSize;
+        texDesc.Height = texSize;
+        texDesc.MipLevels = 1;                              // no mip mapping
+        texDesc.ArraySize = 6;
+        texDesc.Format = DXGI_FORMAT_R32_FLOAT;
+        texDesc.SampleDesc.Count = 1;
+        texDesc.SampleDesc.Quality = 0;
+        texDesc.Usage = D3D11_USAGE_DEFAULT;
+        texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+        texDesc.CPUAccessFlags = 0;
+        texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+        //create the texture resource
+        wrl::ComPtr<ID3D11Texture2D> pTexture;
+        GFX_THROW_INFO(pGfx->GetDevice()->CreateTexture2D(&texDesc, nullptr, &pTexture));
+
+        // create the resource view on the texture
+        D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+        srvDesc.Format = texDesc.Format;
+        srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+        srvDesc.TextureCube.MipLevels = texDesc.MipLevels;
+        srvDesc.TextureCube.MostDetailedMip = 0;
+        GFX_THROW_INFO(pGfx->GetDevice()->CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
+
+        for(unsigned int face = 0 ; face < 6; face++)
+        {
+            depthBuffers.push_back(std::make_unique<DirectXRenderTarget>(pGfx, pTexture.Get(), face));
+        }
+
+    }
+
+    void DepthCubeTexture::BindAsTexture(DirectXGraphics* pGfx, UINT slot)
+    {
+        auto dxGfx = reinterpret_cast<DirectXGraphics*>(pGfx);
+        dxGfx->BindTexture(slot, pTextureView, Graphics::EBindType::ToPS);
+    }
+    void DepthCubeTexture::Clear(Graphics* pGfx)
+    {
+        for(int i = 0 ; i < 6; i++)
+            depthBuffers[i]->Clear(pGfx);
+    }
+
+    
+    std::shared_ptr<DepthCubeTexture> DepthCubeTexture::Create(Graphics* pGfx, TinyEngine::Graph::ResourceDesc desc)
+    {
+        if(desc.type == TinyEngine::Graph::ResourceType::ShadowCubeMap)
+        {
+            return std::make_shared<DepthCubeTexture>(reinterpret_cast<DirectXGraphics*>(pGfx), 1024); // TODO: customize size
+        }
+        THROW_ENGINE_EXCEPTION("cannot create render target from resource desc");
     }
 }

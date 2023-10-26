@@ -14,6 +14,7 @@ Renderer::Renderer(Mesh mesh)
 Renderer::Renderer(Mesh mesh, std::shared_ptr<Material> pMaterial)
     :mesh(mesh), pMaterial(pMaterial)
 {
+    bounds = mesh.bounds;
     this->pMaterial->Bind(this);
 }
 
@@ -131,6 +132,13 @@ void Renderer::SetMesh(Mesh mesh)
 Mesh& Renderer::GetMesh()
 {
     return mesh;
+}
+
+
+Bounds Renderer::GetBounds()
+{
+    Vector3 worldCenter = pGameObject->transform().GetWorldMatrix() * Vector4(bounds.GetCenter(), 1.0f);
+    return Bounds(worldCenter, bounds.GetSize());
 }
 
 // UniformBuffer& Renderer::GetObjBufferData()

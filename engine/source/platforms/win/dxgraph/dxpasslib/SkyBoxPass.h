@@ -44,7 +44,6 @@ namespace TinyEngine::Graph
     private:
         ShaderPass skyboxPass;
         DirectXCubeTexture skyboxTexture;
-
         Mesh cubeMesh;
     };
 }

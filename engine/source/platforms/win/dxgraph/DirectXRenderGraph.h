@@ -1,11 +1,18 @@
 #pragma once
+#include <wrl.h>
+#include <d3d11.h>
 #include "graph/RenderGraph.h"
-#include "dxgraphics/DirectXRenderTarget.h"
+// #include "dxgraphics/DirectXRenderTarget.h"
 
 class DirectXGraphics;
 
 namespace wrl = Microsoft::WRL;
-
+namespace TinyEngine
+{
+    class DirectXRenderTarget;
+    class DirectXDepthStencil;
+    class DepthCubeTexture;
+}
 namespace TinyEngine::Graph
 {
     class DXDefaultRenderGraph : public RenderGraph
@@ -24,6 +31,7 @@ namespace TinyEngine::Graph
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXRenderTarget> backBufferHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> depthStencilHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> shadowMapHandle;
+        TinyEngine::Graph::ResourceHandle<TinyEngine::DepthCubeTexture> shadowCubeHandle;
 
         
         wrl::ComPtr<ID3D11Buffer> pFrameConstantBuffer = nullptr;

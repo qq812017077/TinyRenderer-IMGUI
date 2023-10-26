@@ -18,7 +18,7 @@ namespace TinyEngine
 
         HRESULT LoadBlendState(DirectXGraphics* pGfx ,  const BlendDesc& BlendDesc, ID3D11BlendState ** pTargetBlendState);
     private:
-        std::unordered_map<size_t, wrl::ComPtr<ID3D11BlendState>> m_BlendStates;
+        std::unordered_map<int64_t, wrl::ComPtr<ID3D11BlendState>> m_BlendStates;
         // wrl::ComPtr<ID3D11BlendState> pDefaultTransparentBlendState = nullptr;
         // wrl::ComPtr<ID3D11BlendState> pDefaultOpaqueBlendState = nullptr;
     };

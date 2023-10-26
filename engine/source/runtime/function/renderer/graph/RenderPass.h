@@ -22,7 +22,7 @@ namespace TinyEngine::Graph
         
         virtual std::string GetName() const noexcept { return name; }
 
-        virtual void Initialize(RenderGraph& graph) {}
+        virtual void Initialize(Graphics* pGfx, RenderGraph & graph) {}
         
         virtual void Execute(Graphics *pGfx, RenderGraph& graph) { if (executeCallback) executeCallback(pGfx); }
         virtual void Reset() noexcept {}

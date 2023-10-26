@@ -94,6 +94,27 @@ namespace TinyEngine
         GFX_THROW_INFO(pGfx->GetDevice()->CreateDepthStencilView(pDepthStencil.Get(), &depthStencilViewDesc, &pDepthStencilView));
     }
 
+    
+    DirectXDepthStencil::DirectXDepthStencil(DirectXGraphics* pGfx, wrl::ComPtr<ID3D11Texture2D>& pTexture, unsigned int face)
+    : DepthStencil(pGfx, -1, -1)
+    {
+        INFOMAN(*pGfx);
+        Usage usage = Usage::ShadowDepth;
+        D3D11_TEXTURE2D_DESC textureDesc;
+		pTexture->GetDesc( &textureDesc );
+		m_width = textureDesc.Width;
+		m_height = textureDesc.Height;
+
+        D3D11_DEPTH_STENCIL_VIEW_DESC viewDesc = {};
+        viewDesc.Format = MapUsageDepthStencil(usage);
+        viewDesc.Flags = 0u;
+        viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+        viewDesc.Texture2D.MipSlice = 0u;
+        viewDesc.Texture2DArray.ArraySize = 1u;
+        viewDesc.Texture2DArray.FirstArraySlice = face;
+        GFX_THROW_INFO(pGfx->GetDevice()->CreateDepthStencilView(pTexture.Get(), &viewDesc, &pDepthStencilView));
+    }
+
     void DirectXDepthStencil::Clear(Graphics* pGfx)
     {
         internalClear(reinterpret_cast<DirectXGraphics*>(pGfx));
@@ -101,13 +122,6 @@ namespace TinyEngine
     
     void DirectXDepthStencil::BindAsTexture(Graphics* pGfx, unsigned int slot)
     {
-        ID3D11Resource * pResource = nullptr;
-        pTextureView->GetResource(&pResource);
-        // get width and height
-        D3D11_TEXTURE2D_DESC desc;
-        reinterpret_cast<ID3D11Texture2D*>(pResource)->GetDesc(&desc);
-        pResource->Release();
-        
         auto dxGfx = reinterpret_cast<DirectXGraphics*>(pGfx);
         dxGfx->BindTexture(slot, pTextureView, Graphics::EBindType::ToPS);
         dxGfx->BindSampler(slot, pSamplerState, Graphics::EBindType::ToPS);
@@ -134,4 +148,7 @@ namespace TinyEngine
         }
         THROW_ENGINE_EXCEPTION("cannot create render target from resource desc");
     }
+
+
+    
 }

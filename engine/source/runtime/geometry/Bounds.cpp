@@ -1,5 +1,16 @@
 #include "Bounds.h"
 
+
+int Bounds::MaxExtentDim()
+{
+    if(m_Extents.x > m_Extents.y && m_Extents.x > m_Extents.z)
+        return 0;
+    else if(m_Extents.y > m_Extents.z)
+        return 1;
+    else
+        return 2;
+}
+
 bool Bounds::Intersects(const Bounds bounds)
 {
     auto min = GetMin();
@@ -11,6 +22,30 @@ bool Bounds::Intersects(const Bounds bounds)
             min.z <= boundsMax.z && max.z >= boundsMin.z;
 }
 
+
+bool Bounds::IntersectsWithSphere(const Vector3& center, const float& radius)
+{
+    auto min_bound = GetMin();
+    auto max_bound = GetMax();
+    for (size_t i = 0; i < 3; ++i)
+    {
+        if (center[i] < min_bound[i])
+        {
+            if ((min_bound[i] - center[i]) > radius)
+            {
+                return false;
+            }
+        }
+        else if (center[i] > max_bound[i])
+        {
+            if ((center[i] - max_bound[i]) > radius)
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
 void Bounds::Encapsulate(Vector3 point)
 {
@@ -99,4 +134,69 @@ Vector3 Bounds::ClosestPoint(Vector3 point)
     else if(point.z > max.z)
         closestPoint.z = max.z;
     return closestPoint;
+}
+
+
+Bounds Bounds::Transform(Matrix4x4 transform)
+{
+    const Vector3 g_BoxOffset[8] = {Vector3(-1.0f, -1.0f, 1.0f),
+                                        Vector3(1.0f, -1.0f, 1.0f),
+                                        Vector3(1.0f, 1.0f, 1.0f),
+                                        Vector3(-1.0f, 1.0f, 1.0f),
+                                        Vector3(-1.0f, -1.0f, -1.0f),
+                                        Vector3(1.0f, -1.0f, -1.0f),
+                                        Vector3(1.0f, 1.0f, -1.0f),
+                                        Vector3(-1.0f, 1.0f, -1.0f)};
+
+    size_t const CORNER_COUNT = 8;
+
+    Vector3 min;
+    Vector3 max;
+
+    // Compute and transform the corners and find new min/max bounds.
+    for (size_t i = 0; i < CORNER_COUNT; ++i)
+    {
+        Vector3 corner_before = m_Extents * g_BoxOffset[i] + m_Center;
+        Vector4 corner_with_w = transform * Vector4(corner_before.x, corner_before.y, corner_before.z, 1.0f);
+        Vector3 corner        = Vector3(corner_with_w.x / corner_with_w.w,
+                                        corner_with_w.y / corner_with_w.w,
+                                        corner_with_w.z / corner_with_w.w);
+
+        if (0 == i)
+        {
+            min = corner;
+            max = corner;
+        }
+        else
+        {
+            min = Vector3::Min(min, corner);
+            max = Vector3::Max(max, corner);
+        }
+    }
+
+    Bounds out;
+    out.SetMinMax(min, max);
+    return out;
+}
+
+void Bounds::GetVertices(Vector3* vertices)
+{
+    auto min = GetMin();
+    auto max = GetMax();
+    vertices[0] = Vector3(min.x, min.y, min.z);
+    vertices[1] = Vector3(min.x, min.y, max.z);
+    vertices[2] = Vector3(min.x, max.y, min.z);
+    vertices[3] = Vector3(min.x, max.y, max.z);
+    vertices[4] = Vector3(max.x, min.y, min.z);
+    vertices[5] = Vector3(max.x, min.y, max.z);
+    vertices[6] = Vector3(max.x, max.y, min.z);
+    vertices[7] = Vector3(max.x, max.y, max.z);
+
+}
+
+Bounds Bounds::Union(const Bounds& a, const Bounds& b)
+{
+    Bounds bounds = a;
+    bounds.Encapsulate(b);
+    return bounds;
 }

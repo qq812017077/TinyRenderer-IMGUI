@@ -3,6 +3,8 @@
 class IShaderHelper;
 struct Matrix4x4;
 struct Vector3;
+
+
 class Camera : public Component
 {
 public:

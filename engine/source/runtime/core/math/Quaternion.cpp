@@ -356,7 +356,6 @@ Quaternion Quaternion::SlerpUnclamped(Quaternion a, Quaternion b, float t)
 Quaternion Quaternion::LookRotation(const Vector3 &forward, const Vector3 &up)
 {
     Vector3 _forward = forward;
-    _forward.z = 0.0f;
     _forward.normalize();
 
     Vector3 left = Vector3::Cross(up, _forward);

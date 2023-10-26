@@ -6,6 +6,7 @@
 #include <vector>
 namespace TinyEngine
 {
+    class BVHNode;
     class Effect;
     struct AmbientLight
     {
@@ -22,7 +23,11 @@ namespace TinyEngine
             float padding2;
         };
         DirectionalLightBuffer m_buffer;
-        Matrix4x4 m_lightVP;
+        Matrix4x4 m_lightView;
+        Matrix4x4 m_lightProj;
+        Matrix4x4 m_lightViewProj;
+
+        std::vector<Renderer *> visibleRenderers;
     };
 
     struct EffectDesc
@@ -38,14 +43,21 @@ namespace TinyEngine
 
     struct PointLight
     {
-        Vector3 pos;
-        float padding;
-        Vector4 color;
-        float atten;
-        float range;
-        // float kConstant;
-        // float kLinear;
-        // float kQuadratic;
+        struct PointLightBuffer
+        {
+            Vector3 pos;
+            float padding;
+            Vector4 color;
+            float atten;
+            float range;
+        };
+        PointLightBuffer m_buffer;
+        Matrix4x4 m_lightView[6];
+        Matrix4x4 m_lightProj;
+        Matrix4x4 m_lightViewProj[6];
+
+        std::vector<Renderer *> visibleRenderers;
+
     };
 
     class Scene
@@ -63,15 +75,27 @@ namespace TinyEngine
         std::vector<PointLight> m_point_lights;
         
         // all effectDesc
-        std::vector<EffectDesc> effectDescs;
-        std::vector<ShadowCastDesc> ShadowCastDescs;
-        std::vector<Renderer *> selectedRenderers;
+        std::vector<Renderer *>     m_renderers;
+        std::vector<Renderer *>     selectedRenderers;
+        std::vector<EffectDesc>     CamVisibleRenderers;
+
+        Bounds scene_bounds;
         void                        Lock() { m_scene_mutex.lock(); }
         void                        Unlock() { m_scene_mutex.unlock(); }
         void                        Load();
         void                        Clear();
-        
+        void updateVisibleObjects(std::vector<EffectDesc> & effectDescs, std::vector<ShadowCastDesc> & ShadowCastDescs);
     private:
+        void updateVisibleObjectsDirectionalLight(std::vector<ShadowCastDesc> & ShadowCastDescs);
+        void updateVisibleObjectsPointLight(std::vector<ShadowCastDesc> & ShadowCastDescs);
+        // void updateVisibleObjectsSpotLight();
+        void updateVisibleObjectsMainCamera(std::vector<EffectDesc> & effectDescs);
+
+        // std::shared_ptr<BVHNode> m_bvh_root;
+        
+
+        Matrix4x4 CalculateDirectionalLightCamera();
+
         std::mutex m_scene_mutex;
     };
 }

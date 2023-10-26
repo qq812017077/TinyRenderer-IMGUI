@@ -52,11 +52,13 @@ namespace TinyEngine
         }
         //camera 
         m_scene->m_main_camera = Camera::pActivedCamera;
-        
+        m_scene->m_renderers = std::move(m_renderers);
         //directional light
         m_scene->m_directional_light.m_buffer.m_direction = Light::GetDirectionalLight()->pTransform->forward();
         m_scene->m_directional_light.m_buffer.m_color = Light::GetDirectionalLight()->GetColor();
-        m_scene->m_directional_light.m_lightVP = Light::GetDirectionalLight()->GetLightVP();
+        // Light::GetDirectionalLight()->GetLightView(&(m_scene->m_directional_light.m_lightView));
+        // Light::GetDirectionalLight()->GetLightProj(&(m_scene->m_directional_light.m_lightProj));
+        // m_scene->m_directional_light.m_lightViewProj = m_scene->m_directional_light.m_lightProj * m_scene->m_directional_light.m_lightView;
         
         // point light
         auto pointLights = Light::GetPointLightList();
@@ -64,13 +66,21 @@ namespace TinyEngine
         for(size_t i = 0; i < m_scene->m_point_lights.size(); ++i)
         {
             PointLight pointLight;
-            pointLight.pos = pointLights[i]->pTransform->GetPosition();
-            pointLight.color = pointLights[i]->GetColor();
-            pointLight.atten = 1.0f;
-            pointLight.range = pointLights[i]->GetRange();
+            pointLight.m_buffer.pos = pointLights[i]->pTransform->GetPosition();
+            pointLight.m_buffer.color = pointLights[i]->GetColor();
+            pointLight.m_buffer.atten = 1.0f;
+            pointLight.m_buffer.range = pointLights[i]->GetRange();
+            
+            pointLights[i]->GetLightView(pointLight.m_lightView);
+            pointLights[i]->GetLightProj(&(pointLight.m_lightProj));
+            for(int j = 0 ; j < 6; j++)
+                pointLight.m_lightViewProj[j] = pointLight.m_lightProj * pointLight.m_lightView[j];
             m_scene->m_point_lights[i] = pointLight;
         }
 
+        
+        std::vector<EffectDesc>     effectDescs;
+        std::vector<ShadowCastDesc> shadowCastDescs;
         // add all info(required for rendering) to scene
         for(auto & pair : effectQueueByPriority)
         {
@@ -78,20 +88,17 @@ namespace TinyEngine
             for(auto & effect : pair.second)
             {
                 if(effect->CastShadow()) 
-                    m_scene->ShadowCastDescs.emplace_back(
-                        ShadowCastDesc{rendererQueue[effect]
-                    });
+                    shadowCastDescs.emplace_back(ShadowCastDesc{rendererQueue[effect]});
                 
-                m_scene->effectDescs.emplace_back(
-                    EffectDesc{
-                        effect,
-                        rendererQueue[effect]
-                });
+                effectDescs.emplace_back(EffectDesc{effect,rendererQueue[effect]});
             }
         }
 
         effectQueueByPriority.clear();
         rendererQueue.clear();
+        m_renderers.clear();
+        m_scene->updateVisibleObjects(effectDescs, shadowCastDescs);
+        
         m_scene->Unlock();
     }
 
@@ -103,6 +110,7 @@ namespace TinyEngine
             auto pEffect = pMaterial->GetEffect();
             effectQueueByPriority[pEffect->queuePriority].emplace(pEffect.get());
             rendererQueue[pEffect.get()].push_back(pRenderer);
+            m_renderers.emplace_back(pRenderer);
         }
     }
     void SceneManager::SetSelectedGameObject(GameObject * pGameObject) {

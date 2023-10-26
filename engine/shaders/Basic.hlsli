@@ -43,12 +43,11 @@ struct VS_OUTPUT
 struct SHADOW_VS_OUTPUT
 {
 	float4 pos : SV_Position;
+    float4 viewPos : POSITION;
 };
 
 cbuffer PerFrameCBuf : register(b0)
 {
-	matrix g_View;
-	matrix g_Proj;
     matrix g_ViewProj;
 };
 
@@ -56,7 +55,9 @@ cbuffer PerDrawCBuf : register(b1)
 {
     matrix g_World;
     matrix g_WorldInv;
-    matrix g_LightVP;
+	matrix g_LightView;
+	matrix g_LightProj;
+    matrix g_LightViewProj;
 };
 
 cbuffer LightingCBuf : register(b2) // 160 because of float4 alignment

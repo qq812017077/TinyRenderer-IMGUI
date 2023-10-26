@@ -20,7 +20,7 @@ namespace TinyEngine
     HRESULT BlenderManager::LoadBlendState(DirectXGraphics* pGfx , const BlendDesc& inputBlendDesc, ID3D11BlendState ** pTargetBlendState)
     {
         HRESULT hr = S_OK;
-        size_t uniqueID = inputBlendDesc.GetHash();
+        int64_t uniqueID = inputBlendDesc.GetHash();
         if(m_BlendStates.find(uniqueID) == m_BlendStates.end())
         {
             D3D11_BLEND_DESC blendDesc = CD3D11_BLEND_DESC(CD3D11_DEFAULT());

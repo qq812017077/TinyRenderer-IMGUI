@@ -87,7 +87,7 @@ void Mesh::SetVertexPosition(std::vector<Float3> positions)
     availableVertexType |= VertexDataType::Position;
     Vector3 minPos = positions[0];
     Vector3 maxPos = positions[0];
-    for (int i = 0; i < positions.size(); i++)
+    for (unsigned int i = 0; i < positions.size(); i++)
     {
         vertices[i].position = positions[i];
         minPos = Vector3::Min(minPos, positions[i]);
@@ -109,7 +109,7 @@ void Mesh::SetVertexNormal(std::vector<Float3> normals)
 {
     this->normals = normals;
     availableVertexType |= VertexDataType::Normal;
-    for (int i = 0; i < normals.size(); i++)
+    for (unsigned int i = 0; i < normals.size(); i++)
     {
         vertices[i].normal = normals[i];
     }
@@ -119,7 +119,7 @@ void Mesh::SetVertexColor(std::vector<ColorRGBA> colors)
 {
     this->colors = colors;
     availableVertexType |= VertexDataType::Color;
-    for (int i = 0; i < colors.size(); i++)
+    for (unsigned int i = 0; i < colors.size(); i++)
     {
         vertices[i].color = colors[i];
     }
@@ -129,7 +129,7 @@ void Mesh::SetVertexTexCoord(std::vector<Float2> texCoords)
 {
     this->texCoords = texCoords;
     availableVertexType |= VertexDataType::TexCoord;
-    for (int i = 0; i < texCoords.size(); i++)
+    for (unsigned int i = 0; i < texCoords.size(); i++)
     {
         vertices[i].texCoord = texCoords[i];
     }
@@ -139,7 +139,7 @@ void Mesh::SetVertexTangent(std::vector<Float3> tangents)
 {
     this->tangents = tangents;
     availableVertexType |= VertexDataType::Tangent;
-    for (int i = 0; i < tangents.size(); i++)
+    for (unsigned int i = 0; i < tangents.size(); i++)
     {
         vertices[i].tangent = tangents[i];
     }
@@ -149,7 +149,7 @@ void Mesh::SetVertexBinormal(std::vector<Float3> binormals)
 {
     this->binormals = binormals;
     availableVertexType |= VertexDataType::Binormal;
-    for (int i = 0; i < binormals.size(); i++)
+    for (unsigned int i = 0; i < binormals.size(); i++)
     {
         vertices[i].binormal = binormals[i];
     }

@@ -13,10 +13,6 @@ namespace TinyEngine::Graph
         RegisterSource(std::make_unique<SourceAttachment<TinyEngine::BufferResource>>("buffer", bufferhandle));
     }
     
-    void BufferPass::Initialize(RenderGraph & graph)
-    {
-        
-    }
 
     
     void BufferPass::Execute(Graphics *pGfx, RenderGraph& graph)

@@ -22,4 +22,6 @@ namespace TinyEngine::Rendering
             Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pTextureView{ nullptr };
             Microsoft::WRL::ComPtr<ID3D11SamplerState> pSampler{ nullptr };
     };
+
+    
 }

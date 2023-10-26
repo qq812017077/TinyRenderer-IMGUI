@@ -13,6 +13,7 @@ namespace TinyEngine
     class Scene;
     class DirectXRenderTarget;
     class DirectXDepthStencil;
+    class DepthCubeTexture;
 }
 namespace TinyEngine::Graph
 {
@@ -27,5 +28,6 @@ namespace TinyEngine::Graph
         void internalExecute(DirectXGraphics* pGfx, DXDefaultRenderGraph& graph) override;
     private:
         ResourceHandle<TinyEngine::DirectXDepthStencil> shadowMapHandle;
+        ResourceHandle<TinyEngine::DepthCubeTexture> shadowCubeMapHandle;
     };
 }

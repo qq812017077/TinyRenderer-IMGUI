@@ -23,10 +23,6 @@ namespace TinyEngine::Graph
         RegisterSource(std::make_unique<SourceAttachment<TinyEngine::DirectXDepthStencil>>("depthStencil", depthStencilHandle));
     }
     
-    void RasterPass::Initialize(RenderGraph & graph)
-    {
-        
-    }
 
     void RasterPass::Execute(Graphics *pGfx, RenderGraph& graph)
     {

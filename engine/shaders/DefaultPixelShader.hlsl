@@ -5,19 +5,14 @@ float4 color = float4(1.0, 1.0, 1.0, 1.0);
 Texture2D _MainTex : register(t1);
 SamplerState sampler_MainTex : register(s1);
 
+TextureCube _ShadowCubeMap : register(t3);
+
 // Soft-Shadow 1
 float PCF_Filter(in float2 poissonDisk[PCF_NUM_SAMPLES], float4 shadowCoord, float filterSize, float bias)
 {
   float current_depth = shadowCoord.z;
   float visibility_sum = 0.0;
   
-  // for( int i = 0; i < PCF_NUM_SAMPLES; i++)
-  // {
-  //   float2 offset = poissonDisk[i] * filterSize;  //filterSize 
-  //   // float depth = _ShadowMap.Sample(sampler_ShadowMap, shadowCoord.xy + offset).r;
-  //   // visibility_sum += (((depth + bias) > current_depth) ? 1.0 : 0.0);
-  // }
-  // return visibility_sum / float(PCF_NUM_SAMPLES);
   [unroll]
   for( int x = -PCF_RANGE; x <= PCF_RANGE; x++)
   {
@@ -65,7 +60,7 @@ float useShadowMap(float4 shadowCoord, float bias){
   
 }
 
-float PCF(in float4 shadowCoord, float filterSize, float bias) 
+float DIR_PCF(in float4 shadowCoord, float filterSize, float bias) 
 {
   if(shadowCoord.z > 1.0f || shadowCoord.z < 0.0f) return 1.0;
   float2 poissonDisk[PCF_NUM_SAMPLES];
@@ -76,7 +71,6 @@ float PCF(in float4 shadowCoord, float filterSize, float bias)
 
 // Soft-Shadow 2
 // float PCSS(float4 shadowCoord, float filterSize, float bias){
-
 //   float2 poissonDisk[PCF_NUM_SAMPLES];
 //   // STEP 1: avgblocker depth
 //   float zReceiver = shadowCoord.z;
@@ -91,54 +85,72 @@ float PCF(in float4 shadowCoord, float filterSize, float bias)
 //   return PCF_Filter(poissonDisk, shadowCoord, filterSize * 5, bias);
 // }
 
-float3 get_directional_light(float3 normal, float3 worldPos, DirectionalLight dirLight, float3 texColor)
+float3 get_directional_light(VS_OUTPUT ps_in, DirectionalLight dirLight, float3 texColor)
 {
-    float3 lightdir = normalize(dirLight.dir);
-    float3 light_color = dirLight.color.rgb * texColor;
-    float3 vToL = -lightdir;
-    float3 vReflect = reflect(lightdir, normal);
-    float3 vView = normalize(g_EyePos - worldPos);
-    
-    float3 diffuse = light_color * saturate(dot(normal, vToL));
-    float3 specular = light_color * pow(saturate(dot(vReflect, vView)), 10);
-    return diffuse + specular;
+  float3 normal = ps_in.normal;
+  float3 worldPos = ps_in.worldPos;
+  float3 lightdir = normalize(dirLight.dir);
+  float3 light_color = dirLight.color.rgb * texColor;
+  float3 vToL = -lightdir;
+  float3 vReflect = reflect(lightdir, normal);
+  float3 vView = normalize(g_EyePos - worldPos);
+  
+  float3 diffuse = light_color * saturate(dot(normal, vToL));
+  float3 specular = light_color * pow(saturate(dot(vReflect, vView)), 10);
+
+  float filterSize = 1.0 / float(SAMPLE_SIZE); //SAMPLE_SIZE should be size of Shadow Map,so it equals to  '1 / textureSize(shadowMap, 0)'
+  float visibility = DIR_PCF(ps_in.lightPos / ps_in.lightPos.w, filterSize,  0.005);
+  // float visibility = useShadowMap(ps_in.lightPos / ps_in.lightPos.w, 0.005);
+  // float visibility = PCSS(ps_in.lightPos / ps_in.lightPos.w, filterSize,  0.005);
+  return (diffuse + specular) * visibility;
 }
 
-float3 get_point_light(float3 normal, float3 worldPos, PointLight pointLight, float3 texColor)
+float POINT_SHADOW(in float3 dir, float range, float bias)
 {
-    float3 lightdir = worldPos - pointLight.pos;
-    float distance = length(lightdir);
-    lightdir = normalize(lightdir);
-    float x = distance / pointLight.range;
-    float attenuation = saturate(1.0f - x * x * x * x);
-    
-    float3 light_color = pointLight.color.rgb * texColor * attenuation;
-    float3 vToL = -lightdir;
-    float3 vReflect = reflect(lightdir, normal);
-    float3 vView = normalize(g_EyePos - worldPos);
-    float3 diffuse = light_color * saturate(dot(normal, vToL));
-    float3 specular = light_color * pow(saturate(dot(vReflect, vView)), 10);
-    return diffuse + specular;
+  float current_depth = length(dir) / range;
+  return _ShadowCubeMap.SampleCmpLevelZero(sampler_ShadowMap, dir, current_depth - bias).r;
+}
+float3 get_point_light(VS_OUTPUT ps_in, PointLight pointLight, float3 texColor)
+{
+  float3 normal = ps_in.normal;
+  float3 worldPos = ps_in.worldPos;
+  
+  float3 lightdir = worldPos - pointLight.pos;
+  float distance = length(lightdir);
+  lightdir = normalize(lightdir);
+  float x = distance / pointLight.range;
+  float attenuation = saturate(1.0f - x * x * x * x);
+
+  if(attenuation == 0.0f) return float3(0.0f, 0.0f, 0.0f);
+
+  float3 light_color = pointLight.color.rgb * texColor * attenuation;
+  float3 vToL = -lightdir;
+  float3 vReflect = reflect(lightdir, normal);
+  float3 vView = normalize(g_EyePos - worldPos);
+  float3 diffuse = light_color * saturate(dot(normal, vToL));
+  float3 specular = light_color * pow(saturate(dot(vReflect, vView)), 10);
+  
+  float filterSize = 1.0 / float(SAMPLE_SIZE); //SAMPLE_SIZE should be size of Shadow Map,so it equals to  '1 / textureSize(shadowMap, 0)'
+  float visibility = POINT_SHADOW(worldPos - pointLight.pos, pointLight.range,  0.005);
+  return (diffuse + specular) * visibility;
 }
 
 
 float4 main(VS_OUTPUT ps_in) : SV_Target
 {
     // phong shading
+    ps_in.normal = normalize(ps_in.normal);
     float3 vNormal = normalize(ps_in.normal);
-	float4 texColor = _MainTex.Sample(sampler_MainTex, ps_in.tex);
+	  float4 texColor = _MainTex.Sample(sampler_MainTex, ps_in.tex);
     texColor.rgb = float3(texColor.r * color.r, texColor.g * color.g, texColor.b * color.b);
 
     float3 ambient = texColor.rgb * float3(0.06, 0.06, 0.06);
     // directional light
-    float3 dir_color = get_directional_light(vNormal, ps_in.worldPos, g_DirLight, texColor.rgb);
+    float3 dir_color = get_directional_light(ps_in, g_DirLight, texColor.rgb);
+    
+    
     // point light
-    float3 point_color = get_point_light(vNormal, ps_in.worldPos, g_PointLight, texColor.rgb);
-
-    float filterSize = 1.0 / float(SAMPLE_SIZE); //SAMPLE_SIZE should be size of Shadow Map,so it equals to  '1 / textureSize(shadowMap, 0)'
-    // float visibility = useShadowMap(ps_in.lightPos / ps_in.lightPos.w, 0.005);
-    float visibility = PCF(ps_in.lightPos / ps_in.lightPos.w, filterSize,  0.005);
-    // float visibility = PCSS(ps_in.lightPos / ps_in.lightPos.w, filterSize,  0.005);
+    float3 point_color = get_point_light(ps_in, g_PointLight, texColor.rgb);
     float3 color = dir_color + point_color;
-    return float4(ambient + color * visibility, 1.0);
+    return float4(ambient + color, 1.0);
 }

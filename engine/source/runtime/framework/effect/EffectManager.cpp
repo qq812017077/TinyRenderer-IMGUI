@@ -161,6 +161,7 @@ namespace TinyEngine
     
     std::string EffectManager::Load(EShaderType shaderType, std::string shaderPath)
     {
+        if(!fs::exists(shaderPath)) return "none";
         std::string shaderName = shaderPath;
         
         // build map: shaderName -> shaderPath

@@ -27,6 +27,7 @@ public:
     Transform(Transform const& other) = delete;
     Transform& operator=(Transform& other) noexcept;
     Transform& operator=(const Transform& other) noexcept;
+    bool IsDirty() const;
 
     void SetPosition(const Vector3& position);
     void SetLocalPosition(const Vector3& position);
@@ -68,9 +69,10 @@ public:
     bool IsChildOf(Transform * parent) const;
     
     Transform* FindChild(const char * name) const;
-    Transform* GetChild(int index) const;
+    Transform* GetChild(unsigned int index) const;
     int GetChildCount() const;
     void DetachChildren();
+
 protected:
     void Init() override;
 private:

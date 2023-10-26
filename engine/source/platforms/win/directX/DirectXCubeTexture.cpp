@@ -4,7 +4,6 @@
 
 namespace TinyEngine::Rendering
 {
-
     void DirectXCubeTexture::CreateResource(DirectXGraphics* pGfx)
     {
         D3D11_TEXTURE2D_DESC texDesc = {};
@@ -19,7 +18,7 @@ namespace TinyEngine::Rendering
         texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
         texDesc.CPUAccessFlags = 0;
         texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
-
+        
         // subresource data
         D3D11_SUBRESOURCE_DATA initData[6];
         for(int i = 0; i < 6; i++)
@@ -40,10 +39,8 @@ namespace TinyEngine::Rendering
         srvDesc.TextureCube.MipLevels = texDesc.MipLevels;
         srvDesc.TextureCube.MostDetailedMip = 0;
         GFX_THROW_INFO(pGfx->GetDevice()->CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
-
         // create sampler state
         D3D11_SAMPLER_DESC samplerDesc = CD3D11_SAMPLER_DESC{ CD3D11_DEFAULT{} };
-
         GFX_THROW_INFO(pGfx->GetDevice()->CreateSamplerState(&samplerDesc, &pSampler));
     }
 
@@ -59,4 +56,5 @@ namespace TinyEngine::Rendering
     {
         for(int i = 0; i < 6; i++) textures[i] = Texture::LoadFrom(paths[i]);
     }
+
 }

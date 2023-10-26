@@ -3,6 +3,7 @@
 #include <iostream>
 #include "EngineMath.h"
 #include "Quaternion.h"
+#include <DirectXMath.h>
 /**************************************************************************************************/
 /*                                        Matrix4x4 Part                                          */
 /**************************************************************************************************/
@@ -282,7 +283,7 @@ Matrix4x4 Matrix4x4::Translation(const Vector3& translation)
     return result;
 }
 
-Matrix4x4 Matrix4x4::Rotation(const Vector3& eulerAngle)
+Matrix4x4 Matrix4x4::Rotation(Vector3 eulerAngle)
 {
     Matrix4x4 result = Identity();
     // angle to radian
@@ -304,6 +305,29 @@ Matrix4x4 Matrix4x4::Rotation(const Vector3& eulerAngle)
     result.data[2][0]=-cosX*sinY*cosZ+sinX*sinZ;
     result.data[2][1]=cosX*sinY*sinZ+sinX*cosZ;
     result.data[2][2]=cosX*cosY;
+    return result;
+}
+/**
+ * @brief 
+ *      rotation matrix is a matrix composed of three orthogonal unit vectors, 
+ *      each of which is the direction of the x, y, and z axes after rotation
+ * 
+ * @param forward 
+ * @param up 
+ * @return Matrix4x4 
+ */
+Matrix4x4 Matrix4x4::LookRotation(Vector3 forward, Vector3 up)
+{
+    Vector3 zaxis = forward.normalized();
+    Vector3 xaxis = up.crossProduct(zaxis).normalized();
+    Vector3 yaxis = zaxis.crossProduct(xaxis);
+
+    Matrix4x4 result{
+        xaxis.x, xaxis.y, xaxis.z, 0,
+        yaxis.x, yaxis.y, yaxis.z, 0,
+        zaxis.x, zaxis.y, zaxis.z, 0,
+        0, 0, 0, 1
+    };
     return result;
 }
 
@@ -342,18 +366,45 @@ Matrix4x4 Matrix4x4::Scale(const Vector3& scale)
     return result;
 }
 
-Matrix4x4 Matrix4x4::LookAt(const Vector3& eye, const Vector3& target, const Vector3& up)
+Matrix4x4 Matrix4x4::LookAtLH(Vector3 eye, Vector3 target, Vector3 up)
 {
-    Vector3 forward = Vector3::Normalize(target - eye);
-    return LookAt(forward, up);
+    // auto dxresult = DirectX::XMMatrixLookAtLH(
+    //     DirectX::XMVectorSet(eye.x, eye.y, eye.z, 1.0f),
+    //     DirectX::XMVectorSet(target.x, target.y, target.z, 1.0f),
+    //     DirectX::XMVectorSet(up.x, up.y, up.z, 1.0f)
+    // );
+    Vector3 zaxis = (target - eye).normalized();
+    Vector3 xaxis = up.crossProduct(zaxis).normalized();
+    Vector3 yaxis = zaxis.crossProduct(xaxis);
+
+    Vector3 negEyePos = -eye;
+    
+    Matrix4x4 result{
+        xaxis.x, xaxis.y, xaxis.z, negEyePos.dot(xaxis),
+        yaxis.x, yaxis.y, yaxis.z, negEyePos.dot(yaxis),
+        zaxis.x, zaxis.y, zaxis.z, negEyePos.dot(zaxis),
+        0, 0, 0, 1
+    };
+    return result;
 }
 
-Matrix4x4 Matrix4x4::LookAt(const Vector3& forward, const Vector3& up)
+Matrix4x4 Matrix4x4::LookAtRH(Vector3 eye, Vector3 target, Vector3 up)
 {
-    Vector3 right = Vector3::Normalize(Vector3::Cross(up, forward));
-    auto rotation = Matrix4x4::Rotation(Quaternion::LookRotation(forward, up));
-    return rotation;
+    Vector3 zaxis = (eye - target).normalized();    //eye direction is opposite to zaxis
+    Vector3 xaxis = up.crossProduct(zaxis).normalized();
+    Vector3 yaxis = zaxis.crossProduct(xaxis);
+
+    Vector3 negEyePos = -eye;
+    
+    Matrix4x4 result{
+        xaxis.x, xaxis.y, xaxis.z, negEyePos.dot(xaxis),
+        yaxis.x, yaxis.y, yaxis.z, negEyePos.dot(yaxis),
+        zaxis.x, zaxis.y, zaxis.z, negEyePos.dot(zaxis),
+        0, 0, 0, 1
+    };
+    return result;
 }
+
 Matrix4x4 Matrix4x4::TRS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale)
 {
     auto transMat = Matrix4x4::Translation(translation);

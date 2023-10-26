@@ -29,13 +29,16 @@ public:
     void SetSharedMaterial(std::shared_ptr<Material> pMaterial);
     void SetMesh(Mesh mesh);
     Mesh& GetMesh();
+    Bounds GetBounds();
 
     void UpdateObjBuffer(IShaderHelper& shaderHelper);
+
+    
 protected:
     void ClearObjBuffer();
     
     bool sharedMaterial = true;
     std::shared_ptr<Material> pMaterial;
     Mesh mesh;
-    
+    Bounds bounds;
 };

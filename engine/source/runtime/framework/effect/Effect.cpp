@@ -21,7 +21,7 @@ namespace TinyEngine
     {
         if(m_Passes.size() == 0)
             return false;
-        for(int i = 0 ; i < m_Passes.size(); ++i)
+        for(unsigned int i = 0 ; i < m_Passes.size(); ++i)
         {
             if(!EffectManager::Get().IsValidShader(m_Passes[i].vsName)) return false;
             if(!EffectManager::Get().IsValidShader(m_Passes[i].psName)) return false;

@@ -21,7 +21,7 @@ namespace TinyEngine
         HRESULT LoadStencilState(DirectXGraphics* pGfx , const TinyEngine::Rendering::EStencilMode mode,
          ID3D11DepthStencilState ** pTargetBlendState);
     private:
-        std::unordered_map<size_t, wrl::ComPtr<ID3D11DepthStencilState>> m_StencilStates;
+        std::unordered_map<int64_t, wrl::ComPtr<ID3D11DepthStencilState>> m_StencilStates;
         wrl::ComPtr<ID3D11DepthStencilState> pDefaultDepthStencilState = nullptr;
         wrl::ComPtr<ID3D11DepthStencilState> pWriteDepthStencilState = nullptr;
         wrl::ComPtr<ID3D11DepthStencilState> pReadDepthStencilState = nullptr;

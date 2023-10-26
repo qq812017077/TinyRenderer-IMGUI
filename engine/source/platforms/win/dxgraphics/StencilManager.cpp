@@ -18,7 +18,7 @@ namespace TinyEngine
     HRESULT StencilManager::LoadStencilState(DirectXGraphics* pGfx , const DepthStencilDesc& depthStencilDesc, ID3D11DepthStencilState ** pTargetBlendState)
     {
         HRESULT hr = S_OK;
-        size_t uniqueID = depthStencilDesc.GetHash();
+        int64_t uniqueID = depthStencilDesc.GetHash();
         if(m_StencilStates.find(uniqueID) == m_StencilStates.end())
         {
             D3D11_DEPTH_STENCIL_DESC desc = CD3D11_DEPTH_STENCIL_DESC(CD3D11_DEFAULT());
