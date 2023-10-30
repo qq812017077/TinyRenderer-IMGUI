@@ -24,10 +24,19 @@ Graphics::~Graphics()
 
 void Graphics::OnTick(TinyEngine::FrameBuffer * pFrameBuffer)
 {
-    // ClearBuffer(0.0f, 0.0f, 0.0f);
-
+    // process swap data between logic and render contexts
     TinyEngine::EffectManager::Get().LoadShaders(this);
 
+    // prepare render command context
+
+    // update per-frame buffer
+
+    // update per-frame visible objects
+
+
+    // prepare pipeline's render passes data ( by render graph )
+
+    // render one frame ( by render graph )
     if(m_pRenderGraph == nullptr)
     {
     }else
@@ -38,5 +47,5 @@ void Graphics::OnTick(TinyEngine::FrameBuffer * pFrameBuffer)
         m_pRenderGraph->Execute(this);
     }
     
-    // DrawAll(pFrameBuffer);
+    
 }

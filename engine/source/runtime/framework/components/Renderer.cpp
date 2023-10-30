@@ -14,7 +14,6 @@ Renderer::Renderer(Mesh mesh)
 Renderer::Renderer(Mesh mesh, std::shared_ptr<Material> pMaterial)
     :mesh(mesh), pMaterial(pMaterial)
 {
-    bounds = mesh.bounds;
     this->pMaterial->Bind(this);
 }
 
@@ -36,6 +35,9 @@ void Renderer::OnPreUpdate()
         // RenderQueueManager::Get().AddMaterial(pMaterial.get());
         RenderQueueManager::Get().AddRenderer(this);
         TinyEngine::SceneManager::Get().AddRenderer(this);
+
+        Vector3 worldCenter = pGameObject->transform().GetWorldMatrix() * Vector4(mesh.bounds.GetCenter(), 1.0f);
+        bounds = Bounds(worldCenter, mesh.bounds.GetSize() * pGameObject->transform().GetScale());
     }
 }
 
@@ -137,8 +139,7 @@ Mesh& Renderer::GetMesh()
 
 Bounds Renderer::GetBounds()
 {
-    Vector3 worldCenter = pGameObject->transform().GetWorldMatrix() * Vector4(bounds.GetCenter(), 1.0f);
-    return Bounds(worldCenter, bounds.GetSize());
+    return bounds;
 }
 
 // UniformBuffer& Renderer::GetObjBufferData()

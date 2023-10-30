@@ -61,7 +61,7 @@ namespace TinyEngine::Graph
             
             pGfx->UpdateCBuffer(graph.GetLightingConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
             // draw all objects that cast shadow
-            // pGfx->ApplyPassToRenderList(dir_shadowPass, scene->m_directional_light.visibleRenderers); // load shader and render state
+            pGfx->ApplyPassToRenderList(dir_shadowPass, scene->m_directional_light.visibleRenderers); // load shader and render state
             
             //for points light
             auto & light = scene->m_point_lights[0];

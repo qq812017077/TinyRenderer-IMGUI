@@ -42,6 +42,14 @@ public:
         ToAll
     };
 
+    enum class EDrawMode
+    {
+        TriangleList,
+        LineList,
+        LineStrip,
+        PointList
+    };
+
     struct ViewPort
     {
         int pos_x;
@@ -64,11 +72,12 @@ public:
     
     virtual void SetViewport(ViewPort viewPort) = 0;
 
+    virtual void UnbindAllResource() = 0;
     virtual void ApplyState(TinyEngine::RenderState * pState) = 0;
     virtual void ApplyPass(TinyEngine::ShaderPass & pass) = 0;
     virtual void ApplyPassToRenderList(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers) = 0;
     virtual void ApplyPassToRenderTarget(TinyEngine::ShaderPass & pass, TinyEngine::RenderTarget * pRenderers) = 0;
-    virtual void ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh) = 0;
+    virtual void ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh, EDrawMode mode = EDrawMode::TriangleList) = 0;
     
     //Events
     virtual void UpdateRenderSceneViewPort(int pos_x, int pos_y, int width, int height) = 0;

@@ -5,7 +5,10 @@
 #include "Shader.h"
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include "geometry/Primitive.h"
+
 Camera* Camera::pActivedCamera = nullptr;
+std::vector<Camera*> Camera::cameraList{};
 Camera::Camera():
     fov(60.0f),
     aspect(1280.0f / 720.0f),
@@ -13,6 +16,9 @@ Camera::Camera():
     farPlane(1000.0f)
 {
     if(pActivedCamera == nullptr) pActivedCamera = this;
+
+    cameraList.emplace_back(this);
+    updateFrusutmMesh();
 }
 
 Camera::~Camera()
@@ -22,23 +28,31 @@ Camera::~Camera()
 void Camera::SetFOV(float fov)
 {
     this->fov = fov;
+    updateFrusutmMesh();
 }
 
 void Camera::SetAspect(float aspect)
 {
     this->aspect = aspect;
+    updateFrusutmMesh();
 }
 
 void Camera::SetNear(float nearPlane)
 {
     this->nearPlane = nearPlane;
+    updateFrusutmMesh();
 }
 
 void Camera::SetFar(float farPlane)
 {
     this->farPlane = farPlane;
+    updateFrusutmMesh();
 }
 
+Mesh * Camera::GetFrustumMesh()
+{
+    return &frustumMesh;
+}
 // 
 void Camera::OnUpdate(float deltaTime)
 {
@@ -79,4 +93,10 @@ void Camera::LookAt(Vector3 target)
     Vector3 right = Vector3::Normalize(Vector3::Cross(Vector3::up, forward));
     Vector3 up = Vector3::Normalize(Vector3::Cross(forward, right));
     pTransform->SetRotation(Quaternion::LookRotation(forward, up));
+}
+
+
+void Camera::updateFrusutmMesh()
+{
+    frustumMesh = Primitive::CreateCameraFrustumMesh(fov, aspect, nearPlane, farPlane);
 }

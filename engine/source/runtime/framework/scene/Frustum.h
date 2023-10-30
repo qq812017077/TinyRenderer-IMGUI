@@ -12,6 +12,7 @@ namespace TinyEngine
     class Frustum
     {
         public:
+        friend class Camera;
         enum class Intersection
         {
             OUTSIDE,
@@ -21,6 +22,9 @@ namespace TinyEngine
         public:
             Frustum(Matrix4x4 view, Matrix4x4 projection) : Frustum(projection * view) {}
             Frustum(Matrix4x4 VP);
+            
+            Frustum(const Frustum& frustum);
+            Frustum& operator=(const Frustum& other);
 
             Intersection ContainSphere(const Vector3& center, const float& radius) const;
             Intersection ContainBounds(Bounds bounds) const;
@@ -29,19 +33,16 @@ namespace TinyEngine
             inline Plane& right()  { return planes[1]; }
             inline Plane& bottom()  { return planes[2]; }
             inline Plane& top()  { return planes[3]; }
-            inline Plane& near() { return planes[4]; }
-            inline Plane& far() { return planes[5]; }
+
+            Plane& Near() { return planes[4]; }
+            Plane& Far() { return planes[5]; }
 
             Bounds GetBounds() const { return bounds; }
+            
         private:
         // six plane
         Plane planes[6];
         Bounds bounds;
-        // Plane left;
-        // Plane right;
-        // Plane top;
-        // Plane bottom;
-        // Plane near;
-        // Plane far;
+        Vector3 m_corners[8];
     };
 }

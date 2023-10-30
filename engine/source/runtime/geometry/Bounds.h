@@ -19,12 +19,14 @@ public:
         m_Center = other.m_Center;
         m_Extents = other.m_Extents;
     }
-    Bounds& operator=(Bounds& other) noexcept
+    
+    Bounds& operator=(const Bounds& other) noexcept
     {
         m_Center = other.m_Center;
         m_Extents = other.m_Extents;
         return *this;
     }
+
     ~Bounds() = default;
 
     bool operator==(const Bounds& other) const

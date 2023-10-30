@@ -9,6 +9,9 @@
 
 namespace TinyEngine::Graph
 {
+    /***
+     * PostProcess must close depth write, or we will cannot render pass after it.
+    */
     PostProcessPass::PostProcessPass(std::string name) : RasterPass(name)
     {
         RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DirectXRenderTarget>>("postRT", postHandle));
@@ -26,7 +29,7 @@ namespace TinyEngine::Graph
         outlinePass.rasterDesc.cullMode = TinyEngine::ECullMode::Off;
 
         fullscreenPass = EffectManager::Get().FindPass("Blur/BlurPass");
-        // outlinePass.depthStencilDesc.depthMode = TinyEngine::EDepthMode::Off;
+        fullscreenPass.depthStencilDesc.depthMode = TinyEngine::EDepthMode::Off;
         fullscreenPass.blendDesc = BlendDesc::BlendOneOne();
 
         quad = Primitive::CreateQuadMesh();

@@ -7,3 +7,4 @@
 #include "dxpasslib/PresentPass.h"
 #include "dxpasslib/ShadowPass.h"
 #include "dxpasslib/SkyBoxPass.h"
+#include "dxpasslib/HubPass.h"

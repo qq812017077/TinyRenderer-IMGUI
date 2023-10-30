@@ -4,6 +4,7 @@
 namespace TinyEngine
 {
     using Intersection = Frustum::Intersection;
+
     /**
      * @brief 
      * // [Fast Extraction of Viewing Frustum Planes from the WorldView - Projection
@@ -43,20 +44,19 @@ namespace TinyEngine
         d = VP[3][3] - VP[1][3];
         top() = Plane(normal, d);
 
-        
         // near
-        normal.x = VP[3][0] + VP[2][0];
-        normal.y = VP[3][1] + VP[2][1];
-        normal.z = VP[3][2] + VP[2][2];
-        d = VP[3][3] + VP[2][3];
-        near() = Plane(normal, d);
+        normal.x = VP[2][0];
+        normal.y = VP[2][1];
+        normal.z = VP[2][2];
+        d =  VP[2][3];
+        planes[4] = Plane(normal, d);
 
         // far
         normal.x = VP[3][0] - VP[2][0];
         normal.y = VP[3][1] - VP[2][1];
         normal.z = VP[3][2] - VP[2][2];
         d = VP[3][3] - VP[2][3];
-        far() = Plane(normal, d);
+        planes[5] = Plane(normal, d);
 
         // get eight corners of the frustum from view projection matrix
         Vector3 corners_ndc[8] = {
@@ -77,6 +77,7 @@ namespace TinyEngine
         {
             Vector4 point = invVP * Vector4(corners_ndc[i], 1.0f);
             Vector3 worldPos = Vector3(point.x, point.y, point.z) / point.w; // divide by w, because w must be one.
+            m_corners[i] = worldPos;
             min = Vector3::Min(min, worldPos);
             max = Vector3::Max(max, worldPos);
         }
@@ -85,6 +86,23 @@ namespace TinyEngine
 
     }
     
+    
+    Frustum::Frustum(const Frustum& frustum)
+    {
+        for(int i = 0 ; i < 6; i++)
+            planes[i] = frustum.planes[i];
+        bounds = frustum.bounds;
+        for(int i = 0 ; i < 8; i++)
+            m_corners[i] = frustum.m_corners[i];
+    }
+
+    
+    Frustum& Frustum::operator=(const Frustum& other)
+    {
+        Frustum frustum(other);
+        return std::move(frustum);
+    }
+
     Intersection Frustum::ContainSphere(const Vector3& center, const float& radius) const
     {
         float dist;
@@ -128,10 +146,10 @@ namespace TinyEngine
         float dist;
         for(int i = 0; i < 6; ++i) {
             int out{0};
-            for(int i = 0; i < 8; ++i)
+            for(int j = 0; j < 8; ++j)
             {
-                dist = planes[i].distance(corners[i]);
-                if(dist > 0) out++;
+                dist = planes[i].distance(corners[j]);
+                if(dist < 0) out++;
             }
             if(out == 8) return false;
             

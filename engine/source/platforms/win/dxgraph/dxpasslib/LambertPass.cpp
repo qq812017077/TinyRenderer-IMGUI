@@ -47,7 +47,7 @@ namespace TinyEngine::Graph
             auto & desc = scene->CamVisibleRenderers[i];
             auto pEffect = desc.pEffect;
             auto & renderers = desc.renderers;
-
+            if(renderers.empty()) continue;
             for(size_t j=0; j < pEffect->GetPassCount(); ++j)
             {
                 auto pass = pEffect->GetPass(j);

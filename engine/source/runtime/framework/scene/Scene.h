@@ -60,6 +60,10 @@ namespace TinyEngine
 
     };
 
+    struct CameraList
+    {
+        std::vector<Camera *> cameras;
+    };
     class Scene
     {
     public:
@@ -69,7 +73,9 @@ namespace TinyEngine
         Vector3                 m_center {0, 0, 0};
         float                   m_diagonal {0};
         
+        CameraList              m_camera_list;
         Camera *                m_main_camera {nullptr};
+        Camera *                selectedCamera {nullptr};
         AmbientLight            m_ambient_light;
         DirectionalLight        m_directional_light;
         std::vector<PointLight> m_point_lights;

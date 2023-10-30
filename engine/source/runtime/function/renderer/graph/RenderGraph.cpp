@@ -5,6 +5,7 @@
 #include "RenderPass.h"
 #include "RenderResource.h"
 #include "Attachment.h"
+#include "Graphics.h"
 
 
 #define CHECK_PASS_EXIST(passName) {if(!ExistPass(passName)) THROW_ENGINE_EXCEPTION("Pass not exist: " + passName);}
@@ -94,6 +95,7 @@ namespace TinyEngine::Graph
 	{
 		for( auto& pass: renderPasses)
 		{
+			pGfx->UnbindAllResource();
 			pass->Execute(pGfx, *this);
 		}
 	}

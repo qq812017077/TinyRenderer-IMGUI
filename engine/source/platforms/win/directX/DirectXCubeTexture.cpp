@@ -48,7 +48,7 @@ namespace TinyEngine::Rendering
     void DirectXCubeTexture::BindAsTexture(DirectXGraphics* pGfx, UINT slot)
     {
         pGfx->GetContext()->PSSetShaderResources(slot, 1, pTextureView.GetAddressOf());
-        pGfx->GetContext()->PSGetSamplers(slot, 1, pSampler.GetAddressOf());
+        pGfx->GetContext()->PSSetSamplers(slot, 1, pSampler.GetAddressOf());
     }
 
     

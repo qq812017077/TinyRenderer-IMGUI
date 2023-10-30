@@ -38,11 +38,13 @@ public:
     
     void SetViewport(ViewPort viewPort) override;
     
+    void UnbindAllResource() override;
+
     void ApplyState(TinyEngine::RenderState * pState) override;
     void ApplyPass(TinyEngine::ShaderPass & pass) override;
     void ApplyPassToRenderList(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers) override;
     void ApplyPassToRenderTarget(TinyEngine::ShaderPass & pass, TinyEngine::RenderTarget * pRenderers) override;
-    void ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh) override;
+    void ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh, EDrawMode mode = EDrawMode::TriangleList) override;
     
     void setRasterizerState(const TinyEngine::RasterDesc rasterDesc);
     // Constant Buffer Operation
@@ -69,9 +71,11 @@ public:
     #ifndef NDEBUG
     DxgiInfoManager& GetInfoManager() { return infoManager; }
     #endif
+
+    wrl::ComPtr<ID3D11Buffer> & GetObjectConstantBuffer() {return pObjectConstantBuffer;}
 protected:
     void internalBindRenderTarget(TinyEngine::DirectXRenderTarget* pRenderTarget, TinyEngine::DirectXDepthStencil * pDepthStencil);
-    void drawMesh(HLSLVertexShader* pVertexShader, Mesh & mesh);
+    void drawMesh(HLSLVertexShader* pVertexShader, Mesh & mesh, EDrawMode mode = EDrawMode::TriangleList);
     void CreateDevice() ;
     void CreateBuffers(int width, int height);
 

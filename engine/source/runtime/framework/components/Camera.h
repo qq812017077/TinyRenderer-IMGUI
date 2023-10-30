@@ -1,9 +1,11 @@
 #pragma once
+#include <vector>
+#include <memory>
 #include "Component.h"
+#include "Mesh.h"
 class IShaderHelper;
 struct Matrix4x4;
 struct Vector3;
-
 
 class Camera : public Component
 {
@@ -17,6 +19,7 @@ public:
     void SetNear(float _near);
     void SetFar(float _far);
     
+    Mesh * GetFrustumMesh();
     // View Matrix
     Matrix4x4 GetViewMatrix();
     // Projection Matrix
@@ -24,6 +27,9 @@ public:
     void LookAt(Vector3 target);
     // static void UpdateCameraBuffer(IShaderHelper& shaderHelper);
     static Camera* pActivedCamera;
+
+    static std::vector<Camera*> cameraList;
+
 protected:
     void Init() override;
     void OnUpdate(float deltaTime) override;
@@ -33,4 +39,7 @@ private:
     float orthSize = 200.0f;
     float nearPlane = 0.1f;
     float farPlane = 100.0f;
+
+    Mesh frustumMesh;
+    void updateFrusutmMesh();
 };

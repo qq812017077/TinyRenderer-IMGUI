@@ -67,7 +67,6 @@ namespace TinyEngine
         m_graphics->OnTick(m_framebuffer);
         // 2. render ui
         bool not_quit = m_surface_ui->OnTick(m_framebuffer->m_uistate.get());
-        
         m_graphics->EndFrame();
         //release framebuffer
         return not_quit;

@@ -288,6 +288,69 @@ Mesh Primitive::CreateQuadMesh()
     return mesh;
 }
 
+
+Mesh Primitive::CreateCameraWireframeMesh()
+{
+    const float x = 4.0f / 3.0f * 0.75f;
+    const float y = 1.0f * 0.75f;
+    const float z = -2.0f;
+    const float thalf = x * 0.5f;
+    const float tspace = y * 0.2f;
+    std::vector<Vector3> position = {
+        { -x,y,0.0f }, // 0
+        { x,y,0.0f }, // 1
+        { x,-y,0.0f }, // 2
+        { -x,-y,0.0f }, // 3
+        { 0.0f,0.0f,z }, // 4
+        { -thalf,y + tspace,0.0f }, // 5
+        { thalf,y + tspace,0.0f }, // 6
+        { 0.0f,y + tspace + thalf,0.0f } // 7
+    };
+
+    std::vector<INDICE_TYPE> indices = {
+        0,1, 1,2, 2,3, 3,0,
+        0,4, 1,4, 2,4, 3,4,
+        5,6, 6,7, 7,5
+    };
+
+    Mesh mesh;
+    mesh.SetVertexPosition(position);
+    mesh.SetVertexIndices(indices);
+    return mesh; 
+}
+
+
+Mesh Primitive::CreateCameraFrustumMesh(float fov,float aspect,float nearPlane,float farPlane)
+{
+    float fovRad = fov * 0.5f * PI / 180.0f;
+    float nearY = tanf(fovRad) * nearPlane;
+    float nearX = nearY * aspect;
+    float farY = tanf(fovRad) * farPlane;
+    float farX = farY * aspect;
+
+    std::vector<Float3> position = {
+        { nearX, nearY, nearPlane},
+        { -nearX, nearY, nearPlane},
+        { -nearX, -nearY, nearPlane},
+        { nearX, -nearY, nearPlane},
+        { farX, farY, farPlane},
+        { -farX, farY, farPlane},
+        { -farX, -farY, farPlane},
+        { farX, -farY, farPlane}
+    };
+
+    std::vector<INDICE_TYPE> indices = {
+        0,1, 1,2, 2,3, 3,0,
+        0,4, 1,5, 2,6, 3,7,
+        4,5, 5,6, 6,7, 7,4
+    };
+
+    Mesh mesh;
+    mesh.SetVertexPosition(position);
+    mesh.SetVertexIndices(indices);
+    return mesh; 
+}
+
 Mesh Primitive::CreateCubeMesh(float scale)
 {
     const float side = 1.0f * scale;

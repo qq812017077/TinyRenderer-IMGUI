@@ -15,6 +15,7 @@ namespace TinyEngine
     {
         m_loaded = false;
         
+        selectedCamera = nullptr;
         m_renderers.clear();
         selectedRenderers.clear();
         CamVisibleRenderers.clear();
@@ -23,7 +24,7 @@ namespace TinyEngine
     void Scene::updateVisibleObjects(std::vector<EffectDesc> & effectDescs, std::vector<ShadowCastDesc> & ShadowCastDescs)
     {
         // m_bvh_root = BVHAccel::Build(*this, BVHAccel::SplitMethod::NAIVE);
-        // updateVisibleObjectsDirectionalLight(ShadowCastDescs);
+        updateVisibleObjectsDirectionalLight(ShadowCastDescs);
         updateVisibleObjectsPointLight(ShadowCastDescs);
         updateVisibleObjectsMainCamera(effectDescs);
     }
@@ -49,9 +50,12 @@ namespace TinyEngine
             }
         }
     }
+
+    
     void Scene::updateVisibleObjectsPointLight(std::vector<ShadowCastDesc> & ShadowCastDescs)
     {
         // get bounds sphere from point light
+
         for(auto & point_light : m_point_lights)
         {
             point_light.visibleRenderers.clear();
@@ -88,7 +92,6 @@ namespace TinyEngine
             }
         }
     }
-
     
     Matrix4x4 Scene::CalculateDirectionalLightCamera()
     {
@@ -97,9 +100,6 @@ namespace TinyEngine
 
         Bounds frustum_bounds = frustum.GetBounds();
         
-        Vector4 light_view;
-        Vector4 light_proj;
-
         Vector3 eye = frustum_bounds.GetCenter() + m_directional_light.m_buffer.m_direction * frustum_bounds.GetExtents().length();
         Vector3 center = frustum_bounds.GetCenter();
         Matrix4x4 view = Matrix4x4::LookAtLH(eye, center, Vector3::up);

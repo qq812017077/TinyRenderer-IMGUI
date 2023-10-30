@@ -39,14 +39,13 @@ namespace TinyEngine
         // add default effect
         auto effect = Effect::Create("Default", "shaders/DefaultVertexShader.hlsl", "shaders/DefaultPixelShader.hlsl");
         auto ShadowPass = ShaderPass::Get("ShadowCastPass", "shaders/effects/ShadowVS.hlsl", "shaders/effects/ShadowPS.hlsl");
+        ShadowPass.lightMode = ELightMode::ShadowCaster;
 
         effect->AddPass(ShadowPass);
         auto & defaultPass = (*effect)["DefaultPass"];
         defaultPass.renderingMode = ERenderingMode::Opaque;
         defaultPass.lightMode = ELightMode::ForwardBase;
         effect->queuePriority = RenderQueue::Geometry;
-        (*effect)["ShadowCastPass"].lightMode = ELightMode::ShadowCaster;
-
 
         // add cutout effect
         auto cutoutEffect = Effect::Create("DefaultCutout", "shaders/DefaultVertexShader.hlsl", "shaders/DefaultCutoutPixelShader.hlsl");
@@ -55,6 +54,7 @@ namespace TinyEngine
         cutoutPass.lightMode = ELightMode::ForwardBase;
         cutoutPass.rasterDesc.cullMode = ECullMode::Off;
         cutoutEffect->queuePriority = RenderQueue::AlphaTest;
+        cutoutEffect->AddPass(ShadowPass);
         
         // add transparent effect
         auto transparentEffect = Effect::Create("DefaultTransparent", "shaders/DefaultVertexShader.hlsl", "shaders/DefaultTransparentPixelShader.hlsl");
@@ -79,7 +79,7 @@ namespace TinyEngine
         
 
         // add error effect
-        auto errorEffect = Effect::Create("Error", "shaders/ErrorVertexShader.hlsl", "shaders/ErrorPixelShader.hlsl");
+        auto errorEffect = Effect::Create("Error", "shaders/SimpleVertexShader.hlsl", "shaders/ErrorPixelShader.hlsl");
         errorEffect->FindPass("ErrorPass").renderingMode = ERenderingMode::PostProcessing;
 
 

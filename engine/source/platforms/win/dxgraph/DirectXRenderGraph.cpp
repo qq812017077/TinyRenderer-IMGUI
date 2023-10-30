@@ -36,6 +36,7 @@ namespace TinyEngine::Graph
         auto lightingPass = std::make_unique<LambertPass>("lighting");
         auto skyboxPass = std::make_unique<SkyBoxPass>("skybox");
         auto postPass = std::make_unique<PostProcessPass>("post-process");
+        auto hubPass = std::make_unique<HubPass>("hub");
         auto presentPass = std::make_unique<PresentPass>("present");
         AddRenderPass( std::move( cleanRTPass ) );
         AddRenderPass( std::move( cleanDSPass ) );
@@ -45,6 +46,7 @@ namespace TinyEngine::Graph
         AddRenderPass( std::move( lightingPass ));
         AddRenderPass( std::move( skyboxPass ));
         AddRenderPass( std::move( postPass ) );
+        AddRenderPass( std::move( hubPass ) );
         AddRenderPass( std::move( presentPass ) );
 
         SetLinkage("$.mainRT", "cleanRT.buffer");
@@ -67,8 +69,11 @@ namespace TinyEngine::Graph
         SetLinkage("skybox.renderTarget", "post-process.renderTarget");
         SetLinkage("skybox.depthStencil","post-process.depthStencil");
         
+        SetLinkage("post-process.renderTarget","hub.renderTarget");
+        SetLinkage("post-process.depthStencil","hub.depthStencil");
+        
         //set to backbuffer.
-        SetLinkage("post-process.renderTarget","present.renderTarget");
+        SetLinkage("hub.renderTarget","present.renderTarget");
         SetLinkage("$.backbuffer","present.backbuffer");
         SetLinkage("present.backbuffer","$.backbuffer");
 

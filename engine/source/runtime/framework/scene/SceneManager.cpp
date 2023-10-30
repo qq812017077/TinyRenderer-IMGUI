@@ -49,8 +49,13 @@ namespace TinyEngine
             auto renderer = m_selected_object->GetComponent<Renderer>();
             if(renderer)
                 m_scene->selectedRenderers.emplace_back(renderer);
+            
+            auto camera = m_selected_object->GetComponent<Camera>();
+            if(camera)
+                m_scene->selectedCamera = camera;
         }
         //camera 
+        m_scene->m_camera_list.cameras = Camera::cameraList;
         m_scene->m_main_camera = Camera::pActivedCamera;
         m_scene->m_renderers = std::move(m_renderers);
         //directional light
@@ -77,7 +82,6 @@ namespace TinyEngine
                 pointLight.m_lightViewProj[j] = pointLight.m_lightProj * pointLight.m_lightView[j];
             m_scene->m_point_lights[i] = pointLight;
         }
-
         
         std::vector<EffectDesc>     effectDescs;
         std::vector<ShadowCastDesc> shadowCastDescs;
@@ -120,6 +124,6 @@ namespace TinyEngine
     }
     void SceneManager::setSceneOnce()
     {
-
+        
     }
 } // namespace TinyEngine

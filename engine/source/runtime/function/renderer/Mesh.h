@@ -41,6 +41,7 @@ public:
     ~Mesh();    
     Mesh(Mesh const& other);
     Mesh& operator=(Mesh& other) noexcept;
+    Mesh& operator=(Mesh&& other) noexcept;
 
     // Set Functions
     void SetVertexIndices(std::vector<uint16_t> indices);

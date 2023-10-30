@@ -286,9 +286,15 @@ GameObject* Level::addGameObject(GameObject* pGo)
         auto camGO = CreateGameObject("Cam");
         auto m_main_camera = camGO->AddComponent<Camera>();
         camGO->AddComponent<CamController>();
-        
         camGO->pTransform->SetPosition({ 0.0f, 100.0f, -10.0f });
         camGO->pTransform->SetEulerAngle({ 30.0f, 0.0f, 0.0f });
+
+        // auto cam2 = CreateGameObject("Cam2")->AddComponent<Camera>();
+        // cam2->pTransform->SetPosition({ -50.0f, 150.0f, -50.0f });
+        // cam2->pTransform->SetEulerAngle({ 0.0f, 0.0f, 0.0f });
+        // cam2->SetFar(200.f);
+        // cam2->SetAspect(1280.0f / 720.0f);
+        // cam2->GetGameObject()->AddComponent<FrustumTest>();
 
         auto lightController = CreateGameObject("LightController");
         lightController->AddComponent<LightController>();

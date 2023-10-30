@@ -69,6 +69,12 @@ void DirectXGraphics::SetViewport(ViewPort viewPort)
     vp.TopLeftY = static_cast<FLOAT>(viewPort.pos_y);
     pContext->RSSetViewports(1u, &vp);
 }
+
+void DirectXGraphics::UnbindAllResource()
+{
+    pContext->VSSetShader(nullptr, nullptr, 0u);
+    pContext->PSSetShader(nullptr, nullptr, 0u);
+}
 void DirectXGraphics::ApplyState(TinyEngine::RenderState *pState)
 {
     if (pState == nullptr)
@@ -169,12 +175,12 @@ void DirectXGraphics::ApplyPassToRenderTarget(TinyEngine::ShaderPass &pass, Tiny
     drawMesh(pVertexShader, *quad);
 }
 
-void DirectXGraphics::ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh)
+void DirectXGraphics::ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh, EDrawMode mode)
 {
     if(pMesh == nullptr) THROW_ENGINE_EXCEPTION("Mesh should not be nullptr");
     ApplyPass(pass);
     auto pVertexShader = TinyEngine::EffectManager::Get().VSFindShader<HLSLVertexShader>(pass.vsName);
-    drawMesh(pVertexShader, *pMesh);
+    drawMesh(pVertexShader, *pMesh, mode);
 }
 
 std::shared_ptr<TinyEngine::RenderTarget> DirectXGraphics::CreateRenderTarget()
@@ -250,7 +256,7 @@ wrl::ComPtr<ID3D11Texture2D> DirectXGraphics::GetBackBuffer()
 /***********************************************************************************************************/
 /*                                            Protected Part                                               */
 /***********************************************************************************************************/
-void DirectXGraphics::drawMesh(HLSLVertexShader *pVertexShader, Mesh &mesh)
+void DirectXGraphics::drawMesh(HLSLVertexShader *pVertexShader, Mesh &mesh, EDrawMode mode)
 {
     // BindMesh
     // get vertex buffers, strides, offsets from mesh and layout from vertex shader
@@ -268,7 +274,24 @@ void DirectXGraphics::drawMesh(HLSLVertexShader *pVertexShader, Mesh &mesh)
     pContext->IASetIndexBuffer(pIndexBuffer.Get(), GetIndexDataFormat(mesh.GetIndexStride()), 0u);
 
     // set primitive topology
-    pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    switch(mode)
+    {
+        case EDrawMode::TriangleList:
+            pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            break;
+        case EDrawMode::LineList:
+            pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+            break;
+        case EDrawMode::LineStrip:
+            pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
+            break;
+        case EDrawMode::PointList:
+            pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+            break;
+        default:
+            pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            break;
+    }
 
     // GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
     GFX_THROW_INFO_ONLY(pContext->DrawIndexed(mesh.GetIndexCount(), 0u, 0u));

@@ -68,6 +68,23 @@ Mesh& Mesh::operator=(Mesh& other) noexcept
     return *this;
 }
 
+Mesh& Mesh::operator=(Mesh&& other) noexcept
+{
+    availableVertexType = other.availableVertexType;
+    vertices = std::move(other.vertices);
+    indices_16 = std::move(other.indices_16);
+    indices_32 = std::move(other.indices_32);
+    indiceType = other.indiceType;
+    positions = std::move(other.positions);
+    normals = std::move(other.normals);
+    colors = std::move(other.colors);
+    texCoords = std::move(other.texCoords);
+    tangents = std::move(other.tangents);
+    binormals = std::move(other.binormals);
+    bounds = other.bounds;
+    return *this;
+}
+
 // Set Functions
 void Mesh::SetVertexIndices(std::vector<uint16_t> indices)
 {
