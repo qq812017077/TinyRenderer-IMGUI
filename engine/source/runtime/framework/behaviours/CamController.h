@@ -42,8 +42,8 @@ public:
         }
 
         // bool isMouseLeftDown = Input::InputSystem::GetMouseButton(Mouse::MouseButton::Left);
-        bool isMouseRightDown = Input::InputSystem::GetMouseButton(Mouse::MouseButton::Right);
-        bool isMouseMiddleDown = Input::InputSystem::GetMouseButton(Mouse::MouseButton::Middle);
+        bool isMouseRightDown = Input::InputSystem::GetMouseButton(Input::MouseButton::Right);
+        bool isMouseMiddleDown = Input::InputSystem::GetMouseButton(Input::MouseButton::Middle);
         float scroll = Input::InputSystem::GetMouseScrollWheel();
         // std::cout << "scroll: " << scroll << std::endl;
         // std::cout << "isMouseRightDown: " << isMouseRightDown << std::endl;

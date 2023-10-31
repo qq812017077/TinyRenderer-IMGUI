@@ -1,7 +1,7 @@
 #pragma once
 #include "core/math/EngineMath.h"
 #include "components/components.h"
-
+#include "RenderEntity.h"
 #include <mutex>
 #include <vector>
 namespace TinyEngine
@@ -34,6 +34,7 @@ namespace TinyEngine
     {
         Effect * pEffect;
         std::vector<Renderer *> renderers;
+        std::vector<RenderEntity> renderEntities;
     };
 
     struct ShadowCastDesc

@@ -42,6 +42,7 @@ public:
 
     void ApplyState(TinyEngine::RenderState * pState) override;
     void ApplyPass(TinyEngine::ShaderPass & pass) override;
+    void Draw(TinyEngine::RenderEntity* entity) override;
     void ApplyPassToRenderList(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers) override;
     void ApplyPassToRenderTarget(TinyEngine::ShaderPass & pass, TinyEngine::RenderTarget * pRenderers) override;
     void ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh, EDrawMode mode = EDrawMode::TriangleList) override;
@@ -62,9 +63,9 @@ public:
     ID3D11DeviceContext* GetContext() const noexcept { return pContext.Get(); }
     IDXGISwapChain * GetSwap() const noexcept { return pSwap.Get(); }
     //Events
-    virtual void UpdateRenderSceneViewPort(int pos_x, int pos_y, int width, int height) override;
-    virtual void OnResize(int width, int height) override;
-
+    void UpdateRenderSceneViewPort(float pos_x, float pos_y, float width, float height) override;
+    void OnResize(int width, int height) override;
+    size_t PickGuidOfGameObject(float u, float v) override ;
     wrl::ComPtr<ID3D11Texture2D> GetBackBuffer();
     D3D11_VIEWPORT GetEditorViewPort() const noexcept { return editorViewPort; }
     D3D11_VIEWPORT GetFullViewPort() const noexcept { return fullViewPort; }
@@ -96,6 +97,10 @@ private:
     wrl::ComPtr<ID3D11RasterizerState> pCullBackRasterizerState = nullptr;
     wrl::ComPtr<ID3D11RasterizerState> pCullFrontRasterizerState = nullptr;
     
+    HLSLVertexShader * pCurrentVertexShader = nullptr;
+    HLSLPixelShader * pCurrentPixelShader = nullptr;
+
+
     D3D11_VIEWPORT editorViewPort;
     D3D11_VIEWPORT fullViewPort;
 #ifndef NDEBUG

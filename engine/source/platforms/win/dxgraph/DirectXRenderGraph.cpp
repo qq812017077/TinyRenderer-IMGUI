@@ -19,10 +19,14 @@ namespace TinyEngine::Graph
         depthStencilHandle = CreateResource<DirectXDepthStencil>("depthstencil", ResourceDesc::DepthStencil());
         shadowMapHandle = CreateResource<DirectXDepthStencil>("shadowmap", ResourceDesc::ShadowMap());
         shadowCubeHandle = CreateResource<DepthCubeTexture>("shadowcubemap", ResourceDesc::ShadowCubeMap());
+        goIdRTHandle = CreateResource<DirectXRenderTarget>("idRT", ResourceDesc::GOIDRT());
+        goIdDSHandle = CreateResource<DirectXDepthStencil>("idDS", ResourceDesc::DepthStencil());
 
         AddGlobalSource(backBufferHandle);
         AddGlobalSource(mainRTHandle);
         AddGlobalSource(effectRTHandle);
+        AddGlobalSource(goIdRTHandle);
+        AddGlobalSource(goIdDSHandle);
         AddGlobalSource(depthStencilHandle);
         AddGlobalSource(shadowMapHandle);
         AddGlobalSource(shadowCubeHandle);
@@ -34,6 +38,7 @@ namespace TinyEngine::Graph
         auto cleanSMCubePass = std::make_unique<BufferPass>("cleanSMCube");
         auto shadowPass = std::make_unique<ShadowPass>("shadow-cast");
         auto lightingPass = std::make_unique<LambertPass>("lighting");
+        auto pickPass = std::make_unique<PickPass>("pick");
         auto skyboxPass = std::make_unique<SkyBoxPass>("skybox");
         auto postPass = std::make_unique<PostProcessPass>("post-process");
         auto hubPass = std::make_unique<HubPass>("hub");
@@ -44,6 +49,7 @@ namespace TinyEngine::Graph
         AddRenderPass( std::move( cleanSMCubePass ) );
         AddRenderPass( std::move( shadowPass ) );
         AddRenderPass( std::move( lightingPass ));
+        AddRenderPass( std::move( pickPass ));
         AddRenderPass( std::move( skyboxPass ));
         AddRenderPass( std::move( postPass ) );
         AddRenderPass( std::move( hubPass ) );
@@ -61,6 +67,9 @@ namespace TinyEngine::Graph
         SetLinkage("shadow-cast.shadowcubemap", "lighting.shadowcubemap");
         SetLinkage("cleanRT.buffer", "lighting.renderTarget");
         SetLinkage("cleanDS.buffer", "lighting.depthStencil");
+
+        SetLinkage("$.idRT","pick.renderTarget");
+        SetLinkage("$.idDS","pick.depthStencil");
 
         SetLinkage("lighting.renderTarget", "skybox.renderTarget");
         SetLinkage("lighting.depthStencil","skybox.depthStencil");

@@ -8,6 +8,7 @@
 #include "Win32Window.h"
 #elif __linux__
 #endif
+#include "EditorGlobalContext.h"
 
 namespace TinyEngine
 {
@@ -23,8 +24,6 @@ namespace TinyEngine
     {
         assert(engine_runtime);
         m_engine_runtime = engine_runtime;
-        m_editor_ui      = std::make_shared<EditorUI>(this);
-        m_editor_ui->initialize();
         // if win32 , use win32 window
 #ifdef _WIN32
         pWnd = std::make_unique<Win32Window>(1280, 720, L"TinyRenderer");
@@ -32,8 +31,22 @@ namespace TinyEngine
 #elif __linux__
         pWnd = std::make_unique<LinuxWindow>(1280, 720, L"TinyRenderer");
 #endif
+
+        EditorGlobalContextInitInfo init_info = {   pWnd->Gfx().get(),
+                                                    pWnd.get(),
+                                                    m_engine_runtime};
+
+        g_editor_global_context.initialize(init_info);
+
+        // initialize ui
+        m_editor_ui      = std::make_shared<EditorUI>(this);
+        m_editor_ui->initialize();
+
         engine_runtime->BindEditor(m_editor_ui.get());
         engine_runtime->m_graphics = pWnd->Gfx().get();
+
+
+        
     }
 
     int Editor::Run()
@@ -41,8 +54,14 @@ namespace TinyEngine
         assert(m_engine_runtime);
         try
         {
-            m_engine_runtime->Run();
-            return 0;
+             while (true)
+            {
+                auto delta_time = m_engine_runtime->tick();
+                g_editor_global_context.m_scene_manager->tick(delta_time);
+                g_editor_global_context.m_input_manager->tick(delta_time);
+                if (!m_engine_runtime->tickOneFrame(delta_time))
+                    return 0;
+            }
         }
         catch(const EngineException& e)
         {
@@ -68,15 +87,9 @@ namespace TinyEngine
     void Editor::Clear()
     {
         m_engine_runtime = nullptr;
+        g_editor_global_context.clear();
     }
 
-    
-    void   Editor::onWindowChanged(float pos_x, float pos_y, float width, float height) const
-    {
-        // we need to reset camera aspect
-        // we need to reset viewport
-        pWnd->Gfx()->UpdateRenderSceneViewPort(static_cast<int>(pos_x), static_cast<int>(pos_y), static_cast<int>(width), static_cast<int>(height));
-    }
 };
 
 

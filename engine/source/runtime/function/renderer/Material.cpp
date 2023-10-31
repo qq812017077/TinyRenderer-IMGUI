@@ -96,7 +96,7 @@ std::shared_ptr<ShaderResource> Material::GetUpdatedShaderResourcePtr(ShaderBase
         shaderResourceMap.emplace(shader, pShaderResource);
     }else
         pShaderResource = shaderResourceMap[shader];
-
+    
     // update shader resource
     for(auto & pair : pShaderResource->variables)
     {

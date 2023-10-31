@@ -8,7 +8,7 @@ enum class KeyState : int
     KEY_RELEASED,
     KEY_INVALID
 };
-
+#define TOUC(x) static_cast<unsigned char>(x)
 class Keyboard
 {
 // if is Windows 
@@ -38,12 +38,12 @@ public:
 
     void Tick() noexcept { m_keyStatesPrev = m_keyStates; }
     //key events 
-    bool GetKey(Input::KeyCode keycode) const { return m_keyStates[keycode]; }
+    bool GetKey(Input::KeyCode keycode) const { return m_keyStates[TOUC(keycode)]; }
     bool GetKeyDown(Input::KeyCode keycode) const
     {
-        return !m_keyStatesPrev[keycode] && m_keyStates[keycode]; 
+        return !m_keyStatesPrev[TOUC(keycode)] && m_keyStates[TOUC(keycode)]; 
     }
-    bool GetKeyUp(Input::KeyCode keycode) const { return m_keyStatesPrev[keycode] && !m_keyStates[keycode]; }
+    bool GetKeyUp(Input::KeyCode keycode) const { return m_keyStatesPrev[TOUC(keycode)] && !m_keyStates[TOUC(keycode)]; }
     //read
     KeyEvent ReadKey() { if (m_keyBuffer.size() > 0) { KeyEvent e = m_keyBuffer.front(); m_keyBuffer.pop(); return e; } else { return KeyEvent(); } }
     char ReadChar() { if (m_charBuffer.size() > 0) { unsigned char e = m_charBuffer.front(); m_charBuffer.pop(); return e; } else { return 0; } }

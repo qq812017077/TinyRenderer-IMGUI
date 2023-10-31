@@ -9,6 +9,8 @@
 #include "dxgraphics/StencilManager.h"
 #include "geometry/Primitive.h"
 #include "dxgraph/DirectXRenderGraph.h"
+#include "RenderEntity.h"
+#include "dxgraph/dxpasslib/PickPass.h"
 
 #define LOG(X) std::cout << X << std::endl;
 // add ComPtr
@@ -111,6 +113,8 @@ void DirectXGraphics::ApplyPass(TinyEngine::ShaderPass &pass)
     auto pVertexShader = TinyEngine::EffectManager::Get().VSFindShader<HLSLVertexShader>(pass.vsName);
     auto pPixelShader = TinyEngine::EffectManager::Get().PSFindShader<HLSLPixelShader>(pass.psName);
 
+    pCurrentVertexShader = pVertexShader;
+    pCurrentPixelShader = pPixelShader;
     if (pVertexShader == nullptr)
         throw std::exception("Vertex Shader not found");
     else
@@ -135,6 +139,40 @@ void DirectXGraphics::ApplyPass(TinyEngine::ShaderPass &pass)
 
     setRasterizerState(pass.rasterDesc);
 }
+
+void DirectXGraphics::Draw(TinyEngine::RenderEntity* entity)
+{
+    if(entity == nullptr) return;
+    HLSLVertexShader *pVertexShader = nullptr;
+    HLSLPixelShader *pPixelShader = nullptr;
+    if(entity->m_pass) 
+    {
+        ApplyPass(*(entity->m_pass));
+        pVertexShader = TinyEngine::EffectManager::Get().VSFindShader<HLSLVertexShader>(entity->m_pass->vsName);
+        pPixelShader = TinyEngine::EffectManager::Get().PSFindShader<HLSLPixelShader>(entity->m_pass->psName);
+    }
+    else
+    {
+        pVertexShader = pCurrentVertexShader;
+        pPixelShader = pCurrentPixelShader;
+    }
+    auto &helper = HLSLShaderHelper::Get();
+
+    if(entity->m_material)
+    {
+        // update material resource
+        if (pVertexShader) pVertexShader->LoadMaterialResource(entity->m_material);
+        if (pPixelShader) pPixelShader->LoadMaterialResource(entity->m_material);
+    }
+    
+    // update object buffer
+    helper.SetGlobalMatrix("g_World", entity->m_world_matrix);
+    helper.SetGlobalMatrix("g_WorldInv", entity->m_world_matrix_inv);
+    UpdateCBuffer(pObjectConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerDrawCBufSlot));
+    drawMesh(pVertexShader, *(entity->m_mesh));
+}
+
+
 void DirectXGraphics::ApplyPassToRenderList(TinyEngine::ShaderPass &pass, std::vector<Renderer *> &renderers)
 {
     ApplyPass(pass);
@@ -215,15 +253,15 @@ void DirectXGraphics::internalBindRenderTarget(TinyEngine::DirectXRenderTarget *
 /****************************************************************************************/
 /*                                      Event  Part                                     */
 /****************************************************************************************/
-void DirectXGraphics::UpdateRenderSceneViewPort(int pos_x, int pos_y, int width, int height)
+void DirectXGraphics::UpdateRenderSceneViewPort(float pos_x, float pos_y, float width, float height)
 {
     ZeroMemory(&editorViewPort, sizeof(editorViewPort));
-    editorViewPort.Width = static_cast<FLOAT>(width);
-    editorViewPort.Height = static_cast<FLOAT>(height);
+    editorViewPort.Width = width;
+    editorViewPort.Height = height;
     editorViewPort.MinDepth = 0.0f;
     editorViewPort.MaxDepth = 1.0f;
-    editorViewPort.TopLeftX = static_cast<FLOAT>(pos_x);
-    editorViewPort.TopLeftY = static_cast<FLOAT>(pos_y);
+    editorViewPort.TopLeftX = pos_x;
+    editorViewPort.TopLeftY = pos_y;
     pContext->RSSetViewports(1u, &editorViewPort);
 }
 
@@ -246,6 +284,11 @@ void DirectXGraphics::OnResize(int width, int height)
     fullViewPort.TopLeftY = 0.0f;
 }
 
+size_t DirectXGraphics::PickGuidOfGameObject(float u, float v)
+{
+    TinyEngine::Graph::PickPass* pickpass = dynamic_cast<TinyEngine::Graph::PickPass *>(m_pRenderGraph->FindPassByName("pick"));
+    return pickpass->GetGameObjectID(this, *m_pRenderGraph, u, v);
+}
 wrl::ComPtr<ID3D11Texture2D> DirectXGraphics::GetBackBuffer()
 {
     wrl::ComPtr<ID3D11Texture2D> pBackBuffer = nullptr;

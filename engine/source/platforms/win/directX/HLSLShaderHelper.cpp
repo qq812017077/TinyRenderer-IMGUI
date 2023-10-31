@@ -167,6 +167,15 @@ bool HLSLShaderHelper::SetGlobalVector(const char * varName, Vector3& vec)
     viewVar->SetFloatVector(3, reinterpret_cast<float*>(&vec));
     return true;
 }
+
+bool HLSLShaderHelper::SetGlobalUINT(const char * varName, size_t uintVal)
+{
+    if (m_ConstantBufferVariables.find(varName) == m_ConstantBufferVariables.end())
+        return false;
+    auto & viewVar = m_ConstantBufferVariables[varName];
+    viewVar->SetUInt(uintVal);
+    return true;
+}
 bool HLSLShaderHelper::SetVector(const char * varName, Vector4& vec)
 {
     if (m_ConstantBufferVariables.find(varName) == m_ConstantBufferVariables.end())

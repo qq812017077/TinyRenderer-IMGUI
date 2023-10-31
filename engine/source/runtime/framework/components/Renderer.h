@@ -6,6 +6,12 @@
 class GameObject;
 class Material;
 class IShaderHelper;
+
+namespace TinyEngine
+{
+    class RenderEntity;
+}
+
 class Renderer : public Component
 {
 public:
@@ -30,7 +36,7 @@ public:
     void SetMesh(Mesh mesh);
     Mesh& GetMesh();
     Bounds GetBounds();
-
+    TinyEngine::RenderEntity GetRenderEntity();
     void UpdateObjBuffer(IShaderHelper& shaderHelper);
 
     

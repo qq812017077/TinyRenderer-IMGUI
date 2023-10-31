@@ -27,9 +27,9 @@ public:
     //Mouse events
     Mouse::MouseEvent ReadMouseEvent() { return mouse.Read();}
     Mouse& GetMouse() { return mouse;}
-    bool GetMouseButton(Mouse::MouseButton button) const noexcept { return mouse.GetMouseButton(button); }
-    bool GetMouseButtonDown(Mouse::MouseButton button) const noexcept { return mouse.GetMouseButtonDown(button); }
-    bool GetMouseButtonUp(Mouse::MouseButton button) const noexcept { return mouse.GetMouseButtonUp(button); }
+    bool GetMouseButton(Input::MouseButton button) const noexcept { return mouse.GetMouseButton(button); }
+    bool GetMouseButtonDown(Input::MouseButton button) const noexcept { return mouse.GetMouseButtonDown(button); }
+    bool GetMouseButtonUp(Input::MouseButton button) const noexcept { return mouse.GetMouseButtonUp(button); }
     std::pair<int, int> GetMousePos() const noexcept { return mouse.GetPos(); }
 
     //Graphics

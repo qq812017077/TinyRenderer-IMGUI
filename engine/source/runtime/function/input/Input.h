@@ -52,6 +52,7 @@ namespace Input
             }
             void OnCursorPos(double current_cursor_x, double current_cursor_y)
             {
+                // std::cout << "current_cursor_x: " << current_cursor_x << " current_cursor_y: " << current_cursor_y << std::endl;
                 // m_mouse->OnCursorPos(current_cursor_x, current_cursor_y);
             }
             void OnMouseMoveDelta(double delta_x, double delta_y)
@@ -83,7 +84,7 @@ namespace Input
                 return InputSystem::Get().m_keyboard->GetKeyUp(keycode);
             }
 
-            static bool GetMouseButton(Mouse::MouseButton button) noexcept
+            static bool GetMouseButton(Input::MouseButton button) noexcept
             {
                 return InputSystem::Get().m_mouse->GetMouseButton(button);
             }
@@ -98,29 +99,29 @@ namespace Input
                 return InputSystem::Get().m_mouse->GetMouseAxisY();
             }
 
-            static bool GetMouseButtonDown(Mouse::MouseButton button) noexcept
+            static bool GetMouseButtonDown(Input::MouseButton button) noexcept
             {
                 return InputSystem::Get().m_mouse->GetMouseButtonDown(button);
             }
 
-            static bool GetMouseButtonUp(Mouse::MouseButton button) noexcept
+            static bool GetMouseButtonUp(Input::MouseButton button) noexcept
             {
                 return InputSystem::Get().m_mouse->GetMouseButtonUp(button);
             }
 
             static bool GetMouseButton(unsigned char button) noexcept
             {
-                return InputSystem::Get().m_mouse->GetMouseButton(static_cast<Mouse::MouseButton>(button));
+                return InputSystem::Get().m_mouse->GetMouseButton(static_cast<Input::MouseButton>(button));
             }
             
             static bool GetMouseButtonDown(unsigned char button) noexcept
             {
-                return InputSystem::Get().m_mouse->GetMouseButtonDown(static_cast<Mouse::MouseButton>(button));
+                return InputSystem::Get().m_mouse->GetMouseButtonDown(static_cast<Input::MouseButton>(button));
             }
 
             static bool GetMouseButtonUp(unsigned char button) noexcept
             {
-                return InputSystem::Get().m_mouse->GetMouseButtonUp(static_cast<Mouse::MouseButton>(button));
+                return InputSystem::Get().m_mouse->GetMouseButtonUp(static_cast<Input::MouseButton>(button));
             }
 
             static float GetMouseScrollWheel() noexcept

@@ -1,7 +1,7 @@
 #pragma once
 #include "core/Singleton.h"
 #include "core/Timer.h"
-#include "surfaces/SurfaceUI.h"
+#include "ui/WindowUI.h"
 
 class Graphics;
 namespace TinyEngine
@@ -16,12 +16,12 @@ namespace TinyEngine
         ~Engine();
 
         void Initialize();
-        void Run();
+        float tick();
+        bool tickOneFrame(float deltaTime);
         void ShutdownEngine();
         
-        void BindEditor(SurfaceUI* surface_ui) { m_surface_ui = surface_ui; }
+        void BindEditor(WindowUI* surface_ui) { m_surface_ui = surface_ui; }
     protected:
-        float tick();
         void logicalTick(float deltaTime);
         bool rendererTick();
 
@@ -30,7 +30,7 @@ namespace TinyEngine
         Engine& operator=(const Engine&) = delete;
 
         Timer timer;
-        SurfaceUI* m_surface_ui = nullptr;
+        WindowUI* m_surface_ui = nullptr;
         FrameBuffer* m_framebuffer = nullptr;
         Graphics * m_graphics = nullptr;
     };

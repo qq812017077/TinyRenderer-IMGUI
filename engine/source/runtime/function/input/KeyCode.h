@@ -2,7 +2,7 @@
 
 namespace Input
 {
-    enum KeyCode : unsigned char
+    enum class KeyCode : unsigned char
 {
     //
     // 摘要:
@@ -195,4 +195,5 @@ namespace Input
     OEMClear = 0xFE,    //     Clear key
 
 };
+
 }

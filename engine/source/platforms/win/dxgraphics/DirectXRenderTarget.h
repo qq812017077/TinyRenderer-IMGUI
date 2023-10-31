@@ -19,7 +19,7 @@ namespace TinyEngine
     {
         public:
             DirectXRenderTarget(DirectXGraphics* pGfx, ID3D11Texture2D* pTexture, std::optional<UINT> face = std::nullopt);
-            DirectXRenderTarget(DirectXGraphics* pGfx, unsigned int width, unsigned int height);
+            DirectXRenderTarget(DirectXGraphics* pGfx, unsigned int width, unsigned int height, DXGI_FORMAT format= DXGI_FORMAT_R8G8B8A8_UNORM);
             ~DirectXRenderTarget()  = default;
 
             Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pTextureView{nullptr};

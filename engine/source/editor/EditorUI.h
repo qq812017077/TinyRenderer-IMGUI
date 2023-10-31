@@ -7,26 +7,18 @@
 #include <memory>
 #include <functional>
 #include <string>
-#include "surfaces/SurfaceUI.h"
+#include "ui/WindowUI.h"
 #include "core/base/macro.h"
+#include "EditorGlobalContext.h"
 
 class GameObject;
 namespace TinyEngine
 {
     class Editor;
-    enum class EditorAxisMode : int
-    {
-        TranslateMode = 0,
-        RotateMode    = 1,
-        ScaleMode     = 2,
-        Default       = 3
-    };
 
-    class EditorUI : public SurfaceUI
+    class EditorUI : public WindowUI
     {
     private:
-        // void        onFileContentItemClicked(EditorFileNode* node);
-        void        drawSelectedEntityAxis();
         // void        moveEntity(float     new_mouse_pos_x,
         //                        float     new_mouse_pos_y,
         //                        float     last_mouse_pos_x,
@@ -49,8 +41,6 @@ namespace TinyEngine
         void buildHierarchysUITree(GameObject* node);
         void onReset();
 
-        GameObject* getSelectedGameObject() const;
-        void     onGameObjectSelected(size_t selected_gobject_id);
         std::string getLeafUINodeParentLabel();
         void     onDeleteSelectedGameObject();
 
@@ -60,29 +50,14 @@ namespace TinyEngine
         bool OnTick(UIState* uistate) override;
         
         void draw_frame() override;
-        void processEditorCommand();
         void clear() override;
     
-    protected:
-        void registerInput() override;
     private:
         Editor* m_editor {nullptr};
 
         std::unordered_map<std::string, std::function<void(std::string, void*)>> m_editor_ui_creator;
         std::unordered_map<std::string, unsigned int>                            m_new_object_index_map;
 
-        bool focused_game_engine;
-        Vector2 m_engine_window_pos {0.0f, 0.0f};
-        Vector2 m_engine_window_size {1280.0f, 768.0f};
-        
-        bool m_is_editor_mode {true};
-        int  m_key_state {0};
-        EditorAxisMode m_axis_mode {EditorAxisMode::TranslateMode};
-
-        // 0 for x, 1 for y, 2 for z
-        // 0 for yoz, 1 for xoz, 2 for xoy
-        size_t    m_selected_gobject_id {INVALID_GO_ID};
-        Matrix4x4 m_selected_object_matrix {Matrix4x4::Identity()};
 
     };
 } // namespace Pilot

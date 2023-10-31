@@ -29,7 +29,9 @@ namespace TinyEngine::Graph
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXRenderTarget> mainRTHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXRenderTarget> effectRTHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXRenderTarget> backBufferHandle;
+        TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXRenderTarget> goIdRTHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> depthStencilHandle;
+        TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> goIdDSHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> shadowMapHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DepthCubeTexture> shadowCubeHandle;
 

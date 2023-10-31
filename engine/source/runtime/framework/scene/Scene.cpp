@@ -88,6 +88,7 @@ namespace TinyEngine
                 if(frustum.IntersectAABB(renderer->GetBounds()))
                 {
                     back.renderers.emplace_back(renderer);
+                    back.renderEntities.emplace_back(renderer->GetRenderEntity());
                 }
             }
         }

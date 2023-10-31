@@ -39,6 +39,7 @@ public:
     // std::shared_ptr<ICBufferVariable> GetConstantBufferVariable(const char * varName) override;
     bool SetGlobalVariable(const char * varName, void * data, unsigned int bytesize) override;
     bool SetGlobalMatrix(const char * varName, Matrix4x4& matrix) override;
+    bool SetGlobalUINT(const char * varName, size_t uintVal) override;
     bool SetGlobalVector(const char * varName, Vector3& vec) override;
     bool SetVector(const char * varName, Vector4& vec) override;
     

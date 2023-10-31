@@ -52,7 +52,9 @@ namespace TinyEngine::Graph
             {
                 auto pass = pEffect->GetPass(j);
                 if(pass.lightMode == ELightMode::ShadowCaster) continue;
-                pGfx->ApplyPassToRenderList(pass, renderers); // load shader and render state
+                pGfx->ApplyPass(pass); // load shader and render state
+                for(auto & entity : desc.renderEntities)
+                    pGfx->Draw(&entity);
             }
         }
     }

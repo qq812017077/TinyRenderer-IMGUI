@@ -1,9 +1,9 @@
-#include "SurfaceUI.h"
+#include "WindowUI.h"
 #include "ui/GUI.h"
 
 namespace TinyEngine
 {
-    int SurfaceUI::initialize()
+    int WindowUI::initialize()
     {
         IMGUI_CHECKVERSION();
         GUI::CreateContext();
@@ -22,10 +22,9 @@ namespace TinyEngine
         style.FrameBorderSize = 1.5f;
         setDefaultStyle();
 
-        registerInput();
         return 0;
     }
-    void SurfaceUI::setDefaultStyle()
+    void WindowUI::setDefaultStyle()
     {
         ImGuiStyle* style  = &ImGui::GetStyle();
         ImVec4*     colors = style->Colors;

@@ -35,7 +35,7 @@ namespace TinyEngine
     }
 
 
-    DirectXRenderTarget::DirectXRenderTarget(DirectXGraphics* pGfx, unsigned int width, unsigned int height):
+    DirectXRenderTarget::DirectXRenderTarget(DirectXGraphics* pGfx, unsigned int width, unsigned int height, DXGI_FORMAT format):
         RenderTarget(pGfx, width, height)
     {
         D3D11_TEXTURE2D_DESC textureDesc = {};
@@ -43,13 +43,12 @@ namespace TinyEngine
         textureDesc.Height = height;
         textureDesc.MipLevels = 1u;
         textureDesc.ArraySize = 1u;
-        textureDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        textureDesc.Format = format;
         textureDesc.SampleDesc.Count = 1u;
         textureDesc.SampleDesc.Quality = 0u;
         textureDesc.Usage = D3D11_USAGE_DEFAULT;
         textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
         textureDesc.CPUAccessFlags = 0u;
-        // textureDesc.MiscFlags = 0u;
         
         wrl::ComPtr<ID3D11Texture2D> pTexture;
         INFOMAN(*pGfx);
@@ -98,6 +97,9 @@ namespace TinyEngine
         }else if(desc.type == TinyEngine::Graph::ResourceType::SwapChain)
         {
             return std::make_shared<DirectXRenderTarget>(dxGfx, dxGfx->GetBackBuffer().Get());
+        }else if(desc.type == TinyEngine::Graph::ResourceType::InstanceID)
+        {
+            return std::make_shared<DirectXRenderTarget>(dxGfx, dxGfx->GetWidth(), dxGfx->GetHeight(), DXGI_FORMAT_R32_UINT);
         }
 
         THROW_ENGINE_EXCEPTION("cannot create render target from resource desc: type mismatch: ");

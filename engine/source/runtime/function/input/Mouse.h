@@ -33,18 +33,12 @@ namespace Input
         RELEASED = 1
     };
 }
-
+using namespace Input;
 class Mouse
 {
 friend class Window;
 
 public:
-    enum MouseButton : unsigned char
-    {
-        Left = 0,
-        Right = 1,
-        Middle = 2
-    };
     class MouseEvent
     {
     public:

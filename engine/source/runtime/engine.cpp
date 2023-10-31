@@ -2,7 +2,6 @@
 #include "scene/SceneManager.h"
 #include "effect/EffectManager.h"
 #include "world/WorldManager.h"
-#include "surfaces/SurfaceUI.h"
 #include "input/Input.h"
 #include "FrameBuffer.h"
 #include "Graphics.h"
@@ -37,14 +36,12 @@ namespace TinyEngine
         m_framebuffer = new FrameBuffer();
     }
 
-    void Engine::Run()
+    
+    bool Engine::tickOneFrame(float deltaTime)
     {
-        while (true)
-        {
-            float deltaTime = tick();
-            logicalTick(deltaTime);
-            if(!rendererTick()) return ;
-        }
+        logicalTick(deltaTime);
+        if(!rendererTick()) return false;
+        return true;
     }
 
 

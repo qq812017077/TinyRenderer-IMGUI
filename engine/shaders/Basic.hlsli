@@ -58,6 +58,7 @@ cbuffer PerDrawCBuf : register(b1)
 	matrix g_LightView;
 	matrix g_LightProj;
     matrix g_LightViewProj;
+    uint   g_goid;
 };
 
 cbuffer LightingCBuf : register(b2) // 160 because of float4 alignment

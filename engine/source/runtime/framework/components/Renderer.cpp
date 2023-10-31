@@ -6,6 +6,8 @@
 #include "graphics/Graphics.h"
 #include "Material.h"
 #include "Shader.h"
+#include "RenderEntity.h"
+
 Renderer::Renderer(Mesh mesh)
 :Renderer(mesh, Material::GetDefaultMaterialPtr())
 {
@@ -156,4 +158,18 @@ void Renderer::UpdateObjBuffer(IShaderHelper & shaderHelper)
     auto worldMatrix = pGameObject->transform().GetWorldMatrix();
     shaderHelper.SetGlobalMatrix("g_World", worldMatrix);
     shaderHelper.SetGlobalMatrix("g_WorldInv", worldMatrix.Inverse());
+}
+
+
+TinyEngine::RenderEntity Renderer::GetRenderEntity()
+{
+    TinyEngine::RenderEntity renderEntity;
+    renderEntity.m_instance_id = pGameObject->GetInstanceID();
+    renderEntity.m_world_matrix = pGameObject->transform().GetWorldMatrix();
+    renderEntity.m_world_matrix_inv = renderEntity.m_world_matrix.Inverse();
+
+    renderEntity.m_mesh = &mesh;
+    renderEntity.m_material = pMaterial.get();
+    
+    return renderEntity;
 }

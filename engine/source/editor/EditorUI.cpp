@@ -21,7 +21,7 @@ namespace TinyEngine
             g_node_depth++;
             auto pGo = static_cast<GameObject*>(value_ptr);
             ImGuiTreeNodeFlags flag = pGo->transform().GetChildCount() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf;
-            bool isSelected = m_selected_gobject_id == pGo->GetInstanceID();
+            bool isSelected = g_editor_global_context.m_scene_manager->getSelectedObjectID() == pGo->GetInstanceID();
             flag |= isSelected ? ImGuiTreeNodeFlags_Selected : 0;
             if (g_node_depth > 0)
             {
@@ -41,7 +41,9 @@ namespace TinyEngine
                 node_state = ImGui::TreeNodeEx(name.c_str(), flag);
             }
             
-            if (!isSelected && ImGui::IsItemClicked(0)) onGameObjectSelected(pGo->GetInstanceID());
+            if (!isSelected && ImGui::IsItemClicked(0)) 
+                g_editor_global_context.m_scene_manager->onGameObjectSelected(pGo->GetInstanceID());
+            
             g_editor_node_state_array.emplace_back(std::pair(name.c_str(), node_state));
         };
 
@@ -208,7 +210,6 @@ namespace TinyEngine
         if (const auto ecode = m_editor->pWnd->ProcessMessages()) return false;
         
         showEditorUI();
-        processEditorCommand();
         draw_frame();
         return true;
     }
@@ -354,9 +355,9 @@ namespace TinyEngine
             else if(pGO->transform().GetParent() == nullptr)
             {
                 ImGui::Indent(10.f);
-                if (ImGui::Selectable(pGO->GetName().c_str(), m_selected_gobject_id == object_id))
+                if (ImGui::Selectable(pGO->GetName().c_str(), g_editor_global_context.m_scene_manager->getSelectedObjectID() == object_id))
                 {
-                    onGameObjectSelected(object_id);
+                    g_editor_global_context.m_scene_manager->onGameObjectSelected(object_id);
                     break;
                 }
                 ImGui::Unindent(10.f);
@@ -365,7 +366,7 @@ namespace TinyEngine
         // check if this window is clicked
         if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0))
         {
-            onGameObjectSelected(INVALID_GO_ID);
+            g_editor_global_context.m_scene_manager->onGameObjectSelected(INVALID_GO_ID);
         }
         ImGui::End();
     }
@@ -407,7 +408,7 @@ namespace TinyEngine
         // check if this window is clicked
         if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0))
         {
-            onGameObjectSelected(INVALID_GO_ID);
+            g_editor_global_context.m_scene_manager->onGameObjectSelected(INVALID_GO_ID);
         }
         ImGui::End();
     }
@@ -429,7 +430,7 @@ namespace TinyEngine
         static bool trans_button_ckecked  = false;
         static bool rotate_button_ckecked = false;
         static bool scale_button_ckecked  = false;
-        switch (m_axis_mode)
+        switch (g_editor_global_context.m_scene_manager->getEditorAxisMode())
         {
             case EditorAxisMode::TranslateMode:
                 trans_button_ckecked  = true;
@@ -467,7 +468,7 @@ namespace TinyEngine
             ImGui::SameLine();
 
             float indent_val = 0.0f;
-            indent_val       = m_engine_window_size.x - 100.0f;
+            indent_val       = g_editor_global_context.m_input_manager->getEngineWindowSize().x - 100.0f;
             ImGui::Indent(indent_val);
             // if (m_is_editor_mode)
             // {
@@ -497,7 +498,7 @@ namespace TinyEngine
             ImGui::EndMenuBar();
         }
 
-        if (!m_is_editor_mode)
+        if (!g_editor_global_context.m_is_editor_mode)
         {
             ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Press Left Alt key to display the mouse cursor!");
         }
@@ -509,23 +510,26 @@ namespace TinyEngine
         ImVec2 pos = ImGui::GetWindowPos();
         ImVec2 size = ImGui::GetWindowSize();
         ImVec2 content = ImGui::GetContentRegionAvail();
+        auto menu_bar_rect = ImGui::GetCurrentWindow()->MenuBarRect();
+        
         new_window_pos.x        = pos.x;
-        new_window_pos.y        = pos.y + 38.0f;
+        new_window_pos.y        = menu_bar_rect.Max.y; // pos.y + 38.0f; 
         new_window_size.x       = size.x;
-        new_window_size.y       = size.y - 38.0f;
+        new_window_size.y       = (size.y + pos.y) - menu_bar_rect.Max.y; // size.y - 38.0f;
+
+        
         // 在dockWindow内部显示pos和size
         // ImGui::Text("Pos: (%.2f, %.2f)", pos.x, pos.y);
         // ImGui::Text("Size: (%.2f, %.2f)", size.x, size.y);
         // ImGui::Text("Content: (%.2f, %.2f)", content.x, content.y);
 
-
-        if (new_window_pos != m_engine_window_pos || new_window_size != m_engine_window_size)
+        // if (new_window_pos != m_engine_window_pos || new_window_size != m_engine_window_size)
         {
-            m_editor->onWindowChanged(new_window_pos.x, new_window_pos.y, new_window_size.x, new_window_size.y);
 
-            m_engine_window_pos  = new_window_pos;
-            m_engine_window_size = new_window_size;
-            SceneManager::Get().SetWindowSize(m_engine_window_size);
+            g_editor_global_context.m_graphics->UpdateRenderSceneViewPort(new_window_pos.x, new_window_pos.y,
+                                            new_window_size.x, new_window_size.y);
+            g_editor_global_context.m_input_manager->setEngineWindowPos(new_window_pos);
+            g_editor_global_context.m_input_manager->setEngineWindowSize(new_window_size);
         }
 
         const Level* current_active_level = WorldManager::Get().GetCurrentActiveLevel();
@@ -558,7 +562,7 @@ namespace TinyEngine
             return;
         }
 
-        GameObject* selected_object = getSelectedGameObject();
+        GameObject* selected_object = g_editor_global_context.m_scene_manager->getSelectedGameObject();
         if (selected_object == nullptr)
         {
             ImGui::End();
@@ -600,40 +604,6 @@ namespace TinyEngine
         }
         m_editor_ui_creator["TreeNodePop"](node->GetName().c_str(), node);
     }
-    GameObject * EditorUI::getSelectedGameObject() const
-    {
-        if(m_selected_gobject_id == INVALID_GO_ID)
-            return nullptr;
-        auto pLevel = WorldManager::Get().GetCurrentActiveLevel();
-        if(pLevel)
-        {
-            return pLevel->GetGameObjectByID(m_selected_gobject_id);
-        }
-        return nullptr;
-    }
-    
-    void EditorUI::onGameObjectSelected(size_t selected_gobject_id)
-    {
-        if (selected_gobject_id == m_selected_gobject_id)
-            return;
-
-        m_selected_gobject_id = selected_gobject_id;
-
-        auto pLevel = WorldManager::Get().GetCurrentActiveLevel();
-        GameObject* selected_gobject = getSelectedGameObject();
-
-        SceneManager::Get().SetSelectedGameObject(selected_gobject);
-        // drawSelectedEntityAxis();
-
-        if (m_selected_gobject_id != INVALID_GO_ID)
-        {
-            LOG_INFO("select game object " + std::to_string(m_selected_gobject_id));
-        }
-        else
-        {
-            LOG_INFO("no game object selected");
-        }
-    }
 
     std::string EditorUI::getLeafUINodeParentLabel()
     {
@@ -646,10 +616,6 @@ namespace TinyEngine
         return parent_label;
     }
 
-    void EditorUI::processEditorCommand()
-    {
-        
-    }
 
     void EditorUI::drawAxisToggleButton(const char* string_id, bool check_state, EditorAxisMode axis_mode)
     {
@@ -670,59 +636,14 @@ namespace TinyEngine
             if (ImGui::Button(string_id))
             {
                 check_state = true;
-                m_axis_mode = axis_mode;
-                drawSelectedEntityAxis();
+                g_editor_global_context.m_scene_manager->setEditorAxisMode((EditorAxisMode)axis_mode);
+                g_editor_global_context.m_scene_manager->drawSelectedEntityAxis();
             }
-        }
-    }
-
-    void EditorUI::drawSelectedEntityAxis()
-    {
-        GameObject* selected_object = getSelectedGameObject();
-
-        if (m_is_editor_mode && selected_object != nullptr)
-        {
-            auto pTrans = selected_object->GetComponent<Transform>();
-            // std::vector<RenderMesh>   axis_meshs;
-
-            Vector3    scale = pTrans->GetLossyScale();
-            Quaternion rotation = pTrans->GetRotation();
-            Vector3    translation = pTrans->GetPosition();
-            Matrix4x4 translation_matrix = Matrix4x4::Translation(translation);
-            Matrix4x4 scale_matrix       = Matrix4x4::Scale(scale);
-            Matrix4x4 axis_model_matrix  = translation_matrix * scale_matrix;
-            if (m_axis_mode == EditorAxisMode::TranslateMode)
-            {
-                // m_translation_axis.m_model_matrix = axis_model_matrix;
-                // axis_meshs.push_back(m_translation_axis);
-                // SceneManager::Get().setAxisMesh(axis_meshs);
-            }
-            else if (m_axis_mode == EditorAxisMode::RotateMode)
-            {
-                // m_rotation_axis.m_model_matrix = axis_model_matrix;
-                // axis_meshs.push_back(m_rotation_axis);
-                // SceneManager::getInstance().setAxisMesh(axis_meshs);
-            }
-            else if (m_axis_mode == EditorAxisMode::ScaleMode)
-            {
-                // axis_model_matrix           = axis_model_matrix * Matrix4x4(rotation);
-                // m_scale_aixs.m_model_matrix = axis_model_matrix;
-                // axis_meshs.push_back(m_scale_aixs);
-                // SceneManager::getInstance().setAxisMesh(axis_meshs);
-            }
-        }
-        else
-        {
-            // std::vector<RenderMesh> axis_meshs;
-            // SceneManager::getInstance().setAxisMesh(axis_meshs);
         }
     }
 
 /*****************************************************************************/
 /*                           EditorUI Protected                              */
 /*****************************************************************************/
-    void EditorUI::registerInput()
-    {
-        
-    }
+
 } // namespace TinyEngine

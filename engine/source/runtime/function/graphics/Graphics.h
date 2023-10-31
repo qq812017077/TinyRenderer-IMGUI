@@ -19,6 +19,7 @@ class Mesh;
 namespace TinyEngine
 {
     class RenderState;
+    class RenderEntity;
 }
 
 class Graphics
@@ -75,15 +76,17 @@ public:
     virtual void UnbindAllResource() = 0;
     virtual void ApplyState(TinyEngine::RenderState * pState) = 0;
     virtual void ApplyPass(TinyEngine::ShaderPass & pass) = 0;
+    virtual void Draw(TinyEngine::RenderEntity* entity) = 0;
     virtual void ApplyPassToRenderList(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers) = 0;
     virtual void ApplyPassToRenderTarget(TinyEngine::ShaderPass & pass, TinyEngine::RenderTarget * pRenderers) = 0;
     virtual void ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh, EDrawMode mode = EDrawMode::TriangleList) = 0;
     
     //Events
-    virtual void UpdateRenderSceneViewPort(int pos_x, int pos_y, int width, int height) = 0;
+    virtual void UpdateRenderSceneViewPort(float pos_x, float pos_y, float width, float height) = 0;
     virtual void OnResize(int width, int height) = 0;
     int GetWidth() const noexcept { return m_width; }
     int GetHeight() const noexcept { return m_height; }
+    virtual size_t PickGuidOfGameObject(float u, float v) = 0;
 protected:
     TinyEngine::MousePickEffectPass m_mousepicking_pass;
 
