@@ -245,6 +245,12 @@ GameObject* Primitive::CreateBox(std::string name, float width, float height, fl
 }
 
 
+GameObject* Primitive::CreateSphere(std::string name, float radius, int slice, int stack)
+{
+    return nullptr;
+}
+
+
 std::shared_ptr<Mesh> Primitive::CreateQuadMeshPtr()
 {
     auto pMesh = std::make_shared<Mesh>();

@@ -1,3 +1,5 @@
+#ifndef _BASIC_H_
+#define _BASIC_H_
 
 struct DirectionalLight //32  because of float4 alignment
 {
@@ -72,4 +74,9 @@ cbuffer LightingCBuf : register(b2) // 160 because of float4 alignment
 
 Texture2D _ShadowMap : register(t0);
 SamplerComparisonState sampler_ShadowMap : register(s0);
+
+TextureCube _ShadowCubeMap : register(t3);
+
 #define PCF_RANGE 2
+
+#endif

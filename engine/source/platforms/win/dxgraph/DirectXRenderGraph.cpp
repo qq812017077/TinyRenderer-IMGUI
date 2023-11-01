@@ -69,6 +69,7 @@ namespace TinyEngine::Graph
         SetLinkage("cleanDS.buffer", "lighting.depthStencil");
 
         SetLinkage("$.idRT","pick.renderTarget");
+        SetLinkage("$.backbuffer","pick.backbuffer");
         SetLinkage("$.idDS","pick.depthStencil");
 
         SetLinkage("lighting.renderTarget", "skybox.renderTarget");

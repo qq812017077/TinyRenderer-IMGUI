@@ -35,8 +35,9 @@ Texture::Texture(Texture&& texture) noexcept:
 }
 
 Texture::Texture(Surface&& surface):
-    Texture(std::move(surface), surface.AlphaLoaded() ? ETextureFormat::RGBA32 : ETextureFormat::RGB24, 0, true)
+    Texture(std::move(surface), surface.AlphaLoaded() ? ETextureFormat::RGBA32 : ETextureFormat::RGB24, 0, false)
 {
+    
 }
 Texture::Texture(Surface&& surface, ETextureFormat textureFormat, int mipCount, bool linear):
     m_Surface(std::move(surface)), m_TextureFormat(textureFormat), m_Linear(linear)
@@ -175,6 +176,7 @@ std::shared_ptr<Texture> Texture::LoadFrom(const char* filename)
 		strcat_s(error, sizeof(error), filename);
 		throw EngineException(__LINE__, __FILE__, error);
 	}
+    
 	assert(width > 0 && height > 0 && channels > 0);
 	
 	std::unique_ptr<Color[]> pBuffer = std::make_unique<Color[]>(width * height);

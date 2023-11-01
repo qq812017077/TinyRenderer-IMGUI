@@ -1,4 +1,7 @@
 // Shadow map related variables
+#ifndef __MATH__H__
+#define __MATH__H__
+
 #define NUM_SAMPLES 20
 #define BLOCKER_SEARCH_NUM_SAMPLES NUM_SAMPLES
 #define PCF_NUM_SAMPLES NUM_SAMPLES
@@ -68,3 +71,11 @@ float bias(float3 lightDir, float3 normal)
   normal = normalize(normal);
   return max(0.01 * (1.0 - dot(normal, lightDir)), 0.005); // max(0.001 * (1.0 - dot(normal, lightDir)), 0.005)
 }
+
+
+float3 gammaCorrect(float3 color, float gamma)
+{
+  color = color / (color + float3(1.0, 1.0, 1.0));
+  return pow(color, 1.0 / gamma);
+}
+#endif

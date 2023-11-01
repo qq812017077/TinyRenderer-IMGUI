@@ -23,6 +23,7 @@ namespace TinyEngine::Graph
     public:
         PickPass(std::string name) : DXRenderPass(name){
             RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DirectXRenderTarget>>("renderTarget", goIdTextureHandle));
+            RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DirectXRenderTarget>>("backbuffer", backBufferHandle));
             RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DirectXDepthStencil>>("depthStencil", depthStencilHandle));
         
             pickPass = ShaderPass::Get("PickPass", "shaders/SimpleVertexShader.hlsl", "shaders/PickPS.hlsl");
@@ -32,14 +33,7 @@ namespace TinyEngine::Graph
         virtual ~PickPass() = default;
         void Execute(Graphics *pGfx, RenderGraph& graph) override
         {
-            auto * renderTarget = graph.GetBufferResource(goIdTextureHandle);
-            auto * depthStencil = graph.GetBufferResource(depthStencilHandle);
-            depthStencil->Clear(pGfx);
-            if(renderTarget && depthStencil) pGfx->BindRenderTarget(renderTarget, depthStencil);
-            else if(renderTarget) pGfx->BindRenderTarget(renderTarget, nullptr);
-            else if(depthStencil) pGfx->BindRenderTarget(nullptr, depthStencil);
-
-        internalExecute(reinterpret_cast<DirectXGraphics*>(pGfx), static_cast<DXDefaultRenderGraph&>(graph));
+            
         }
         void internalExecute(DirectXGraphics* pGfx, DXDefaultRenderGraph& graph) override
         {
@@ -63,12 +57,26 @@ namespace TinyEngine::Graph
                     pGfx->Draw(&entity);
                 }
             }
+
+            auto * backbuffer = graph.GetBufferResource(backBufferHandle);
+            pGfx->GetContext()->RSSetViewports(1, &pGfx->GetEditorViewPort());
+            pGfx->BindRenderTarget(backbuffer, nullptr);
         }
 
         size_t GetGameObjectID(DirectXGraphics* pGfx,  RenderGraph& graph, float u, float v)
         {
-            // from texture get id
             auto * renderTarget = graph.GetBufferResource(goIdTextureHandle);
+            auto * depthStencil = graph.GetBufferResource(depthStencilHandle);
+            renderTarget->Clear(pGfx);
+            depthStencil->Clear(pGfx);
+            if(renderTarget && depthStencil) pGfx->BindRenderTarget(renderTarget, depthStencil);
+            else if(renderTarget) pGfx->BindRenderTarget(renderTarget, nullptr);
+            else if(depthStencil) pGfx->BindRenderTarget(nullptr, depthStencil);
+
+            internalExecute(reinterpret_cast<DirectXGraphics*>(pGfx), static_cast<DXDefaultRenderGraph&>(graph));
+
+            // from texture get id
+            // auto * renderTarget = graph.GetBufferResource(goIdTextureHandle);
 
             wrl::ComPtr<ID3D11Texture2D> pTexture;
             renderTarget->pTextureView->GetResource(reinterpret_cast<ID3D11Resource**>(pTexture.GetAddressOf()));
@@ -94,6 +102,7 @@ namespace TinyEngine::Graph
     private:
         ShaderPass pickPass;
         ResourceHandle<TinyEngine::DirectXRenderTarget> goIdTextureHandle;
+        ResourceHandle<TinyEngine::DirectXRenderTarget> backBufferHandle;
         ResourceHandle<TinyEngine::DirectXDepthStencil> depthStencilHandle;
     };
 }

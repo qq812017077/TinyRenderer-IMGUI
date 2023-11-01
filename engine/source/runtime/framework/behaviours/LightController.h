@@ -29,14 +29,14 @@ public:
         {
             pWhiteLittleCube = Primitive::CreateCube("white littleCube");
             pWhiteLittleCube->GetComponent<Renderer>()->SetMaterial(pMat);
-            pWhiteLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::White());
+            pWhiteLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("albedo", Color::White());
             pWhiteLittleCube->transform().SetPosition({ 0.0f, 0.f, 0.0f });
             pWhiteLittleCube->transform().SetScale({ 1.f, 1.f, 1.f });
             pWhiteLittleCube->transform().SetParent(pPointLightGO->transform());
             pWhiteLittleCube->transform().SetLocalPosition({ 0.0f, 0.0f, 0.0f });
             pointLightPos = { 0.3f, 1.5f, 0.0f };
             pPointLight->pTransform->SetPosition({ 0.0f, 120.f, 0.0f });
-            pPointLight->SetIntensity(0.8f);
+            pPointLight->SetIntensity(1.8f);
             pPointLight->SetRange(500.0f);
         }
     }
@@ -71,7 +71,7 @@ public:
             GUI::Checkbox("Active", &active);
             pPointLight->GetGameObject()->SetActive(active);
             auto intensity = pPointLight->GetIntensity();
-            GUI::SliderFloat("Point Intensity", &intensity, 0.0f, 1.0f);
+            GUI::SliderFloat("Point Intensity", &intensity, 0.0f, 3.0f);
             pPointLight->SetIntensity(intensity);
         }
         GUI::End();

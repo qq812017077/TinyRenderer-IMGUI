@@ -290,6 +290,7 @@ std::shared_ptr<Material> Material::CreateDefault(std::string materialName, ERen
     int i = 1;
     while(MaterialManager::HasExist(materialName)) materialName = materialName + " (" + std::to_string(i++) + ")";
     auto pMat = Create(pEffect, materialName);
+    pMat->SetColor("albedo", Color::LightGray());
     pMat->SetColor("color", Color::LightGray());
     return pMat;
 }

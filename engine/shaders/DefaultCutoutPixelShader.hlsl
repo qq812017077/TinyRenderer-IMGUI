@@ -1,56 +1,26 @@
 #include "Basic.hlsli"
+#include "Math.hlsli"
+#include "PBR.hlsli"
 
-float4 color = float4(1.0, 1.0, 1.0, 1.0);
 
-Texture2D _MainTex : register(t0);
-SamplerState sampler_MainTex : register(s0);
-float3 get_directional_light(float3 normal, float3 worldPos, DirectionalLight dirLight, float3 texColor)
-{
-    float3 lightdir = normalize(dirLight.dir);
-    float3 light_color = dirLight.color.rgb * texColor;
-    float3 vToL = -lightdir;
-    float3 vReflect = reflect(lightdir, normal);
-    float3 vView = normalize(g_EyePos - worldPos);
-    float3 ambient = texColor * float3(0.06, 0.06, 0.06);
-    float3 diffuse = light_color * saturate(dot(normal, vToL));
-    float3 specular = light_color * pow(saturate(dot(vReflect, vView)), 10);
-    float3 _color = ambient + diffuse + specular;
-    return _color;
-}
+Texture2D _MainTex : register(t1);
+SamplerState sampler_MainTex : register(s1);
 
-float3 get_point_light(float3 normal, float3 worldPos, PointLight pointLight, float3 texColor)
-{
-    float3 lightdir = worldPos - pointLight.pos;
-    float distance = length(lightdir);
-    lightdir = normalize(lightdir);
-    float kConstant = 1.0f;
-    float kLinear = 4.5f / pointLight.range;
-    float kQuadratic = 75.0f / (pointLight.range * pointLight.range);
-    float attenuation = 1.0 / (kConstant + kLinear * distance + kQuadratic * distance * distance);
-    
-    
-    float3 light_color = pointLight.color.rgb * texColor * attenuation;
-    float3 vToL = -lightdir;
-    float3 vReflect = reflect(lightdir, normal);
-    float3 vView = normalize(g_EyePos - worldPos);
-    float3 ambient = texColor * float3(0.06, 0.06, 0.06);
-    float3 diffuse = light_color * saturate(dot(normal, vToL));
-    float3 specular = light_color * pow(saturate(dot(vReflect, vView)), 10);
-    float3 _color = ambient + diffuse + specular;
-    return _color;
-}
+
+float4 albedo = float4(1.0, 1.0, 1.0, 1.0);
+
 float4 main(VS_OUTPUT ps_in) : SV_Target
 {
-    
 	float4 sColor = _MainTex.Sample(sampler_MainTex, ps_in.tex);
     clip(sColor.a < 0.1f? -1 : 1);
-    // phong shading
-    float3 vNormal = normalize(ps_in.normal);
-    float3 texColor = float3(sColor.r * color.r, sColor.g * color.g, sColor.b * color.b);
+    float3 texColor = sColor.rgb * albedo.rgb;
+
     // directional light
-    float3 dir_color = get_directional_light(vNormal, ps_in.worldPos, g_DirLight, texColor);
+    float3 dir_color = get_directional_light(ps_in, g_DirLight, texColor);
     // point light
-    float3 point_color = get_point_light(vNormal, ps_in.worldPos, g_PointLight, texColor);
+    float3 point_color = get_point_light(ps_in, g_PointLight, texColor);
     float3 color = dir_color + point_color;
-    return float4(color, sColor.a);
+
+    float3 ambient = texColor.rgb * float3(0.03, 0.03, 0.03);
+    return float4(gammaCorrect(color,2.2), sColor.a);
 }
