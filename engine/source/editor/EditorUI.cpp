@@ -4,6 +4,7 @@
 #include "world/WorldManager.h"
 #include "object/GameObject.h"
 #include "scene/SceneManager.h"
+#include "Material.h"
 namespace TinyEngine
 {
     
@@ -78,6 +79,50 @@ namespace TinyEngine
             trans_ptr->SetLocalEulerAngle(Vector3(rotation_val[0], rotation_val[1], rotation_val[2]));
             trans_ptr->SetScale(Vector3(scale_val[0], scale_val[1], scale_val[2]));
             // drawSelectedEntityAxis();
+        };
+
+        m_editor_ui_creator["Material"] = [this](std::string name, void* value_ptr) -> void {
+            // draw line
+            ImGui::Separator();
+            ImGui::Text(name.c_str());
+            Material* mat_ptr = static_cast<Material*>(value_ptr);
+            auto& variableMap = mat_ptr->GetVariableMap();
+            for(auto & pair: variableMap)
+            {
+                auto & name = pair.first;
+                auto & var = pair.second;
+                switch(var.GetType())
+                {
+                    case Material::EVarType::Integer:
+                    {
+                        int val = var;
+                        ImGui::TableNextColumn();
+                        ImGui::DragInt(name.c_str(), &val, 0.1f, 0, 10);
+                        var = val;
+                        break;
+                    }
+                    case Material::EVarType::Float:
+                    {
+                        float val = var;
+                        ImGui::TableNextColumn();
+                        bool change = ImGui::DragFloat(name.c_str(), &val, 0.01f, 0.0f, 1.0f);
+                        if(change)
+                            var = val;
+                        break;
+                    }
+                    case Material::EVarType::_Color:
+                    {
+                        // Color val = var;
+                        // float color[4] = {val.GetRf(), val.GetGf(), val.GetBf(), val.GetAf()};
+                        // ImGui::TableNextColumn();
+                        // auto change = ImGui::ColorEdit4(name.c_str(), color);
+                        // if(change)
+                        //     var = Color(color);
+                        // var = Color(color);
+                        break;
+                    }
+                }
+            }
         };
 
         m_editor_ui_creator["int"] = [this](std::string name, void* value_ptr) -> void {
@@ -347,6 +392,7 @@ namespace TinyEngine
             return;
 
         const auto& all_gobjects = current_active_level->GetAllGameObjects();
+        auto selectedID = g_editor_global_context.m_scene_manager->getSelectedObjectID();
         for (auto& id_object_pair : all_gobjects)
         {
             const size_t      object_id = id_object_pair.first;
@@ -355,7 +401,7 @@ namespace TinyEngine
             else if(pGO->transform().GetParent() == nullptr)
             {
                 ImGui::Indent(10.f);
-                if (ImGui::Selectable(pGO->GetName().c_str(), g_editor_global_context.m_scene_manager->getSelectedObjectID() == object_id))
+                if (ImGui::Selectable(pGO->GetName().c_str(), selectedID == object_id))
                 {
                     g_editor_global_context.m_scene_manager->onGameObjectSelected(object_id);
                     break;
@@ -580,6 +626,13 @@ namespace TinyEngine
         static ImGuiTableFlags flags                      = ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings;
         auto pTrans = selected_object->GetComponent<Transform>();
         m_editor_ui_creator["Transform"]("<Transform>", pTrans);
+
+        auto pRenderer = selected_object->GetComponent<Renderer>();
+
+        if(pRenderer)
+        {
+            m_editor_ui_creator["Material"]("<Material>", pRenderer->GetMaterialPtr());
+        }
         // auto&&                 selected_object_components = selected_object->GetComponent();
         // for (auto component_ptr : selected_object_components)
         // {

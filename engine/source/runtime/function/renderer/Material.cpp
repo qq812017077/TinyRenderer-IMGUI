@@ -7,6 +7,7 @@
 #include <filesystem>
 #include "components/Renderer.h"
 #include "core/math/Matrix.h"
+#include "effect/EffectManager.h"
 namespace fs = std::filesystem;
 
 // 12 bit- 111111111111
@@ -115,7 +116,7 @@ std::shared_ptr<ShaderResource> Material::GetUpdatedShaderResourcePtr(ShaderBase
             case EVarType::Float:
                 bufferVariable->SetFloat(variable);
                 break;
-            case EVarType::Color:
+            case EVarType::_Color:
                 bufferVariable->SetColor(variable);
                 break;
             case EVarType::Matrix4x4:
@@ -145,7 +146,6 @@ std::shared_ptr<ShaderResource> Material::GetUpdatedShaderResourcePtr(ShaderBase
     }
     return pShaderResource;
 }
-
 
 /*********************************************************/
 /*                set/get operation                      */

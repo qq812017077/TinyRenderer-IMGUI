@@ -22,5 +22,5 @@ float4 main(VS_OUTPUT ps_in) : SV_Target
     float3 color = dir_color + point_color;
 
     float3 ambient = texColor.rgb * float3(0.03, 0.03, 0.03);
-    return float4(gammaCorrect(color,2.2), sColor.a);
+    return float4(color, sColor.a);
 }

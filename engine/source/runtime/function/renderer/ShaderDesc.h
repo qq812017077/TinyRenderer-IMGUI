@@ -163,10 +163,10 @@ struct CBufferVariable : public ICBufferVariable
 	void SetInt(INT val) override       { SetRaw(&val, 0, 4); }
 	void SetFloat(FLOAT val) override   { SetRaw(&val, 0, 4); }
 	void SetColor(Color color) override {
-		colordata[0] = color.GetR() / 255.0f;
-		colordata[1] = color.GetG() / 255.0f;
-		colordata[2] = color.GetB() / 255.0f;
-		colordata[3] = color.GetA() / 255.0f;
+		colordata[0] = color.GetRf();
+		colordata[1] = color.GetGf();
+		colordata[2] = color.GetBf();
+		colordata[3] = color.GetAf();
 		SetFloatVector(4, colordata);
 	}
 	void SetMatrix(Matrix4x4 matrix) override { SetFloatMatrix(4, 4, matrix.GetData()); }

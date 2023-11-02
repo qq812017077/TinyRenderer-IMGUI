@@ -5,6 +5,7 @@
 #include "input/Input.h"
 #include "FrameBuffer.h"
 #include "Graphics.h"
+#include "global/RuntimeGlobalContext.h"
 namespace TinyEngine
 {
     bool g_is_editor_mode {true};
@@ -23,14 +24,15 @@ namespace TinyEngine
 
         // 2. initialize assetManager
         
-        // 3. initialize worldManager
-        WorldManager::Get().Initialize();
-        // 4. initialize sceneManager
-        SceneManager::Get().Initialize();
-        // 5. initialize inputSystem
-        Input::InputSystem::Get().Initialize();
-        // 6. Initialize EffectManager
+        // 3. Initialize EffectManager
         EffectManager::Get().Initialize();
+        
+        // 4. initialize worldManager
+        WorldManager::Get().Initialize();
+        // 5. initialize sceneManager
+        SceneManager::Get().Initialize();
+        // 6. initialize inputSystem
+        Input::InputSystem::Get().Initialize();
 
         // initialize frame buffer
         m_framebuffer = new FrameBuffer();

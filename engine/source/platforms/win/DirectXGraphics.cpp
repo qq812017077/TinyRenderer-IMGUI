@@ -140,7 +140,7 @@ void DirectXGraphics::ApplyPass(TinyEngine::ShaderPass &pass)
     setRasterizerState(pass.rasterDesc);
 }
 
-void DirectXGraphics::Draw(TinyEngine::RenderEntity* entity)
+void DirectXGraphics::Draw(TinyEngine::RenderEntity* entity, EDrawMode mode)
 {
     if(entity == nullptr) return;
     HLSLVertexShader *pVertexShader = nullptr;
@@ -169,7 +169,7 @@ void DirectXGraphics::Draw(TinyEngine::RenderEntity* entity)
     helper.SetGlobalMatrix("g_World", entity->m_world_matrix);
     helper.SetGlobalMatrix("g_WorldInv", entity->m_world_matrix_inv);
     UpdateCBuffer(pObjectConstantBuffer, helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerDrawCBufSlot));
-    drawMesh(pVertexShader, *(entity->m_mesh));
+    drawMesh(pVertexShader, *(entity->m_mesh), mode);
 }
 
 
@@ -321,6 +321,9 @@ void DirectXGraphics::drawMesh(HLSLVertexShader *pVertexShader, Mesh &mesh, EDra
     {
         case EDrawMode::TriangleList:
             pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            break;
+        case EDrawMode::TriangleStrip:
+            pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
             break;
         case EDrawMode::LineList:
             pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_LINELIST);

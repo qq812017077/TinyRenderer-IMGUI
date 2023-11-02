@@ -95,7 +95,9 @@ namespace TinyEngine::Graph
             D3D11_MAPPED_SUBRESOURCE mapped = {};
             GFX_THROW_INFO(pGfx->GetContext()->Map(pTexForRead.Get(), 0u, D3D11_MAP_READ, 0u, &mapped));
             auto pTexData = reinterpret_cast<UINT*>(mapped.pData);
-            auto id = pTexData[(int)(v * (float)descForRead.Height) * descForRead.Width + (int)(u * (float)descForRead.Width)];
+            int x = (int)(u * (float)descForRead.Width);
+            int y = (int)(v * (float)descForRead.Height);
+            auto id = pTexData[y * descForRead.Width + x];
             pGfx->GetContext()->Unmap(pTexForRead.Get(), 0u);
             return id;
         }

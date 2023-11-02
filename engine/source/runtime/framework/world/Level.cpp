@@ -322,6 +322,68 @@ GameObject* Level::addGameObject(GameObject* pGo)
         bcube->transform().SetPosition({ -100.0f, 60.0f, 200.0f });
         bcube->transform().SetScale({ 50.0f, 50.0f, 3.0f });
     }
+
+
+    void Level::LoadTestSphere()
+    {
+        auto camGO = CreateGameObject("Cam");
+        auto m_main_camera = camGO->AddComponent<Camera>();
+        camGO->AddComponent<CamController>();
+
+        camGO->pTransform->SetPosition({ -4.0f, 00.0f, -5.0f });
+        camGO->pTransform->SetEulerAngle({ 00.0f, 35.0f, 0.0f });
+
+        auto pDirLightGO = Light::CreateDirectionalLight("dirLight");
+        auto pDirLight = pDirLightGO->GetComponent<Light>();
+        pDirLight->pTransform->SetPosition({ 0.0f, 0.0f, 0.0f });
+        pDirLight->SetIntensity(0.2f);
+
+
+        auto pPointLightGO = Light::CreatePointLight("pointLight");
+        auto pPointLight = pPointLightGO->GetComponent<Light>();
+        pPointLight->pTransform->SetPosition({ 0.0f, 0.0f, -3.0f });
+        pPointLight->SetIntensity(1.0f);
+        pPointLight->SetRange(20.f);
+        
+        if(pPointLight)
+        {
+            auto pMat = Material::Create("Unlit", "Unlit-Material");
+            auto pWhiteLittleCube = Primitive::CreateCube("white littleCube");
+            pWhiteLittleCube->GetComponent<Renderer>()->SetMaterial(pMat);
+            pWhiteLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::White());
+            pWhiteLittleCube->transform().SetPosition({ 0.0f, 0.f, 0.0f });
+            pWhiteLittleCube->transform().SetScale({ 0.1f, 0.1f, 0.1f });
+            pWhiteLittleCube->transform().SetParent(pPointLightGO->transform());
+            pWhiteLittleCube->transform().SetLocalPosition({ 0.0f, 0.0f, 0.0f });
+        }
+
+        // Create 5 * 5 spheres
+        auto pMat = Material::GetDefaultMaterialPtr();
+        std::string name = "sphere";
+        int count = 0;
+        float metallic = 0.0f;
+        float smoothness = 0.0f;
+        int size = 2;
+        int size_sqr = size * size;
+        float fsize = (float)size;
+        for (int i = -size ; i <= size; i++)
+        {
+            metallic = ( i + size) / float(size_sqr);
+            for(int j = -size; j <= size; j++)
+            {
+                smoothness = ( i + size) / float(size_sqr);
+                auto sphere = addGameObject(Primitive::CreateSphere(name + std::to_string(count++), 1.0f, 50, 50));
+                // auto sphere = addGameObject(Primitive::CreateCube(name + std::to_string(count++)));
+                sphere->transform().SetPosition({ i * 2.0f,  j * 2.0f, 0.0f });
+                sphere->transform().SetScale({ 0.5f, 0.5f, 0.5f });
+                auto pRenderer = sphere->GetComponent<Renderer>();
+                pRenderer->SetMaterial(pMat);
+                pRenderer->GetMaterial()->SetColor("albedo", Color::White());
+                pRenderer->GetMaterial()->SetFloat("metallic", metallic);
+                pRenderer->GetMaterial()->SetFloat("smoothness", smoothness);
+            }
+        }
+    }
 /************************************************************************************************/
 /*                                         Static Methods                                      */
 /************************************************************************************************/

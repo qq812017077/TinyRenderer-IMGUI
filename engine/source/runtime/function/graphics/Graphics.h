@@ -46,6 +46,7 @@ public:
     enum class EDrawMode
     {
         TriangleList,
+        TriangleStrip,
         LineList,
         LineStrip,
         PointList
@@ -76,7 +77,7 @@ public:
     virtual void UnbindAllResource() = 0;
     virtual void ApplyState(TinyEngine::RenderState * pState) = 0;
     virtual void ApplyPass(TinyEngine::ShaderPass & pass) = 0;
-    virtual void Draw(TinyEngine::RenderEntity* entity) = 0;
+    virtual void Draw(TinyEngine::RenderEntity* entity, EDrawMode mode = EDrawMode::TriangleList) = 0;
     virtual void ApplyPassToRenderList(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers) = 0;
     virtual void ApplyPassToRenderTarget(TinyEngine::ShaderPass & pass, TinyEngine::RenderTarget * pRenderers) = 0;
     virtual void ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh, EDrawMode mode = EDrawMode::TriangleList) = 0;

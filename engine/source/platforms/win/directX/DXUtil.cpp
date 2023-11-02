@@ -1,6 +1,7 @@
 #include "DXUtil.h"
 #include "EngineWin.h"
 #include "Texture.h"
+#include "Exceptions.h"
 // COM Release
 #define SAFE_RELEASE(p) { if ((p)) { (p)->Release(); (p) = nullptr; } }
 
@@ -250,10 +251,17 @@ UINT GetDataStride(DXGI_FORMAT format)
 
 DXGI_FORMAT GetTextureFormat(ETextureFormat textureFormat, bool islinear)
 {
-    if(textureFormat == ETextureFormat::RGBA4444) return DXGI_FORMAT_B4G4R4A4_UNORM;
-
-
-    return islinear? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    // if(textureFormat == ETextureFormat::RGBA4444) return DXGI_FORMAT_B4G4R4A4_UNORM;
+    switch(textureFormat)
+    {
+        case ETextureFormat::RGB24:
+        case ETextureFormat::RGBA32:
+            return islinear? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        case ETextureFormat::RGBFloat:
+            return DXGI_FORMAT_R32G32B32_FLOAT;
+    }
+    
+    THROW_ENGINE_EXCEPTION("Unsupported texture format["+std::to_string(textureFormat)+"], now only support RGBA32/RGB32 and RGBAFloat");
 }
 
 D3D11_FILTER GetTextureFilterMode(EFilterMode filterMode)
@@ -314,7 +322,7 @@ Texture* pInputTex, ID3D11ShaderResourceView ** ppOutputTextureView)
     
 
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = GetTextureFormat(pInputTex->GetTextureFormat(), pInputTex->IsLinear());
+    srvDesc.Format = ImageTextureDesc.Format;
     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MipLevels = 1;
     srvDesc.Texture2D.MostDetailedMip = 0;

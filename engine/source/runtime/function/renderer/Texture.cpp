@@ -9,6 +9,22 @@
 #include "Color.h"
 #include <string>
 
+
+static int GetPixelByteSize(ETextureFormat textureFormat)
+{
+    switch (textureFormat)
+    {
+    case ETextureFormat::RGBA32:
+        return 4 * sizeof(uint8_t);
+    case ETextureFormat::RGBAFloat:
+        return 4 * sizeof(float);
+    case ETextureFormat::RGBFloat:
+        return 3 * sizeof(float);
+    }
+    THROW_ENGINE_EXCEPTION("unknowned texture format. cannot get channel");
+    return 0;
+}
+
 std::shared_ptr<Texture> Texture::pDefaultTexture = nullptr;
 
 Texture::Texture(int width, int height):
@@ -17,7 +33,7 @@ Texture::Texture(int width, int height):
 }
 
 Texture::Texture(int width, int height, ETextureFormat textureFormat, int mipCount, bool linear):
-    Texture(Surface(width, height), textureFormat, mipCount, linear)
+    Texture(Surface(width, height, GetPixelByteSize(textureFormat)), textureFormat, mipCount, linear)
 {
 }
 
@@ -34,8 +50,8 @@ Texture::Texture(Texture&& texture) noexcept:
     texture.m_MipChain.clear();
 }
 
-Texture::Texture(Surface&& surface):
-    Texture(std::move(surface), surface.AlphaLoaded() ? ETextureFormat::RGBA32 : ETextureFormat::RGB24, 0, false)
+Texture::Texture(Surface&& surface, ETextureFormat textureFormat):
+    Texture(std::move(surface), textureFormat, 0, false)
 {
     
 }
@@ -68,7 +84,20 @@ int Texture::GetHeight() const
 
 int Texture::GetPitch() const
 {
-    return m_Surface.width * sizeof( Color );
+    switch (m_TextureFormat)
+    {
+    case ETextureFormat::RGBA32:
+        return m_Surface.width * 4 * sizeof(uint8_t);
+    case ETextureFormat::RGB24:
+        return m_Surface.width * 3 * sizeof(uint8_t);
+    case ETextureFormat::RGBAFloat:
+        return m_Surface.width * 4 * sizeof(float);
+    case ETextureFormat::RGBFloat:
+        return m_Surface.width * 3 * sizeof(float);
+    }
+    THROW_ENGINE_EXCEPTION("unknowned texture format. cannot get pitch");
+    return 0;
+    // return m_Surface.width * sizeof( Color );
 }
 void Texture::PutPixel( unsigned int x,unsigned int y,Color c )
 {
@@ -77,7 +106,8 @@ void Texture::PutPixel( unsigned int x,unsigned int y,Color c )
 	assert( y >= 0 );
 	assert( x < m_Surface.width );
 	assert( y < m_Surface.height );
-	m_Surface.pBuffer[y * m_Surface.width + x] = c;
+	// m_Surface.pBuffer[y * m_Surface.width + x] = c;
+    THROW_ENGINE_EXCEPTION("Not implemented");
 }
 Color Texture::GetPixel( unsigned int x,unsigned int y ) const
 {
@@ -85,7 +115,9 @@ Color Texture::GetPixel( unsigned int x,unsigned int y ) const
 	assert( y >= 0 );
 	assert( x < m_Surface.width );
 	assert( y < m_Surface.height );
-	return m_Surface.pBuffer[y * m_Surface.width + x];
+    
+    THROW_ENGINE_EXCEPTION("Not implemented");
+	return Color::White();
 }
 
 ETextureFormat Texture::GetTextureFormat() const
@@ -123,7 +155,7 @@ bool Texture::HasAlphaChannel() const
 {
     return m_TextureFormat == ETextureFormat::RGBA32;
 }
-Color * Texture::GetImageData() const
+uint8_t * Texture::GetImageData() const
 {
     return m_Surface.pBuffer.get();
 }
@@ -161,7 +193,20 @@ void Texture::SetMipMapLevel(int mipMapLevel)
 
 void Texture::Clear(Color fillValue)
 {
-    memset( m_Surface.pBuffer.get(), fillValue.dword, m_Surface.width * m_Surface.height * sizeof( Color ));
+    switch (m_TextureFormat)
+    {
+    
+    case ETextureFormat::RGB24:
+    case ETextureFormat::RGBA32:
+        memset(m_Surface.pBuffer.get(), fillValue.dword(), m_Surface.width * m_Surface.height * 4 * sizeof(unsigned char));
+        break;
+    case ETextureFormat::RGBAFloat:
+        THROW_ENGINE_EXCEPTION("Not implemented");
+        break;
+    case ETextureFormat::RGBFloat:
+        THROW_ENGINE_EXCEPTION("Not implemented");
+        break;
+    }
 }
 
 std::shared_ptr<Texture> Texture::LoadFrom(const char* filename)
@@ -169,7 +214,7 @@ std::shared_ptr<Texture> Texture::LoadFrom(const char* filename)
     int width;
 	int height;
 	int channels;
-	unsigned char *image = stbi_load(filename, &width, &height, &channels, STBI_default);
+	unsigned char *image = stbi_load(filename, &width, &height, &channels, STBI_default); // force channels = 4
 	if (!image) {
 		// throw std::runtime_error("Failed to load image: " + filename);
 		char error[50] = "Failed to load image: ";
@@ -178,28 +223,38 @@ std::shared_ptr<Texture> Texture::LoadFrom(const char* filename)
 	}
     
 	assert(width > 0 && height > 0 && channels > 0);
-	
-	std::unique_ptr<Color[]> pBuffer = std::make_unique<Color[]>(width * height);
-	
-	Color c;
-	for( int y = 0; y < height; y++ )
+
+    long numBytes = height * width * 4 * sizeof(uint8_t);
+    std::unique_ptr<uint8_t[]> buffer = std::make_unique<uint8_t[]>(numBytes);
+
+    /**
+     * we need to expand the image to 4 channels, because dx11 has no support for R8G8B8, only R8G8B8A8
+     */
+    for( int y = 0; y < height; y++ )
 	{
 		for( int x = 0; x < width; x++ )
 		{
-			auto r = image[(y * width + x) * channels + 0];
-			auto g = image[(y * width + x) * channels + 1];
-			auto b = image[(y * width + x) * channels + 2];
-			auto a = channels == 4 ? image[(y * width + x) * channels + 3] : 255;
-			// save the pixel to our buffer
-			pBuffer[y * width + x] = Color(r, g, b, a);
+            buffer[(y * width + x) * 4 + 0] = image[(y * width + x) * channels + 0];
+            buffer[(y * width + x) * 4 + 1] = image[(y * width + x) * channels + 1];
+            buffer[(y * width + x) * 4 + 2] = image[(y * width + x) * channels + 2];
+            buffer[(y * width + x) * 4 + 3] = channels == 4 ? image[(y * width + x) * channels + 3] : 255;
 		}
 	}
 	free(image);
-    return std::make_shared<Texture>(Texture(Surface(width, height, std::move(pBuffer), channels)));
+    auto pTex = std::make_shared<Texture>(Texture(Surface(width, height, std::move(buffer)), ETextureFormat::RGBA32));
+    return pTex;
 }
+
 std::shared_ptr<Texture> Texture::LoadFrom(const std::string name)
 {
     return LoadFrom(name.c_str());
+}
+
+
+std::shared_ptr<Texture> Texture::LoadHDRFrom(const std::string filename)
+{
+    THROW_ENGINE_EXCEPTION("Not implemented");
+    return nullptr;
 }
 
 Texture * Texture::GetDefaultTexturePtr()
@@ -231,12 +286,5 @@ void Texture::generateMipChain()
     {
     }
 }
-
-// void Surface::Copy( const Surface & src ) noexcept(!IS_DEBUG)
-// {
-// 	assert( width == src.width );
-// 	assert( height == src.height );
-// 	memcpy( pBuffer.get(),src.pBuffer.get(),width * height * sizeof( Color ) );
-// }
 
 

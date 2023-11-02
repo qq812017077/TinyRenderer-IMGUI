@@ -1,6 +1,7 @@
 #include "Basic.hlsli"
 #include "Math.hlsli"
-#include "PBR.hlsli"
+#include "Lambert.hlsli"
+// #include "PBR.hlsli"
 
 float4 albedo = float4(1.0, 1.0, 1.0, 1.0);
 
@@ -20,5 +21,5 @@ float4 main(VS_OUTPUT ps_in) : SV_Target
     float3 point_color = get_point_light(ps_in, g_PointLight, texColor.rgb);
     
     float3 color = dir_color + point_color;
-    return float4(ambient + gammaCorrect(color,2.2), 1.0);
+    return float4(ambient + color, 1.0);
 }

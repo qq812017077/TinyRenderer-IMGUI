@@ -54,7 +54,8 @@ namespace TinyEngine
         m_current_active_level = new Level();
         m_levels.push_back(m_current_active_level);
         // m_current_active_level->LoadDefault();
-        m_current_active_level->LoadSponzaScene();
+        // m_current_active_level->LoadSponzaScene();
+        m_current_active_level->LoadTestSphere();
     }
 
     void WorldManager::processPendingLoadWorld()

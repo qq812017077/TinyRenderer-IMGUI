@@ -12,7 +12,7 @@ public:
     static GameObject* CreateCube(std::string name);
     static GameObject* CreatePlane(std::string name);
     static GameObject* CreateBox(std::string name, float width, float height, float depth);
-    static GameObject* CreateSphere(std::string name, float radius, int slice, int stack);
+    static GameObject* CreateSphere(std::string name, float radius = 1, int slice = 20, int stack = 20);
     static std::shared_ptr<Mesh> CreateQuadMeshPtr();
     static Mesh CreateQuadMesh();
     static Mesh CreateCameraWireframeMesh();

@@ -17,5 +17,5 @@ float4 main(VS_OUTPUT ps_in) : SV_Target
     // point light
     float3 point_color = get_point_light(ps_in, g_PointLight, texColor.rgb);
     float3 color = dir_color + point_color;
-    return float4(gammaCorrect(color, 2.2), texColor.a);
+    return float4(color, texColor.a);
 }

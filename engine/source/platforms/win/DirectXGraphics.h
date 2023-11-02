@@ -42,7 +42,7 @@ public:
 
     void ApplyState(TinyEngine::RenderState * pState) override;
     void ApplyPass(TinyEngine::ShaderPass & pass) override;
-    void Draw(TinyEngine::RenderEntity* entity) override;
+    void Draw(TinyEngine::RenderEntity* entity, EDrawMode mode = EDrawMode::TriangleList) override;
     void ApplyPassToRenderList(TinyEngine::ShaderPass & pass, std::vector<Renderer*> & renderers) override;
     void ApplyPassToRenderTarget(TinyEngine::ShaderPass & pass, TinyEngine::RenderTarget * pRenderers) override;
     void ApplyPassToMesh(TinyEngine::ShaderPass & pass, Mesh * pMesh, EDrawMode mode = EDrawMode::TriangleList) override;

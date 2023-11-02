@@ -22,7 +22,8 @@ float3 fresnelSchlick(float cosTheta, float3 F0)
     NDF: normal distribution function
 */
 float DistributionGGX(float3 N, float3 H, float roughness)
-{
+{   
+    roughness = clamp(roughness, 0.01, 0.99);
     float a      = roughness*roughness;
     float a2     = a*a;
     float NdotH  = max(dot(N, H), 0.0);
@@ -40,12 +41,11 @@ float DistributionGGX(float3 N, float3 H, float roughness)
 */
 float GeometrySchlickGGX(float NdotV, float roughness)
 {
+    roughness = clamp(roughness, 0.01, 0.99);
     float r = (roughness + 1.0);
     float k = (r*r) / 8.0;
-
     float num   = NdotV;
     float denom = NdotV * (1.0 - k) + k;
-	
     return num / denom;
 }
 

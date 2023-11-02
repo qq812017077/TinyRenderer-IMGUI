@@ -44,7 +44,7 @@ public:
     bool UseMipMap() const;
     bool IsLinear() const;
     bool HasAlphaChannel() const;
-    Color * GetImageData() const;
+    uint8_t * GetImageData() const;
 
     EFilterMode GetFilterMode() const;
     EWrapMode GetWrapMode() const;
@@ -58,43 +58,44 @@ public:
     void Clear(Color c);
     static std::shared_ptr<Texture> LoadFrom(const std::string name);
     static std::shared_ptr<Texture> LoadFrom(const char* name);
+    static std::shared_ptr<Texture> LoadHDRFrom(const std::string name);
     static Texture* GetDefaultTexturePtr();
 
 private:
     class Surface
     {
     public:
-        Surface( unsigned int width, unsigned int height, int channels=3):
-            Surface(width, height, std::make_unique<Color[]>(width * height), channels)
+        Surface( unsigned int width, unsigned int height, int bytePerPixel):
+            Surface(width, height, std::make_unique<uint8_t[]>(width * height * bytePerPixel))
         {}
-        Surface(Surface && source ) noexcept : Surface( source.width,source.height,std::move( source.pBuffer ), source.channels )
+        Surface(Surface && source ) noexcept : Surface( source.width,source.height,std::move(source.pBuffer))
         {}
 
-        Surface( unsigned int width,unsigned int height,std::unique_ptr<Color[]> pBufferParam, int channels) noexcept:
-            width( width ), height( height ), pBuffer( std::move( pBufferParam)), channels(channels){}
+        Surface( unsigned int width,unsigned int height, std::unique_ptr<uint8_t []> pBufferParam) noexcept:
+            width( width ), height( height ), pBuffer( std::move( pBufferParam)){}
         Surface::~Surface() {}
         Surface( Surface& ) = delete;
-        Surface& operator=( Surface&& donor ) noexcept = default;
+        Surface& operator=( Surface&& donor ) noexcept{
+            width = donor.width;
+            height = donor.height;
+            pBuffer = std::move(donor.pBuffer);
+            return *this;
+        }
         Surface& operator=( const Surface& ) = delete;
 
-        bool AlphaLoaded() const noexcept {return channels == 4;}
-        // virtual void Copy( const Surface& src ) noexcept(!IS_DEBUG);
-
         std::string path;
-        std::unique_ptr<Color[]> pBuffer;
+        std::unique_ptr<uint8_t[]> pBuffer;
+        // std::vector<uint8_t> buffer;
         unsigned int width;
         unsigned int height;
-        unsigned int pitch;
-        int channels;
     };
-    Texture(Surface&& surface);
+    Texture(Surface&& surface, ETextureFormat textureFormat);
     Texture(Surface&& surface, ETextureFormat textureFormat, int mipCount, bool linear);
 
     void releaseMipChain();
     void generateMipChain();
 private:
     
-
     std::string name;
     Surface m_Surface;
     std::vector<Surface *> m_MipChain;

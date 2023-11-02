@@ -33,12 +33,12 @@ private:
         std::shared_ptr<Texture> pTexture;
         std::string samplerName;
     };
-
+public:
     enum class EVarType
     {
         Integer,
         Float,
-        Color,
+        _Color,
         Matrix4x4,
         Texture
     };
@@ -48,7 +48,7 @@ private:
     #define VAR_TYPE(type, enumType) template<> struct VarMap<type> { using Type = type; static constexpr EVarType TypeEnum = EVarType::enumType; }
     VAR_TYPE(int, Integer);
     VAR_TYPE(float, Float);
-    VAR_TYPE(Color, Color);
+    VAR_TYPE(Color, _Color);
     VAR_TYPE(Matrix4x4, Matrix4x4);
     VAR_TYPE(TextureInfo, Texture);
     #undef VAR_TYPE
@@ -86,7 +86,8 @@ private:
         EVarType type;
         bool dirty;
     };
-
+    
+private:
     Material() = delete;
     // Material(std::string vertexShaderPath, std::string pixelShaderPath, std::string materialName, size_t mat_id);
     Material(std::shared_ptr<Effect> pEffect, std::string materialName, size_t mat_id);
@@ -109,7 +110,7 @@ public:
 
     // resource operation
     std::shared_ptr<ShaderResource> GetUpdatedShaderResourcePtr(ShaderBase* shader);
-
+    std::unordered_map<std::string, Variable>& GetVariableMap() { return variableMap; }
     // uniform buffer operation
     void SetInteger(const char * name, int value);
     void SetFloat(const char * name, float value);
