@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <memory>
 #include "graphics/BufferResource.h"
+#include "TextureFormat.h"
 
 class Graphics;
 namespace TinyEngine::Graph
@@ -75,6 +76,8 @@ namespace TinyEngine::Graph
         static ResourceDesc GOIDRT() { return {ResourceType::InstanceID}; }
         
     };
+    
+    
 
     class VirtualRenderResource
     {

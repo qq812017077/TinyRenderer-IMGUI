@@ -2,6 +2,14 @@
 #include "DXUtil.h"
 #include "Exceptions.h"
 
+std::unordered_map<UINT, bool> HLSLShaderHelper::m_GlobalTextureSlots = {
+    {HLSLShaderHelper::ShadowMapSlot, true},
+    {HLSLShaderHelper::ShadowCubeMapSlot, true},
+    {HLSLShaderHelper::IrradianceMapSlot, true},
+    {HLSLShaderHelper::PrefilterMapSlot, true},
+    {HLSLShaderHelper::BrdfLutMapSlot, true}
+};
+
 HRESULT HLSLShaderHelper::LoadShader(DirectXGraphics& gfx, const std::wstring& path, LPCSTR entryPoint, LPCSTR shaderModel, 
     wrl::ComPtr<ID3D11VertexShader>& pVertexShaderOut, wrl::ComPtr<ID3DBlob> & pBlobOut, wrl::ComPtr<ID3D11ShaderReflection> & pShaderReflectionOut)
 {
@@ -68,6 +76,7 @@ HRESULT HLSLShaderHelper::LoadShaderInfo(ID3D11ShaderReflection* pShaderReflecti
                     hr = constantBuffer->GetDesc(&cbufferDesc);
                     if (FAILED(hr)) return hr;
                     bool isParam = !strcmp(bindDesc.Name, "$Params");
+                    bool isGlobal = !strcmp(bindDesc.Name, "$Globals");
                     if (!isParam)
                     {
 
@@ -75,7 +84,7 @@ HRESULT HLSLShaderHelper::LoadShaderInfo(ID3D11ShaderReflection* pShaderReflecti
                     {
                         
                     }
-                    if(bindDesc.BindPoint <= MaxCommonSlot){
+                    if(!isGlobal && bindDesc.BindPoint <= MaxCommonSlot){
                         if(Get().AddCommonConstantBuffer(cbufferDesc.Name, bindDesc.BindPoint, cbufferDesc.Size))
                         {
                             for (UINT j = 0; j < cbufferDesc.Variables; ++j)
@@ -105,6 +114,7 @@ HRESULT HLSLShaderHelper::LoadShaderInfo(ID3D11ShaderReflection* pShaderReflecti
                             D3D11_SHADER_TYPE_DESC stDesc;
                             variableType->GetDesc(&stDesc);
                             buffDesc.variables.emplace_back(variableDesc.Name, variableDesc.StartOffset, variableDesc.Size);
+                            buffDesc.variables.back().isGlobal = isGlobal;
                         }
                         pShaderDesc->cbuffers.emplace_back(buffDesc);
                     }
@@ -112,7 +122,23 @@ HRESULT HLSLShaderHelper::LoadShaderInfo(ID3D11ShaderReflection* pShaderReflecti
                 break;
             case D3D_SIT_TEXTURE:
                 {
-                    pShaderDesc->textures.emplace_back(bindDesc.BindPoint, bindDesc.Name);
+                    TextureDim texDim;
+                    switch(bindDesc.Dimension)
+                    {
+                        case D3D_SRV_DIMENSION_TEXTURE2D:
+                            texDim = TextureDim::Texture2D;
+                            break;
+                        case D3D_SRV_DIMENSION_TEXTURE2DARRAY:
+                            texDim = TextureDim::Texture2DArray;
+                            break;
+                        case D3D_SRV_DIMENSION_TEXTURECUBE:
+                            texDim = TextureDim::TextureCube;
+                            break;
+                        case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
+                            texDim = TextureDim::TextureCubeArray;
+                            break;
+                    }
+                    pShaderDesc->textures.emplace_back(bindDesc.BindPoint, bindDesc.Name, texDim);
                 }
                 break;
             case D3D_SIT_SAMPLER:
@@ -129,6 +155,18 @@ HRESULT HLSLShaderHelper::LoadShaderInfo(ID3D11ShaderReflection* pShaderReflecti
 	}
 
 	return S_OK;
+}
+
+
+bool HLSLShaderHelper::IsGlobalTextureSlot(unsigned int slot)
+{
+    return m_GlobalTextureSlots.find(slot) != m_GlobalTextureSlots.end();
+    // if( slot == ShadowMapSlot || 
+    //     slot == ShadowCubeMapSlot || 
+    //     slot == IrradianceMapSlot || 
+    //     slot == PrefilterMapSlot  ||
+    //     slot == BrdfLutMapSlot)
+    //     return true;
 }
 // std::shared_ptr<ICBufferVariable> HLSLShaderHelper::GetConstantBufferVariable(const char * varName)
 // {

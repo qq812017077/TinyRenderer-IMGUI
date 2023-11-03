@@ -76,13 +76,23 @@ namespace TinyEngine
 
         // skybox effect
         auto skyboxEffect = Effect::Create("SkyBox", "shaders/SkyBoxVS.hlsl", "shaders/SkyBoxPS.hlsl");
-        
-
+        skyboxEffect->AddPass(ShaderPass::Get("IrradianceMapPass", "shaders/tools/cubemapVS.hlsl", "shaders/tools/irradiancePS.hlsl"));
+        skyboxEffect->FindPass("IrradianceMapPass").rasterDesc.cullMode = ECullMode::Front;
+        skyboxEffect->AddPass(ShaderPass::Get("PrefilterMapPass", "shaders/tools/cubemapVS.hlsl", "shaders/tools/prefilterPS.hlsl"));
+        skyboxEffect->FindPass("PrefilterMapPass").rasterDesc.cullMode = ECullMode::Front;
+                
         // add error effect
         auto errorEffect = Effect::Create("Error", "shaders/SimpleVertexShader.hlsl", "shaders/ErrorPixelShader.hlsl");
         errorEffect->FindPass("ErrorPass").renderingMode = ERenderingMode::PostProcessing;
 
+        // add tool effect
+        auto cubMapEffect = Effect::Create("CubeMap", "shaders/tools/cubemapVS.hlsl", "shaders/tools/cubemapPS.hlsl");
+        cubMapEffect->FindPass("CubeMapPass").rasterDesc.cullMode = ECullMode::Off;
 
+        auto brdfEffect = Effect::Create("BRDFLUT", "shaders/tools/brdfVS.hlsl", "shaders/tools/brdfPS.hlsl");
+        // auto cubMapEffect = Effect::Create("Prefilter", "shaders/tools/cubemapVS.hlsl", "shaders/tools/prefilterPS.hlsl");
+        // cubMapEffect->FindPass("PrefilterPass").rasterDesc.cullMode = ECullMode::Off;
+        
     }
 
     std::shared_ptr<Effect> EffectManager::FindEffect(const std::string& name)

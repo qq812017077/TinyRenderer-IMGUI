@@ -8,6 +8,7 @@
 
 class DirectXGraphics;
 class Graphics;
+struct TextureResDesc;
 namespace TinyEngine::Graph
 {
     struct ResourceDesc;
@@ -18,7 +19,7 @@ namespace TinyEngine
     class   DirectXRenderTarget : public RenderTarget
     {
         public:
-            DirectXRenderTarget(DirectXGraphics* pGfx, ID3D11Texture2D* pTexture, std::optional<UINT> face = std::nullopt);
+            DirectXRenderTarget(DirectXGraphics* pGfx, ID3D11Texture2D* pTexture, std::optional<UINT> face = std::nullopt, std::optional<UINT> mipmapLevel = std::nullopt);
             DirectXRenderTarget(DirectXGraphics* pGfx, unsigned int width, unsigned int height, DXGI_FORMAT format= DXGI_FORMAT_R8G8B8A8_UNORM);
             ~DirectXRenderTarget()  = default;
 
@@ -35,20 +36,22 @@ namespace TinyEngine
 
     };
 
-    class DepthCubeTexture : public BufferResource
+    class CubeRenderTexture : public BufferResource
     {
         public:
-            DepthCubeTexture(DirectXGraphics* pGfx, unsigned int texSize);
+
+            CubeRenderTexture(DirectXGraphics* pGfx, TextureResDesc texDesc);
 
             void BindAsTexture(Graphics* pGfx, unsigned int slot) { BindAsTexture(reinterpret_cast<DirectXGraphics*>(pGfx), slot); }
 
             void Clear(Graphics* pGfx) override;
             
             void BindAsTexture(DirectXGraphics* pGfx, UINT slot);
-            DirectXRenderTarget * GetDepthBuffer(unsigned int face) { return depthBuffers[face].get(); }
-            static std::shared_ptr<DepthCubeTexture> Create(Graphics* pGfx, TinyEngine::Graph::ResourceDesc desc);
-        private:
+            DirectXRenderTarget * GetFaceBuffer(unsigned int face, int mipmapLevel = 0);
+            static std::shared_ptr<CubeRenderTexture> Create(Graphics* pGfx, TinyEngine::Graph::ResourceDesc desc);
             Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pTextureView{ nullptr };
-            std::vector<std::unique_ptr<DirectXRenderTarget>> depthBuffers;
+        private:
+            std::vector<std::vector<std::unique_ptr<DirectXRenderTarget>>> renderBuffers;
     };
+
 }

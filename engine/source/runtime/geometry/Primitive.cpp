@@ -245,94 +245,89 @@ GameObject* Primitive::CreateBox(std::string name, float width, float height, fl
 }
 
 
-GameObject* Primitive::CreateSphere(std::string name, float radius, int sector, int stack)
+GameObject* Primitive::CreateSphere(std::string name, int sector, int stack)
 {
     std::vector<Vector3> vertices;
     std::vector<Vector3> normals;
     std::vector<Vector2> texCoords;
-
-    float x, y, z, xz;                              // vertex position
-    float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal
-    float s, t;                                     // vertex texCoord
+    constexpr float radius = 1.0f;
     
-    float sectorStep = 2 * PI / sector;             // [0, 2*PI]
-    float stackStep = PI / stack;                   // [-PI/2, PI/2]
-    float phiAngle, thetaAngle;
-
-    // vertices.push_back(Vector3(0.0f, radius, 0.0f)); // top vertex
-
-    for(int i = 0; i <= stack; i++)
+    auto base = Vector4(0.0f, 0.0f, radius, 0);
+    float longDiv = sector;
+    float latDiv = stack;
+    const float lattitudeAngle = PI / latDiv;
+    const float longitudeAngle = 2.0f * PI / longDiv;
+    for( int iLat = 1; iLat < latDiv; iLat++ )
     {
-        thetaAngle = i * stackStep;        // starting from pi/2 to -pi/2
-        xz = radius * sinf(thetaAngle);             // r * sin(theta)
-        y = radius * cosf(thetaAngle);              // r * cos(theta)
-
-        // add (slice+1) vertices per stack
-        // the first and last vertices have same position and normal, but different texCoords
-        for(int j = 0; j <= sector; ++j)
+        //rotate around X axis
+        auto latBase = Matrix4x4::RotationX( lattitudeAngle * iLat ) * base;
+        for( int iLong = 0; iLong < longDiv; iLong++ )
         {
-            phiAngle = j * sectorStep;           // starting from 0 to 2pi
-            // vertex position (x, y, z)
-            x = xz * cosf(phiAngle);             // r * cos(u) * cos(v)
-            z = xz * sinf(phiAngle);             // r * cos(u) * sin(v)
-            vertices.push_back({x, y, z});
-
-            // normalized vertex normal (nx, ny, nz)
-            nx = x * lengthInv;
-            ny = y * lengthInv;
-            nz = z * lengthInv;
-            normals.push_back({nx, ny, nz});
-
-            // vertex tex coord (s, t) range between [0, 1]
-            s = (float)j / sector;
-            t = (float)i / stack;
-            texCoords.push_back({s, t});
+            //rotate around Y axis
+            auto v = Matrix4x4::RotationZ( longitudeAngle * iLong ) * latBase;
+            vertices.push_back( Vector3( v.x, v.y, v.z ) );
+            normals.push_back( Vector3( v.x, v.y, v.z ) );
+            texCoords.push_back( Vector2( (float)iLong / longDiv, (float)iLat / latDiv ) );
         }
     }
 
-    // generate CCW index list of sphere triangles
-    // k1--k1+1
-    // |  / |
-    // | /  |
-    // k2--k2+1
-    std::vector<INDICE_TYPE> indices;
-    // std::vector<int> lineIndices;
-    int k1, k2;
-    for(int i = 0; i <= stack; i++)
+    // cap vertices
+    const auto iNorthPole = (unsigned short)vertices.size();
     {
-        k1 = i * (sector + 1);     // beginning of current stack
-        k2 = k1 + sector + 1;      // beginning of next stack
-        for(int j = 0; j < sector; ++j, ++k1, ++k2)
-        {
-            // 2 triangles per sector excluding first and last stacks
-            // k1 => k2 => k1+1
-            if(i != 0)
-            {
-                indices.push_back(k1);
-                indices.push_back(k1 + 1);
-                indices.push_back(k2);
-            }
-
-            // k1+1 => k2 => k2+1
-            if(i != (stack-1))
-            {
-                indices.push_back(k1 + 1);
-                indices.push_back(k2 + 1);
-                indices.push_back(k2);
-            }
-
-            // store indices for lines
-            // vertical lines for all stacks, k1 => k2
-            // lineIndices.push_back(k1);
-            // lineIndices.push_back(k2);
-            // if(i != 0)  // horizontal lines except 1st stack, k1 => k+1
-            // {
-            //     lineIndices.push_back(k1);
-            //     lineIndices.push_back(k1 + 1);
-            // }
-        }
+        Vector3 northPos = base;
+        vertices.push_back( northPos );
     }
-    
+    const auto iSouthPole = (unsigned short)vertices.size();
+    {
+        Vector3 southPos = Vector3::zero - base;
+        vertices.push_back( southPos );
+    }
+
+    const auto calcIdx = [latDiv,longDiv]( unsigned short iLat,unsigned short iLong )
+			{ return iLat * longDiv + iLong; };
+        
+    std::vector<unsigned short> indices;
+    for( unsigned short iLat = 0; iLat < latDiv - 2; iLat++ )
+    {
+        for( unsigned short iLong = 0; iLong < longDiv - 1; iLong++ )
+        {
+            indices.push_back( calcIdx( iLat,iLong ) );
+            indices.push_back( calcIdx( iLat + 1,iLong ) );
+            indices.push_back( calcIdx( iLat,iLong + 1 ) );
+            indices.push_back( calcIdx( iLat,iLong + 1 ) );
+            indices.push_back( calcIdx( iLat + 1,iLong ) );
+            indices.push_back( calcIdx( iLat + 1,iLong + 1 ) );
+        }
+        // wrap band
+        indices.push_back( calcIdx( iLat,longDiv - 1 ) );
+        indices.push_back( calcIdx( iLat + 1,longDiv - 1 ) );
+        indices.push_back( calcIdx( iLat,0 ) );
+        indices.push_back( calcIdx( iLat,0 ) );
+        indices.push_back( calcIdx( iLat + 1,longDiv - 1 ) );
+        indices.push_back( calcIdx( iLat + 1,0 ) );			
+    }
+
+    // cap fans
+    for( unsigned short iLong = 0; iLong < longDiv - 1; iLong++ )
+    {
+        // north
+        indices.push_back( iNorthPole );
+        indices.push_back( calcIdx( 0,iLong ) );
+        indices.push_back( calcIdx( 0,iLong + 1 ) );
+        // south
+        indices.push_back( calcIdx( latDiv - 2,iLong + 1 ) );
+        indices.push_back( calcIdx( latDiv - 2,iLong ) );
+        indices.push_back( iSouthPole );
+    }
+    // wrap triangles
+    // north
+    indices.push_back( iNorthPole );
+    indices.push_back( calcIdx( 0,longDiv - 1 ) );
+    indices.push_back( calcIdx( 0,0 ) );
+    // south
+    indices.push_back( calcIdx( latDiv - 2,0 ) );
+    indices.push_back( calcIdx( latDiv - 2,longDiv - 1 ) );
+    indices.push_back( iSouthPole );
 
     Mesh mesh;
     mesh.SetVertexPosition(vertices);

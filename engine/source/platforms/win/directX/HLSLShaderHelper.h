@@ -34,6 +34,10 @@ public:
     const static unsigned int ShadowMapSlot = 0u;
     const static unsigned int ShadowCubeMapSlot = 3u;
 
+    const static unsigned int IrradianceMapSlot = 4u;
+    const static unsigned int PrefilterMapSlot = 5u;
+    const static unsigned int BrdfLutMapSlot = 6u;
+
     HLSLShaderHelper() = default;
 
     // std::shared_ptr<ICBufferVariable> GetConstantBufferVariable(const char * varName) override;
@@ -52,6 +56,7 @@ public:
     wrl::ComPtr<ID3D11PixelShader>& pPixelShaderOut, wrl::ComPtr<ID3DBlob> & pBlobOut, wrl::ComPtr<ID3D11ShaderReflection> & pShaderReflectionOut);
 	static HRESULT LoadShaderInfo(ID3D11ShaderReflection* pShaderReflection, ShaderDesc * pShaderDesc);
     
+    static bool IsGlobalTextureSlot(unsigned int slot) ; 
 protected:
     HLSLShaderHelper(const HLSLShaderHelper&) = delete;
     HLSLShaderHelper& operator=(const HLSLShaderHelper&) = delete;
@@ -76,4 +81,6 @@ private:
 	// std::unordered_map<std::string, std::shared_ptr<GeometryShaderInfo>> m_GeometryShaders;	
 	std::unordered_map<std::string, std::shared_ptr<PixelShader>> m_PixelShaders;
 	// std::unordered_map<std::string, std::shared_ptr<ComputeShaderInfo>> m_ComputeShaders;
+
+    static std::unordered_map<UINT, bool> m_GlobalTextureSlots;
 };

@@ -5,6 +5,10 @@
 #include "Basic.hlsli"
 #include "Shadow.hlsli"
 
+float3 get_ambient(VS_OUTPUT ps_in, float3 albedo)
+{
+  return float3(0.03, 0.03, 0.03);
+}
 
 float3 get_directional_light(VS_OUTPUT ps_in, DirectionalLight dirLight, float3 texColor)
 {

@@ -24,13 +24,12 @@ std::shared_ptr<ShaderResource> ShaderBase::CreateShaderResource()
         );
         for(auto& var : cbuffer.variables)
         {
-            pShaderResource->variables.emplace(var.varName, std::make_shared<CBufferVariable>(var.startOffset, var.size, 
-            pShaderResource->CBufferBySlot[cbuffer.bindPoint].get()));
+            pShaderResource->variables.emplace(var.varName, std::make_shared<CBufferVariable>(var, pShaderResource->CBufferBySlot[cbuffer.bindPoint].get()));
         }
     }
     
-    for(auto & tex : shaderDescInfo.textures)
-        pShaderResource->textures.emplace(tex.textureName, std::make_shared<TextureVariable>(tex.bindPoint, tex.textureName));
+    for(auto & texdesc : shaderDescInfo.textures)
+        pShaderResource->textures.emplace(texdesc.textureName, std::make_shared<TextureVariable>(texdesc));
     
     int i{0};
     for(auto & sampler : shaderDescInfo.samplers)

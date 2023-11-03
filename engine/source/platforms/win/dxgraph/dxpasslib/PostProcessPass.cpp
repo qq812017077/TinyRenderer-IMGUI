@@ -73,6 +73,6 @@ namespace TinyEngine::Graph
         pGfx->BindRenderTarget(renderTarget, depthStencil);
         PostTexture->BindAsTexture(pGfx, 0);
         pGfx->ApplyPassToMesh(fullscreenPass, &quad);
-        // pGfx->ApplyPassToRenderTarget(fullscreenPass, PostTexture);
+        
     }
 }

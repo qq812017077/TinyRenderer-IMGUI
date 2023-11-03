@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "Frustum.h"
 #include "BVH.h"
+#include "Texture.h"
 
 
 namespace TinyEngine
@@ -14,7 +15,7 @@ namespace TinyEngine
     void Scene::Clear()
     {
         m_loaded = false;
-        
+        p_map_resource = nullptr;
         selectedCamera = nullptr;
         m_renderers.clear();
         selectedRenderers.clear();

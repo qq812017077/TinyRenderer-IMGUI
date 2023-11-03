@@ -6,6 +6,8 @@
 #include "Material.h"
 #include "FrameBuffer.h"
 #include "effect/Pass.h"
+#include "Texture.h"
+
 namespace TinyEngine
 {
     SceneManager::SceneManager()
@@ -19,6 +21,11 @@ namespace TinyEngine
     void SceneManager::Initialize()
     {
         if (m_scene && m_scene->m_loaded == false) m_scene->Load();
+
+        m_map_resource = std::make_shared<SceneResource>();
+        m_map_resource->m_skybox_cubemap = std::make_shared<CubeTexture>();
+        for(int i = 0 ; i < 6; i++)
+            m_map_resource->m_skybox_cubemap->textures[i] = Texture::LoadFrom("res/images/skybox/2/" + std::to_string(i) + ".png");
     }
 
     int SceneManager::Tick(FrameBuffer * pFrameBuffer)
@@ -44,6 +51,7 @@ namespace TinyEngine
         m_scene->Lock();
         m_scene->Clear();
 
+        m_scene->p_map_resource = m_map_resource.get();
         if(m_selected_object != nullptr)
         {
             auto renderer = m_selected_object->GetComponent<Renderer>();

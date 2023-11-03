@@ -6,6 +6,7 @@
 #include <set>
 #include "SceneObject.h"
 #include "core/math/Vector.h"
+#include "RenderContext.h"
 
 class Material;
 class Renderer;
@@ -38,8 +39,11 @@ namespace TinyEngine
         std::unordered_map<size_t, size_t> m_mesh_id_gobejct_id_map;
 
         GameObject * m_selected_object = nullptr;
+
+        SceneResourceDesc                   m_resource_desc;
+        std::shared_ptr<SceneResource>      m_map_resource;
     private:
-        std::vector<GameObjectDesc> m_go_descs;
+        std::vector<GameObjectDesc>         m_go_descs;
         
         Camera* m_actived_camera{nullptr};
         std::map<int, std::set<Effect *>> effectQueueByPriority;

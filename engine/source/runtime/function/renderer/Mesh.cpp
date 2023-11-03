@@ -42,6 +42,8 @@ Mesh::Mesh(Mesh const& other) :
     indices_32(other.indices_32),
     bounds(other.bounds),
     positions(other.positions),
+    positions2D(other.positions2D),
+    posType(other.posType),
     normals(other.normals),
     colors(other.colors),
     texCoords(other.texCoords),
@@ -55,10 +57,13 @@ Mesh& Mesh::operator=(Mesh& other) noexcept
 {
     availableVertexType = other.availableVertexType;
     vertices = other.vertices;
+
     indices_16 = other.indices_16;
     indices_32 = other.indices_32;
     indiceType = other.indiceType;
     positions = other.positions;
+    positions2D = other.positions2D;
+    posType = other.posType;
     normals = other.normals;
     colors = other.colors;
     texCoords = other.texCoords;
@@ -76,6 +81,8 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept
     indices_32 = std::move(other.indices_32);
     indiceType = other.indiceType;
     positions = std::move(other.positions);
+    positions2D = std::move(other.positions2D);
+    posType = other.posType;
     normals = std::move(other.normals);
     colors = std::move(other.colors);
     texCoords = std::move(other.texCoords);

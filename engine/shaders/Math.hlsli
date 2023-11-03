@@ -75,6 +75,7 @@ float bias(float3 lightDir, float3 normal)
 
 float3 gammaCorrect(float3 color, float gamma)
 {
+  // return color;
   color = color / (color + float3(1.0, 1.0, 1.0));
   return pow(color, 1.0 / gamma);
 }

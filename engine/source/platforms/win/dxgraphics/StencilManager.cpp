@@ -31,7 +31,7 @@ namespace TinyEngine
             case TinyEngine::EDepthMode::On:
                 desc.DepthEnable = TRUE;
                 break;
-            case TinyEngine::EDepthMode::DepthFirst:
+            case TinyEngine::EDepthMode::LessEqualPass:
                 desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
                 desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;  // we dont want to write to the depth buffer
                 desc.DepthEnable = TRUE;

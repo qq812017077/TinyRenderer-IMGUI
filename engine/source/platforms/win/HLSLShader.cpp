@@ -93,8 +93,8 @@ void HLSLVertexShader::LoadMaterialResource(Material * pMat)
         auto & name = pair.first;
         TextureVariable * pTexVariable = pair.second.get();
         size_t texId = pTexVariable->uniqueID;
-        unsigned int slot = pTexVariable->slot;
-        SamplerInfo& samplerInfo = shaderResource->GetSamplerInfoByName(pTexVariable->samplerName.c_str(), (int)slot);
+        int slot = pTexVariable->slot();
+        SamplerInfo& samplerInfo = shaderResource->GetSamplerInfoByName(pTexVariable->samplerName.c_str(), slot);
         size_t samplerId = samplerInfo.uniqueID;
         if(pTexVariable->isDirty)
         {
@@ -208,11 +208,10 @@ void HLSLPixelShader::LoadMaterialResource(Material * pMat)
     for(auto & pair: shaderResource->textures)
     {
         auto & name = pair.first;
-        if(name == "_ShadowMap") continue; // skip shadow map
-        if(name == "_ShadowCubeMap") continue; // skip shadow map
         TextureVariable * pTexVariable = pair.second.get();
         size_t texId = pTexVariable->uniqueID;
-        unsigned int slot = pTexVariable->slot;
+        int slot = pTexVariable->slot();
+        if(HLSLShaderHelper::IsGlobalTextureSlot(slot)) continue; // skip global texture
         SamplerInfo& samplerInfo = shaderResource->GetSamplerInfoByName(pTexVariable->samplerName.c_str(), (int)slot);
         size_t samplerId = samplerInfo.uniqueID;
         if(pTexVariable->isDirty)

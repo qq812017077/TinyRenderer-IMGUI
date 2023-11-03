@@ -44,7 +44,6 @@ namespace TinyEngine
 
         engine_runtime->BindEditor(m_editor_ui.get());
         engine_runtime->m_graphics = pWnd->Gfx().get();
-        
     }
 
     int Editor::Run()

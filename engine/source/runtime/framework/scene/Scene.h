@@ -4,10 +4,15 @@
 #include "RenderEntity.h"
 #include <mutex>
 #include <vector>
+#include <array>
+#include "RenderContext.h"
+
 namespace TinyEngine
 {
     class BVHNode;
     class Effect;
+
+
     struct AmbientLight
     {
         Vector3 m_irradiance;
@@ -73,7 +78,8 @@ namespace TinyEngine
         Vector3                 m_maxBounds {0, 0, 0};
         Vector3                 m_center {0, 0, 0};
         float                   m_diagonal {0};
-        
+
+        SceneResource*          p_map_resource;
         CameraList              m_camera_list;
         Camera *                m_main_camera {nullptr};
         Camera *                selectedCamera {nullptr};

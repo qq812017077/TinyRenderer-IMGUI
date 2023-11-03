@@ -11,7 +11,7 @@ namespace TinyEngine
 {
     class DirectXRenderTarget;
     class DirectXDepthStencil;
-    class DepthCubeTexture;
+    class CubeRenderTexture;
 }
 namespace TinyEngine::Graph
 {
@@ -24,6 +24,7 @@ namespace TinyEngine::Graph
         void Resize(DirectXGraphics * pGfx);
         wrl::ComPtr<ID3D11Buffer>& GetFrameConstantBuffer() { return pFrameConstantBuffer; }
         wrl::ComPtr<ID3D11Buffer>& GetLightingConstantBuffer() { return pLightingConstantBuffer; }
+
     private:
         DirectXGraphics * pGfx;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXRenderTarget> mainRTHandle;
@@ -33,7 +34,7 @@ namespace TinyEngine::Graph
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> depthStencilHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> goIdDSHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> shadowMapHandle;
-        TinyEngine::Graph::ResourceHandle<TinyEngine::DepthCubeTexture> shadowCubeHandle;
+        TinyEngine::Graph::ResourceHandle<TinyEngine::CubeRenderTexture> shadowCubeHandle;
 
         
         wrl::ComPtr<ID3D11Buffer> pFrameConstantBuffer = nullptr;

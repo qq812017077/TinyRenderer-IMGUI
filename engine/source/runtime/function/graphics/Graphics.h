@@ -10,6 +10,8 @@
 #include "DepthStencil.h"
 #include "graph/RenderGraph.h"
 
+class Texture;
+class CubeTexture;
 class Material;
 class Renderer;
 class VertexShader;
@@ -20,6 +22,7 @@ namespace TinyEngine
 {
     class RenderState;
     class RenderEntity;
+    class SceneResource;
 }
 
 class Graphics
@@ -88,6 +91,13 @@ public:
     int GetWidth() const noexcept { return m_width; }
     int GetHeight() const noexcept { return m_height; }
     virtual size_t PickGuidOfGameObject(float u, float v) = 0;
+
+    void UpdateSceneResource(TinyEngine::SceneResource * pSceneResource);
+    //utils
+    virtual void RenderCubeMap(Renderer * pRenderer) = 0;
+    virtual std::shared_ptr<CubeTexture> RenderIrradianceMap(std::shared_ptr<CubeTexture> pCubeTexture = nullptr) = 0;
+    virtual std::shared_ptr<CubeTexture>  GeneratePrefilterMap(std::shared_ptr<CubeTexture> pCubeTexture = nullptr) = 0;
+    virtual std::shared_ptr<Texture> GenerateBRDFLUT(bool saveToFile = false) = 0;
 protected:
     TinyEngine::MousePickEffectPass m_mousepicking_pass;
 

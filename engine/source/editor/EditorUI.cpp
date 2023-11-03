@@ -276,6 +276,37 @@ namespace TinyEngine
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         }
         ImGui::End();
+
+        // render button
+        if (ImGui::Begin("Render Utils"))
+        {
+            // get selected gameobject
+            auto go = g_editor_global_context.m_scene_manager->getSelectedGameObject();
+            if(go)
+            {
+                if (ImGui::Button("Render CubeMap"))
+                {
+                    g_editor_global_context.m_graphics->RenderCubeMap(go->GetComponent<Renderer>());
+                }
+            }
+
+            if (ImGui::Button("Render Irradiance Map"))
+            {
+                g_editor_global_context.m_graphics->RenderIrradianceMap();
+            }
+
+            if (ImGui::Button("Generate Prefilter Map"))
+            {
+                g_editor_global_context.m_graphics->GeneratePrefilterMap();
+            }
+
+            if (ImGui::Button("Generate BRDF LUT"))
+            {
+                g_editor_global_context.m_graphics->GenerateBRDFLUT(true);
+            }
+        }
+        ImGui::End();
+        
         m_editor->imgui.Render();
     }
 

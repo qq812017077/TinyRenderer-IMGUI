@@ -18,7 +18,7 @@ namespace TinyEngine::Graph
         backBufferHandle = CreateResource<DirectXRenderTarget>("backbuffer", ResourceDesc::SwapChain());
         depthStencilHandle = CreateResource<DirectXDepthStencil>("depthstencil", ResourceDesc::DepthStencil());
         shadowMapHandle = CreateResource<DirectXDepthStencil>("shadowmap", ResourceDesc::ShadowMap());
-        shadowCubeHandle = CreateResource<DepthCubeTexture>("shadowcubemap", ResourceDesc::ShadowCubeMap());
+        shadowCubeHandle = CreateResource<CubeRenderTexture>("shadowcubemap", ResourceDesc::ShadowCubeMap());
         goIdRTHandle = CreateResource<DirectXRenderTarget>("idRT", ResourceDesc::GOIDRT());
         goIdDSHandle = CreateResource<DirectXDepthStencil>("idDS", ResourceDesc::DepthStencil());
 
@@ -37,7 +37,7 @@ namespace TinyEngine::Graph
         auto cleanSMPass = std::make_unique<BufferPass>("cleanSM");
         auto cleanSMCubePass = std::make_unique<BufferPass>("cleanSMCube");
         auto shadowPass = std::make_unique<ShadowPass>("shadow-cast");
-        auto lightingPass = std::make_unique<LambertPass>("lighting");
+        auto lightingPass = std::make_unique<ShadingPass>("lighting");
         auto pickPass = std::make_unique<PickPass>("pick");
         auto skyboxPass = std::make_unique<SkyBoxPass>("skybox");
         auto postPass = std::make_unique<PostProcessPass>("post-process");

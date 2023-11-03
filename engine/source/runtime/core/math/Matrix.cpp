@@ -357,6 +357,45 @@ Matrix4x4 Matrix4x4::Rotation(const Quaternion& rotation)
     return result;
 }
 
+Matrix4x4 Matrix4x4::RotationX(float radian)
+{
+    Matrix4x4 result;
+    float cosX = std::cos(radian);
+    float sinX = std::sin(radian);
+    result.data[0][0]=1;
+    result.data[1][1]=cosX;
+    result.data[1][2]=-sinX;
+    result.data[2][1]=sinX;
+    result.data[2][2]=cosX;
+    result.data[3][3]=1;
+    return result;
+}
+Matrix4x4 Matrix4x4::RotationY(float radian)
+{
+    Matrix4x4 result;
+    float cosY = std::cos(radian);
+    float sinY = std::sin(radian);
+    result.data[0][0]=cosY;
+    result.data[0][2]=sinY;
+    result.data[1][1]=1;
+    result.data[2][0]=-sinY;
+    result.data[2][2]=cosY;
+    result.data[3][3]=1;
+    return result;
+}
+Matrix4x4 Matrix4x4::RotationZ(float radian)
+{
+    Matrix4x4 result;
+    float cosZ = std::cos(radian);
+    float sinZ = std::sin(radian);
+    result.data[0][0]=cosZ;
+    result.data[0][1]=-sinZ;
+    result.data[1][0]=sinZ;
+    result.data[1][1]=cosZ;
+    result.data[2][2]=1;
+    result.data[3][3]=1;
+    return result;
+}
 Matrix4x4 Matrix4x4::Scale(const Vector3& scale)
 {
     Matrix4x4 result = Identity();

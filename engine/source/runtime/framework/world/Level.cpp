@@ -357,22 +357,28 @@ GameObject* Level::addGameObject(GameObject* pGo)
             pWhiteLittleCube->transform().SetLocalPosition({ 0.0f, 0.0f, 0.0f });
         }
 
+        // auto cubeMapMat = Material::Create("Prefilter", "CubeMap-Material");
+        // auto cubeMapTex = Texture::LoadHDRFrom("res/images/hdr/ibl_hdr_radiance.png");
+        // cubeMapMat->SetTexture("_MainTex", cubeMapTex);
+        // auto cube = addGameObject(Primitive::CreateCube("cube"));
+        // cube->GetComponent<Renderer>()->SetMaterial(cubeMapMat);
+        
         // Create 5 * 5 spheres
         auto pMat = Material::GetDefaultMaterialPtr();
         std::string name = "sphere";
         int count = 0;
         float metallic = 0.0f;
         float smoothness = 0.0f;
-        int size = 2;
-        int size_sqr = size * size;
+        int size = 3;
+        int line = size * 2 + 1;
         float fsize = (float)size;
         for (int i = -size ; i <= size; i++)
         {
-            metallic = ( i + size) / float(size_sqr);
+            metallic = ( i + size) / float(line);
             for(int j = -size; j <= size; j++)
             {
-                smoothness = ( i + size) / float(size_sqr);
-                auto sphere = addGameObject(Primitive::CreateSphere(name + std::to_string(count++), 1.0f, 50, 50));
+                smoothness = ( j + size) / float(line);
+                auto sphere = addGameObject(Primitive::CreateSphere(name + std::to_string(count++), 20, 20));
                 // auto sphere = addGameObject(Primitive::CreateCube(name + std::to_string(count++)));
                 sphere->transform().SetPosition({ i * 2.0f,  j * 2.0f, 0.0f });
                 sphere->transform().SetScale({ 0.5f, 0.5f, 0.5f });

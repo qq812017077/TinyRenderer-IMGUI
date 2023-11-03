@@ -5,6 +5,7 @@
 #include "components/Camera.h"
 #include "components/Light.h"
 #include "graph/RenderGraph.h"
+#include "scene/Scene.h"
 
 #define LOG(X) std::cout << X << std::endl;
 // std::queue<Material*> Graphics::m_WaitForLoadMaterials;
@@ -35,7 +36,8 @@ void Graphics::OnTick(TinyEngine::FrameBuffer * pFrameBuffer)
 
 
     // prepare pipeline's render passes data ( by render graph )
-
+    
+    UpdateSceneResource(pFrameBuffer->m_scene->p_map_resource);
     // render one frame ( by render graph )
     if(m_pRenderGraph == nullptr)
     {
@@ -50,3 +52,16 @@ void Graphics::OnTick(TinyEngine::FrameBuffer * pFrameBuffer)
     
 }
 
+
+void Graphics::UpdateSceneResource(TinyEngine::SceneResource * pSceneResource)
+{
+    if(pSceneResource == nullptr) return;
+    if(pSceneResource->m_irradiance_cubemap == nullptr)
+        pSceneResource->m_irradiance_cubemap = RenderIrradianceMap(pSceneResource->m_skybox_cubemap);
+    
+    if(pSceneResource->m_prefilter_cubemap == nullptr)
+        pSceneResource->m_prefilter_cubemap = GeneratePrefilterMap(pSceneResource->m_skybox_cubemap);
+    
+    if(pSceneResource->m_brdf_lut_map == nullptr)
+        pSceneResource->m_brdf_lut_map = GenerateBRDFLUT();
+}

@@ -11,7 +11,11 @@
 #include "dxgraph/DirectXRenderGraph.h"
 #include "geometry/Primitive.h"
 #include "directX/DirectXCubeTexture.h"
+#include "Exceptions.h"
 
+// #ifndef STB_IMAGE_WRITE_IMPLEMENTATION
+
+// #endif
 namespace wrl = Microsoft::WRL;
 class DirectXGraphics;
 
@@ -23,16 +27,18 @@ namespace TinyEngine::Graph
         SkyBoxPass(std::string name) : RasterPass(name)
         {
             std::vector<std::string> paths;
-            for(int i = 0 ; i < 6; i++)
-                paths.emplace_back("res/images/skybox/" + std::to_string(i) + ".png");
-            skyboxTexture.LoadFromFiles(paths);
             skyboxPass = EffectManager::Get().FindPass("SkyBox/SkyBoxPass");
-            skyboxPass.depthStencilDesc.depthMode = EDepthMode::DepthFirst;
+            skyboxPass.depthStencilDesc.depthMode = EDepthMode::LessEqualPass;
             skyboxPass.rasterDesc.cullMode = ECullMode::Front;
             cubeMesh = Primitive::CreateCubeMesh(3.0f);
         }
 
-        virtual ~SkyBoxPass() = default;
+        ~SkyBoxPass() override = default;
+
+        void BindScene(std::shared_ptr<TinyEngine::Scene> pScene) noexcept override {
+            this->pScene = pScene;
+            skyboxTexture.BindCubeMap(this->pScene->p_map_resource->m_skybox_cubemap);
+        }
 
         void internalExecute(DirectXGraphics* pGfx, DXDefaultRenderGraph& graph) override
         {
@@ -41,9 +47,16 @@ namespace TinyEngine::Graph
             pGfx->ApplyPassToMesh(skyboxPass, &cubeMesh);
         }
 
+        void RenderCubeMap(DirectXGraphics* pGfx, DXDefaultRenderGraph& graph, Renderer * pRenderer, int width = 512, int height =512);
+
+        void RenderIrradianceMap(DirectXGraphics* pGfx, DXDefaultRenderGraph& graph, int width = 32, int height = 32);
+
+        std::shared_ptr<CubeTexture> GeneratePrefilterMap(DirectXGraphics* pGfx, DXDefaultRenderGraph& graph, int width = 256, int height = 256, int mipLevels = 5);
+    
+        
+        DirectXCubeTexture skyboxTexture;
     private:
         ShaderPass skyboxPass;
-        DirectXCubeTexture skyboxTexture;
         Mesh cubeMesh;
     };
 }

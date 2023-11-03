@@ -25,7 +25,7 @@ namespace TinyEngine
     {
         Off,
         On,
-		DepthFirst
+		LessEqualPass	//	
     };
 
 	enum class ECullMode

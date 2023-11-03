@@ -251,17 +251,20 @@ UINT GetDataStride(DXGI_FORMAT format)
 
 DXGI_FORMAT GetTextureFormat(ETextureFormat textureFormat, bool islinear)
 {
-    // if(textureFormat == ETextureFormat::RGBA4444) return DXGI_FORMAT_B4G4R4A4_UNORM;
     switch(textureFormat)
     {
         case ETextureFormat::RGB24:
         case ETextureFormat::RGBA32:
+            // return DXGI_FORMAT_R8G8B8A8_UNORM;
             return islinear? DXGI_FORMAT_R8G8B8A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
         case ETextureFormat::RGBFloat:
             return DXGI_FORMAT_R32G32B32_FLOAT;
+        case ETextureFormat::RGHalf:
+            return DXGI_FORMAT_R16G16_FLOAT;
     }
     
-    THROW_ENGINE_EXCEPTION("Unsupported texture format["+std::to_string(textureFormat)+"], now only support RGBA32/RGB32 and RGBAFloat");
+    auto msg = "Unsupported texture format["+std::to_string((int)textureFormat)+"], now only support RGBA32/RGB32 and RGBAFloat";
+    THROW_ENGINE_EXCEPTION("Unsupported texture format");
 }
 
 D3D11_FILTER GetTextureFilterMode(EFilterMode filterMode)
@@ -301,6 +304,11 @@ D3D11_TEXTURE_ADDRESS_MODE GetTextureWrapMode(EWrapMode wrapMode)
 HRESULT CreateTexture2DView(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pContext,  
 Texture* pInputTex, ID3D11ShaderResourceView ** ppOutputTextureView)
 {
+    return CreateTexture2DView(pDevice.Get(), pContext.Get(), pInputTex, ppOutputTextureView);
+}
+HRESULT CreateTexture2DView(ID3D11Device* pDevice, ID3D11DeviceContext* pContext,  
+    Texture* pInputTex, ID3D11ShaderResourceView ** ppOutputTextureView)
+{
     HRESULT hr = E_FAIL;
     if(pInputTex == nullptr) return hr;
     // auto pDevice = directXGfx.GetDevice();
@@ -330,6 +338,8 @@ Texture* pInputTex, ID3D11ShaderResourceView ** ppOutputTextureView)
     if(pInputTex->UseMipMap())
     {
         ImageTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+        // if(ImageTextureDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB || ImageTextureDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM)
+            
         ImageTextureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
         ImageTextureDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
         // we just want to write into first mip level, rest will be generated automatically
@@ -337,7 +347,7 @@ Texture* pInputTex, ID3D11ShaderResourceView ** ppOutputTextureView)
         // we cannot use subresource data here, because we only have original image data.
         hr = pDevice->CreateTexture2D(&ImageTextureDesc, nullptr, &pTexture2D);
         if(FAILED(hr)) return hr;
-        pContext->UpdateSubresource(pTexture2D.Get(), 0, nullptr, pInputTex->GetImageData(), pInputTex->GetPitch(), 0);
+        pContext->UpdateSubresource(pTexture2D.Get(), 0, nullptr, pInputTex->GetImageData(), pInputTex->GetRowPitch(), 0);
 
         hr = pDevice->CreateShaderResourceView(pTexture2D.Get(), &srvDesc, ppOutputTextureView);
         if(FAILED(hr)) return hr;
@@ -347,7 +357,7 @@ Texture* pInputTex, ID3D11ShaderResourceView ** ppOutputTextureView)
     else{
         D3D11_SUBRESOURCE_DATA ImageSubresourceData = {};
         ImageSubresourceData.pSysMem = pInputTex->GetImageData();
-        ImageSubresourceData.SysMemPitch = pInputTex->GetPitch();
+        ImageSubresourceData.SysMemPitch = pInputTex->GetRowPitch();
         hr = pDevice->CreateTexture2D(&ImageTextureDesc, &ImageSubresourceData, &pTexture2D);
         if(FAILED(hr)) return hr;
         

@@ -25,8 +25,8 @@ namespace TinyEngine::Graph
             // RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DirectXRenderTarget>>("renderTarget", renderTargetHandle));
             RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DirectXDepthStencil>>("shadowmap", shadowMapHandle));
             RegisterSource(std::make_unique<SourceAttachment<TinyEngine::DirectXDepthStencil>>("shadowmap", shadowMapHandle));
-            RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DepthCubeTexture>>("shadowcubemap", shadowCubeMapHandle));
-            RegisterSource(std::make_unique<SourceAttachment<TinyEngine::DepthCubeTexture>>("shadowcubemap", shadowCubeMapHandle));
+            RegisterSink(std::make_unique<SinkAttachment<TinyEngine::CubeRenderTexture>>("shadowcubemap", shadowCubeMapHandle));
+            RegisterSource(std::make_unique<SourceAttachment<TinyEngine::CubeRenderTexture>>("shadowcubemap", shadowCubeMapHandle));
 
             dir_shadowPass = EffectManager::Get().FindPass("Default/ShadowCastPass");
             dir_shadowPass.psName = "none";
@@ -69,7 +69,7 @@ namespace TinyEngine::Graph
             helper.SetGlobalVariable("g_PointLight", &light.m_buffer, sizeof(TinyEngine::PointLight::PointLightBuffer));
             for(int face = 0 ; face < 6; face++)
             {
-                auto depthMap = shadowCubeMap->GetDepthBuffer(face);
+                auto depthMap = shadowCubeMap->GetFaceBuffer(face);
                 depthStencil->Clear(pGfx);
                 pGfx->BindRenderTarget(depthMap, depthStencil.get());
                 pGfx->SetViewport(Graphics::ViewPort{0, 0, depthMap->GetWidth(), depthMap->GetHeight()});
@@ -82,7 +82,7 @@ namespace TinyEngine::Graph
 
     private:
         ResourceHandle<TinyEngine::DirectXDepthStencil> shadowMapHandle;
-        ResourceHandle<TinyEngine::DepthCubeTexture> shadowCubeMapHandle;
+        ResourceHandle<TinyEngine::CubeRenderTexture> shadowCubeMapHandle;
         std::shared_ptr<TinyEngine::DirectXDepthStencil> depthStencil{nullptr};
         ShaderPass dir_shadowPass;
         ShaderPass point_ShadowPass;

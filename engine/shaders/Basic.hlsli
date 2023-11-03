@@ -51,6 +51,8 @@ struct SHADOW_VS_OUTPUT
 cbuffer PerFrameCBuf : register(b0)
 {
     matrix g_ViewProj;
+    matrix g_View;
+    matrix g_Proj;
 };
 
 cbuffer PerDrawCBuf : register(b1)
@@ -76,6 +78,15 @@ Texture2D _ShadowMap : register(t0);
 SamplerComparisonState sampler_ShadowMap : register(s0);
 
 TextureCube _ShadowCubeMap : register(t3);
+
+TextureCube _IrradianceMap : register(t4);
+SamplerState sampler_IrradianceMap : register(s4);
+
+TextureCube _PrefilteredEnvMap : register(t5);
+SamplerState sampler_PrefilteredEnvMap : register(s5);
+
+Texture2D _BRDFLutMap : register(t6);
+SamplerState sampler_BRDFLutMap : register(s6);
 
 #define PCF_RANGE 2
 

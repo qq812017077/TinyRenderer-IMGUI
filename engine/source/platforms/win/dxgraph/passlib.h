@@ -2,7 +2,7 @@
 
 #include "dxpasslib/RasterPass.h"
 #include "dxpasslib/BufferPass.h"
-#include "dxpasslib/LambertPass.h"
+#include "dxpasslib/ShadingPass.h"
 #include "dxpasslib/PostProcessPass.h"
 #include "dxpasslib/PresentPass.h"
 #include "dxpasslib/ShadowPass.h"

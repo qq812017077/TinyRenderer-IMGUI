@@ -10,7 +10,9 @@
 #include "geometry/Primitive.h"
 #include "dxgraph/DirectXRenderGraph.h"
 #include "RenderEntity.h"
-#include "dxgraph/dxpasslib/PickPass.h"
+#include "dxgraph/passlib.h"
+#include "dxutil/TextureUtil.h"
+// #include "dxgraph/RenderCubeMapPass.h"
 
 #define LOG(X) std::cout << X << std::endl;
 // add ComPtr
@@ -241,7 +243,18 @@ void DirectXGraphics::BindDefaultRenderTarget()
 }
 void DirectXGraphics::internalBindRenderTarget(TinyEngine::DirectXRenderTarget *pRenderTarget, TinyEngine::DirectXDepthStencil *pDepthStencil)
 {
-    pContext->RSSetViewports(1u, &fullViewPort);
+    if(pRenderTarget)
+    {
+        D3D11_VIEWPORT rtViewPort = {};
+        rtViewPort.TopLeftX = 0.0f;
+        rtViewPort.TopLeftY = 0.0f;
+        rtViewPort.Width = static_cast<FLOAT>(pRenderTarget->GetWidth());
+        rtViewPort.Height = static_cast<FLOAT>(pRenderTarget->GetHeight());
+        rtViewPort.MinDepth = 0.0f;
+        rtViewPort.MaxDepth = 1.0f;
+        pContext->RSSetViewports(1u, &rtViewPort);
+    }else
+        pContext->RSSetViewports(1u, &fullViewPort);
     if (pRenderTarget == nullptr)
         pContext->OMSetRenderTargets(0u, nullptr, pDepthStencil->Get());
     else if (pDepthStencil == nullptr)
@@ -289,6 +302,7 @@ size_t DirectXGraphics::PickGuidOfGameObject(float u, float v)
     TinyEngine::Graph::PickPass* pickpass = dynamic_cast<TinyEngine::Graph::PickPass *>(m_pRenderGraph->FindPassByName("pick"));
     return pickpass->GetGameObjectID(this, *m_pRenderGraph, u, v);
 }
+
 wrl::ComPtr<ID3D11Texture2D> DirectXGraphics::GetBackBuffer()
 {
     wrl::ComPtr<ID3D11Texture2D> pBackBuffer = nullptr;
@@ -296,6 +310,63 @@ wrl::ComPtr<ID3D11Texture2D> DirectXGraphics::GetBackBuffer()
     GFX_THROW_INFO(pSwap->GetBuffer(0u, __uuidof(ID3D11Texture2D), &pBackBuffer));
     return pBackBuffer;
 }
+
+
+
+/***********************************************************************************************************/
+/*                                               Util Part                                                 */
+/***********************************************************************************************************/
+void DirectXGraphics::RenderCubeMap(Renderer * pRenderer)
+{
+    if(pRenderer == nullptr) return ;
+    TinyEngine::Graph::SkyBoxPass* skyboxpass = dynamic_cast<TinyEngine::Graph::SkyBoxPass *>(m_pRenderGraph->FindPassByName("skybox"));
+    TinyEngine::Graph::DXDefaultRenderGraph& dxGraph = dynamic_cast<TinyEngine::Graph::DXDefaultRenderGraph &>(*m_pRenderGraph);
+    return skyboxpass->RenderCubeMap(this, dxGraph, pRenderer);
+    // return pickpass->GetGameObjectID(this, *m_pRenderGraph, u, v);
+
+    // TinyEngine::RenderCubeMapPass renderCubeMapPass(this, 
+    // (dynamic_cast<TinyEngine::Graph::DXDefaultRenderGraph *>(m_pRenderGraph.get()))->GetFrameConstantBuffer());
+    // renderCubeMapPass.RenderCubeMap(this, pRenderer);
+}
+
+std::shared_ptr<CubeTexture> DirectXGraphics::RenderIrradianceMap(std::shared_ptr<CubeTexture> pCubeTexture)
+{
+    TinyEngine::Graph::DXDefaultRenderGraph& dxGraph = dynamic_cast<TinyEngine::Graph::DXDefaultRenderGraph &>(*m_pRenderGraph);
+    if(pCubeTexture == nullptr)
+    {
+        TinyEngine::Graph::SkyBoxPass* skyboxpass = dynamic_cast<TinyEngine::Graph::SkyBoxPass *>(m_pRenderGraph->FindPassByName("skybox"));
+        return TinyEngine::Util::DXTextureUtil::RenderIrradianceMap(this, dxGraph, skyboxpass->skyboxTexture);
+    }
+    
+    TinyEngine::Rendering::DirectXCubeTexture skyboxTexture ;
+    skyboxTexture.BindCubeMap(pCubeTexture);
+    return TinyEngine::Util::DXTextureUtil::RenderIrradianceMap(this, dxGraph, skyboxTexture);
+    
+    
+    // return skyboxpass->RenderIrradianceMap(this, dxGraph);
+   
+}
+
+std::shared_ptr<CubeTexture> DirectXGraphics::GeneratePrefilterMap(std::shared_ptr<CubeTexture> pCubeTexture)
+{
+    TinyEngine::Graph::DXDefaultRenderGraph& dxGraph = dynamic_cast<TinyEngine::Graph::DXDefaultRenderGraph &>(*m_pRenderGraph);
+    if(pCubeTexture == nullptr)
+    {
+        TinyEngine::Graph::SkyBoxPass* skyboxpass = dynamic_cast<TinyEngine::Graph::SkyBoxPass *>(m_pRenderGraph->FindPassByName("skybox"));
+        return TinyEngine::Util::DXTextureUtil::GeneratePrefilterMap(this, dxGraph, skyboxpass->skyboxTexture);
+    }
+
+    TinyEngine::Rendering::DirectXCubeTexture skyboxTexture ;
+    skyboxTexture.BindCubeMap(pCubeTexture);
+    return TinyEngine::Util::DXTextureUtil::GeneratePrefilterMap(this, dxGraph, skyboxTexture);
+}
+
+std::shared_ptr<Texture> DirectXGraphics::GenerateBRDFLUT(bool saveToFile){
+    TinyEngine::Graph::DXDefaultRenderGraph& dxGraph = dynamic_cast<TinyEngine::Graph::DXDefaultRenderGraph &>(*m_pRenderGraph);
+    return TinyEngine::Util::DXTextureUtil::GenerateBRDFLUT(this, dxGraph, saveToFile);
+}
+
+
 /***********************************************************************************************************/
 /*                                            Protected Part                                               */
 /***********************************************************************************************************/

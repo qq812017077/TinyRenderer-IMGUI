@@ -2,12 +2,20 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <array>
 #include "Color.h"
 #include "TextureFormat.h"
 #include "SampleMode.h"
 
-
-
+struct TextureResDesc
+{
+    uint32_t width;
+    uint32_t height;
+    uint32_t mipLevels{1};
+    ETextureFormat format{ETextureFormat::RGBA32};
+    bool linear{false};
+    EWrapMode wrapMode{EWrapMode::Repeat};
+};
 
 class Texture
 {
@@ -29,33 +37,43 @@ public:
     };
     
 public:
-    Texture(int width, int height);
+    Texture(int width, int height): Texture(width, height, ETextureFormat::RGBA32, 1, true){}
+    Texture(int width, int height, ETextureFormat textureFormat): Texture(width, height, textureFormat, 1, true){}
     Texture(int width, int height, ETextureFormat textureFormat, int mipCount, bool linear);
     Texture(Texture&& texture) noexcept;
     ~Texture();
-    void LoadImageFrom(const char* path);
-    int GetWidth() const;
-    int GetHeight() const;
-    int GetPitch() const;
+    
+    
     void PutPixel( unsigned int x,unsigned int y,Color c );
 	Color GetPixel( unsigned int x,unsigned int y ) const;
+
+    void * GetImageData() const;
+    void * GetMipmapImageData(int mipLevel) const;
+
+    void SetData(const void* data, long size, int mipLevelIndex = 0);
+
+    int GetWidth() const;
+    int GetHeight() const;
+    int GetRowPitch() const;
+    int GetMipmapRowPitch(int level) const;
     ETextureFormat GetTextureFormat() const;
     int GetMipMapLevels() const;
     bool UseMipMap() const;
     bool IsLinear() const;
     bool HasAlphaChannel() const;
-    uint8_t * GetImageData() const;
 
     EFilterMode GetFilterMode() const;
     EWrapMode GetWrapMode() const;
     int GetAnisoLevel() const;
-    
     void SetFilterMode(EFilterMode filterMode);
     void SetWrapMode(EWrapMode wrapMode);
     void SetAnisoLevel(int anisoLevel);
     void SetMipMapLevel(int mipMapLevel);
 
+    void releaseMipChain();
+    void generateMipChain();
     void Clear(Color c);
+    void SavePNG(const std::string& path, int miplevel = 0);
     static std::shared_ptr<Texture> LoadFrom(const std::string name);
     static std::shared_ptr<Texture> LoadFrom(const char* name);
     static std::shared_ptr<Texture> LoadHDRFrom(const std::string name);
@@ -82,18 +100,13 @@ private:
             return *this;
         }
         Surface& operator=( const Surface& ) = delete;
-
-        std::string path;
         std::unique_ptr<uint8_t[]> pBuffer;
-        // std::vector<uint8_t> buffer;
         unsigned int width;
         unsigned int height;
     };
     Texture(Surface&& surface, ETextureFormat textureFormat);
     Texture(Surface&& surface, ETextureFormat textureFormat, int mipCount, bool linear);
 
-    void releaseMipChain();
-    void generateMipChain();
 private:
     
     std::string name;
@@ -112,6 +125,9 @@ class CubeTexture
 {
 public:
     CubeTexture() = default;
+    CubeTexture(TextureResDesc desc);
+
+    void SavePNG(const std::string& path);
 // in directx :
 /***
  *  In directx:
@@ -129,6 +145,6 @@ public:
     std::shared_ptr<Texture> top() const { return textures[2]; }
     std::shared_ptr<Texture> bottom() const { return textures[3]; }
     
-    std::shared_ptr<Texture> textures[6];
+    std::array<std::shared_ptr<Texture>, 6> textures;
     
 };

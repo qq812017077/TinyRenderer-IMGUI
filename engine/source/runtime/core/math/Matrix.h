@@ -44,6 +44,9 @@ public:
     static Matrix4x4 Rotation(Vector3 eulerAngle);
     static Matrix4x4 LookRotation(Vector3 forward, Vector3 up);
     static Matrix4x4 Rotation(const Quaternion& rotation);
+    static Matrix4x4 RotationX(float radian);
+    static Matrix4x4 RotationY(float radian);
+    static Matrix4x4 RotationZ(float radian);
     static Matrix4x4 Scale(const Vector3& scale);
     static Matrix4x4 LookAtLH(Vector3 eye, Vector3 target, Vector3 up);
     static Matrix4x4 LookAtRH(Vector3 eye, Vector3 target, Vector3 up);

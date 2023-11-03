@@ -65,4 +65,6 @@ D3D11_TEXTURE_ADDRESS_MODE GetTextureWrapMode(EWrapMode wrapMode);
 
 HRESULT CreateTexture2DView(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pContext,  
     Texture* pInputTex, ID3D11ShaderResourceView ** ppOutputTextureView);
+HRESULT CreateTexture2DView(ID3D11Device* pDevice, ID3D11DeviceContext* pContext,  
+    Texture* pInputTex, ID3D11ShaderResourceView ** ppOutputTextureView);
 HRESULT CreateSampler(Microsoft::WRL::ComPtr<ID3D11Device>& pDevice,  Texture * pInputTex, ID3D11SamplerState ** ppOutputSampler);

@@ -37,7 +37,6 @@ public:
     void ClearBuffer(float red, float green, float blue) noexcept override;
     
     void SetViewport(ViewPort viewPort) override;
-    
     void UnbindAllResource() override;
 
     void ApplyState(TinyEngine::RenderState * pState) override;
@@ -74,6 +73,12 @@ public:
     #endif
 
     wrl::ComPtr<ID3D11Buffer> & GetObjectConstantBuffer() {return pObjectConstantBuffer;}
+    
+    //utils
+    void RenderCubeMap(Renderer * pRenderer) override;
+    std::shared_ptr<CubeTexture> RenderIrradianceMap(std::shared_ptr<CubeTexture> pCubeTexture = nullptr) override;
+    std::shared_ptr<CubeTexture> GeneratePrefilterMap(std::shared_ptr<CubeTexture> pCubeTexture = nullptr) override;
+    std::shared_ptr<Texture> GenerateBRDFLUT(bool saveToFile = false) override;
 protected:
     void internalBindRenderTarget(TinyEngine::DirectXRenderTarget* pRenderTarget, TinyEngine::DirectXDepthStencil * pDepthStencil);
     void drawMesh(HLSLVertexShader* pVertexShader, Mesh & mesh, EDrawMode mode = EDrawMode::TriangleList);
@@ -85,8 +90,6 @@ protected:
     
     
 private:
-
-
     wrl::ComPtr<ID3D11Device> pDevice= nullptr;
     wrl::ComPtr<ID3D11DeviceContext> pContext = nullptr;
     wrl::ComPtr<IDXGISwapChain> pSwap = nullptr;

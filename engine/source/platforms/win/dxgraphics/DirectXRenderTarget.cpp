@@ -3,11 +3,23 @@
 #include "Exceptions.h"
 #include "DirectXDepthStencil.h"
 #include "graph/RenderResource.h"
+#include "Texture.h"
+
 namespace wrl = Microsoft::WRL;
 namespace TinyEngine
 {
-    
-    DirectXRenderTarget::DirectXRenderTarget(DirectXGraphics* pGfx, ID3D11Texture2D* pTexture, std::optional<UINT> face):
+    static DXGI_FORMAT GetDXFormat(ETextureFormat format)
+    {
+        switch(format)
+        {
+            case ETextureFormat::RGBA32: return DXGI_FORMAT_R8G8B8A8_UNORM;
+            case ETextureFormat::RFloat: return DXGI_FORMAT_R32_FLOAT;
+            case ETextureFormat::RGBAFloat: return DXGI_FORMAT_R32G32B32A32_FLOAT;
+        }
+
+        THROW_ENGINE_EXCEPTION("unsupported texture format");
+    }
+    DirectXRenderTarget::DirectXRenderTarget(DirectXGraphics* pGfx, ID3D11Texture2D* pTexture, std::optional<UINT> face, std::optional<UINT> mipmapLevel):
         RenderTarget(pGfx, -1, -1)
     {
         INFOMAN(*pGfx);
@@ -24,7 +36,7 @@ namespace TinyEngine
             rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
             rtvDesc.Texture2DArray.ArraySize = 1u;
             rtvDesc.Texture2DArray.FirstArraySlice = face.value();
-            rtvDesc.Texture2DArray.MipSlice = 0u;
+            rtvDesc.Texture2DArray.MipSlice = mipmapLevel.value_or(0);
         }else
         {
             rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
@@ -106,16 +118,16 @@ namespace TinyEngine
         
     }
 
-    DepthCubeTexture::DepthCubeTexture(DirectXGraphics* pGfx, unsigned int texSize): BufferResource(pGfx, texSize, texSize)
+    CubeRenderTexture::CubeRenderTexture(DirectXGraphics* pGfx, TextureResDesc _texDesc): 
+        BufferResource(pGfx, _texDesc.width, _texDesc.height)
     {
         INFOMAN(*pGfx);
-
         D3D11_TEXTURE2D_DESC texDesc = {};
-        texDesc.Width = texSize;
-        texDesc.Height = texSize;
-        texDesc.MipLevels = 1;                              // no mip mapping
+        texDesc.Width = _texDesc.width;
+        texDesc.Height = _texDesc.height;
+        texDesc.MipLevels = _texDesc.mipLevels;                              // no mip mapping
         texDesc.ArraySize = 6;
-        texDesc.Format = DXGI_FORMAT_R32_FLOAT;
+        texDesc.Format = GetDXFormat(_texDesc.format);
         texDesc.SampleDesc.Count = 1;
         texDesc.SampleDesc.Quality = 0;
         texDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -125,7 +137,6 @@ namespace TinyEngine
 
         //create the texture resource
         wrl::ComPtr<ID3D11Texture2D> pTexture;
-        GFX_THROW_INFO(pGfx->GetDevice()->CreateTexture2D(&texDesc, nullptr, &pTexture));
 
         // create the resource view on the texture
         D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -133,32 +144,90 @@ namespace TinyEngine
         srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
         srvDesc.TextureCube.MipLevels = texDesc.MipLevels;
         srvDesc.TextureCube.MostDetailedMip = 0;
+
+        if(texDesc.MipLevels != 1) texDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
+        GFX_THROW_INFO(pGfx->GetDevice()->CreateTexture2D(&texDesc, nullptr, &pTexture));
         GFX_THROW_INFO(pGfx->GetDevice()->CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
 
-        for(unsigned int face = 0 ; face < 6; face++)
+        for(unsigned int mipmapLevel = 0; mipmapLevel < texDesc.MipLevels; mipmapLevel++)
         {
-            depthBuffers.push_back(std::make_unique<DirectXRenderTarget>(pGfx, pTexture.Get(), face));
+            std::vector<std::unique_ptr<DirectXRenderTarget>> faceBuffers;
+            for(unsigned int face = 0 ; face < 6; face++)
+            {
+                faceBuffers.push_back(std::make_unique<DirectXRenderTarget>(pGfx, pTexture.Get(), face, mipmapLevel));
+            }
+            renderBuffers.push_back(std::move(faceBuffers));
         }
-
+        // for(unsigned int face = 0 ; face < 6; face++)
+        // {
+        //     renderBuffers.push_back(std::make_unique<DirectXRenderTarget>(pGfx, pTexture.Get(), face));
+        // }
     }
+    
+    // CubeRenderTexture::CubeRenderTexture(DirectXGraphics* pGfx, unsigned int texSize, int mipmapLevels, DXGI_FORMAT format): BufferResource(pGfx, texSize, texSize)
+    // {
+    //     INFOMAN(*pGfx);
 
-    void DepthCubeTexture::BindAsTexture(DirectXGraphics* pGfx, UINT slot)
+    //     D3D11_TEXTURE2D_DESC texDesc = {};
+    //     texDesc.Width = texSize;
+    //     texDesc.Height = texSize;
+    //     texDesc.MipLevels = mipmapLevels;                                           // no mip mapping
+    //     texDesc.ArraySize = 6;
+    //     texDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    //     texDesc.SampleDesc.Count = 1;
+    //     texDesc.SampleDesc.Quality = 0;
+    //     texDesc.Usage = D3D11_USAGE_DEFAULT;
+    //     texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+    //     texDesc.CPUAccessFlags = 0;
+    //     texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+    //     //create the texture resource
+    //     wrl::ComPtr<ID3D11Texture2D> pTexture;
+    //     GFX_THROW_INFO(pGfx->GetDevice()->CreateTexture2D(&texDesc, nullptr, &pTexture));
+
+    //     // create the resource view on the texture
+    //     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    //     srvDesc.Format = texDesc.Format;
+    //     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+    //     srvDesc.TextureCube.MipLevels = texDesc.MipLevels;
+    //     srvDesc.TextureCube.MostDetailedMip = 0;
+    //     GFX_THROW_INFO(pGfx->GetDevice()->CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
+
+    //     for(unsigned int face = 0 ; face < 6; face++)
+    //     {
+    //         renderBuffers.push_back(std::make_unique<DirectXRenderTarget>(pGfx, pTexture.Get(), face));
+    //     }
+    // }
+
+    void CubeRenderTexture::BindAsTexture(DirectXGraphics* pGfx, UINT slot)
     {
         auto dxGfx = reinterpret_cast<DirectXGraphics*>(pGfx);
         dxGfx->BindTexture(slot, pTextureView, Graphics::EBindType::ToPS);
     }
-    void DepthCubeTexture::Clear(Graphics* pGfx)
-    {
-        for(int i = 0 ; i < 6; i++)
-            depthBuffers[i]->Clear(pGfx);
+    DirectXRenderTarget * CubeRenderTexture::GetFaceBuffer(unsigned int face, int mipmapLevel)
+    { 
+        return renderBuffers[mipmapLevel][face].get(); 
     }
 
+    void CubeRenderTexture::Clear(Graphics* pGfx)
+    {
+        for(int i = 0, size = renderBuffers.size(); i < size; i++)
+        {
+            for(int j = 0; j < 6; j++)
+                renderBuffers[i][j]->Clear(pGfx);
+        }
+    }
     
-    std::shared_ptr<DepthCubeTexture> DepthCubeTexture::Create(Graphics* pGfx, TinyEngine::Graph::ResourceDesc desc)
+    std::shared_ptr<CubeRenderTexture> CubeRenderTexture::Create(Graphics* pGfx, TinyEngine::Graph::ResourceDesc desc)
     {
         if(desc.type == TinyEngine::Graph::ResourceType::ShadowCubeMap)
         {
-            return std::make_shared<DepthCubeTexture>(reinterpret_cast<DirectXGraphics*>(pGfx), 1024); // TODO: customize size
+            TextureResDesc texDesc;
+            texDesc.width = 1024;
+            texDesc.height = 1024;
+            texDesc.mipLevels = 1;
+            texDesc.format = ETextureFormat::RFloat;
+            return std::make_shared<CubeRenderTexture>(reinterpret_cast<DirectXGraphics*>(pGfx), texDesc); // TODO: customize size
         }
         THROW_ENGINE_EXCEPTION("cannot create render target from resource desc");
     }
