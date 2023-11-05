@@ -25,7 +25,7 @@ namespace TinyEngine
         m_map_resource = std::make_shared<SceneResource>();
         m_map_resource->m_skybox_cubemap = std::make_shared<CubeTexture>();
         for(int i = 0 ; i < 6; i++)
-            m_map_resource->m_skybox_cubemap->textures[i] = Texture::LoadFrom("res/images/skybox/2/" + std::to_string(i) + ".png");
+            m_map_resource->m_skybox_cubemap->textures[i] = Texture::LoadFrom("res/images/skybox/1/" + std::to_string(i) + ".png");
     }
 
     int SceneManager::Tick(FrameBuffer * pFrameBuffer)
@@ -62,16 +62,18 @@ namespace TinyEngine
             if(camera)
                 m_scene->selectedCamera = camera;
         }
+        // update scene bounds
         //camera 
         m_scene->m_camera_list.cameras = Camera::cameraList;
         m_scene->m_main_camera = Camera::pActivedCamera;
         m_scene->m_renderers = std::move(m_renderers);
         //directional light
-        m_scene->m_directional_light.m_buffer.m_direction = Light::GetDirectionalLight()->pTransform->forward();
-        m_scene->m_directional_light.m_buffer.m_color = Light::GetDirectionalLight()->GetColor();
-        // Light::GetDirectionalLight()->GetLightView(&(m_scene->m_directional_light.m_lightView));
-        // Light::GetDirectionalLight()->GetLightProj(&(m_scene->m_directional_light.m_lightProj));
-        // m_scene->m_directional_light.m_lightViewProj = m_scene->m_directional_light.m_lightProj * m_scene->m_directional_light.m_lightView;
+        m_scene->m_directional_light.exist = Light::GetDirectionalLight() != nullptr;
+        if(m_scene->m_directional_light.exist)
+        {
+            m_scene->m_directional_light.m_buffer.m_direction = Light::GetDirectionalLight()->pTransform->forward();
+            m_scene->m_directional_light.m_buffer.m_color = Light::GetDirectionalLight()->GetColor();
+        }
         
         // point light
         auto pointLights = Light::GetPointLightList();

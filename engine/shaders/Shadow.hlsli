@@ -88,7 +88,7 @@ float DIR_PCF(in float4 shadowCoord, float filterSize, float bias)
 float POINT_SHADOW(in float3 dir, float range, float bias)
 {
   float current_depth = length(dir) / range;
-  return _ShadowCubeMap.SampleCmpLevelZero(sampler_ShadowMap, dir, current_depth - bias).r;
+  return _ShadowCubeMap.SampleCmpLevelZero(sampler_ShadowMap, dir, current_depth).r;
 }
 
 

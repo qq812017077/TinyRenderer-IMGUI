@@ -126,6 +126,8 @@ float3 get_directional_light(VS_OUTPUT ps_in, DirectionalLight dirLight, float3 
     float3 lightdir = -normalize(dirLight.dir);
     float3 viewdir = normalize(g_EyePos - worldPos);
     float3 halfdir = normalize(lightdir + viewdir);
+    float NdotL = max(dot(normal, lightdir), 0.0);
+    float NdotV = max(dot(normal, viewdir), 0.0);
 
     float3 dielectric = float3(DielectricMetal, DielectricMetal, DielectricMetal);
     float3 fresnel = fresnelSchlick(max(dot(normal, halfdir), 0.0f), lerp(dielectric, albedo.rgb, float3(metallic,metallic,metallic)));
@@ -133,7 +135,7 @@ float3 get_directional_light(VS_OUTPUT ps_in, DirectionalLight dirLight, float3 
     float G   = GeometrySmith(normal, viewdir, lightdir, 1- smoothness);
 
     float3 numerator    = NDF * G * fresnel;
-    float denominator = 4.0 * max(dot(normal, viewdir), 0.0) * max(dot(normal, lightdir), 0.0)  + 0.0001;
+    float denominator = 4.0 * NdotV * NdotL  + 0.0001;
     float3 specular     = numerator / denominator;
 
     float3 kS = fresnel;            // specular
@@ -144,7 +146,9 @@ float3 get_directional_light(VS_OUTPUT ps_in, DirectionalLight dirLight, float3 
     float visibility = DIR_PCF(ps_in.lightPos / ps_in.lightPos.w, filterSize,  0.005);
     // float visibility = useShadowMap(ps_in.lightPos / ps_in.lightPos.w, 0.005);
     // float visibility = PCSS(ps_in.lightPos / ps_in.lightPos.w, filterSize,  0.005);
-    return (kD * albedo.rgb / PI + specular) * dirLight.color.rgb * visibility;
+    
+    
+    return (kD * albedo.rgb / PI + specular) * dirLight.color.rgb * NdotL * visibility;
 }
 
 float3 get_point_light(VS_OUTPUT ps_in, PointLight pointLight, float3 albedo)
@@ -162,26 +166,29 @@ float3 get_point_light(VS_OUTPUT ps_in, PointLight pointLight, float3 albedo)
     
     float3 viewdir = normalize(g_EyePos - worldPos);
     float3 halfdir = normalize(lightdir + viewdir);
-    // fresnel term
+    float NdotL = max(dot(normal, lightdir), 0.0);    
+    float NdotV = max(dot(normal, viewdir), 0.0);
 
     float3 dielectric = float3(DielectricMetal, DielectricMetal, DielectricMetal);
-    float3 fresnel = fresnelSchlick(max(dot(normal, halfdir), 0.0f), lerp(dielectric, albedo.rgb, float3(metallic,metallic,metallic)));
+    float3 F0 = lerp(dielectric, albedo.rgb, float3(metallic,metallic,metallic));
+    
     float NDF = DistributionGGX(normal, halfdir, 1 - smoothness);
     float G   = GeometrySmith(normal, viewdir, lightdir, 1- smoothness);
-
-    float3 numerator    = NDF * G * fresnel;
-    float denominator = 4.0 * max(dot(normal, viewdir), 0.0) * max(dot(normal, lightdir), 0.0)  + 0.0001;
-    float3 specular     = numerator / denominator;
+    float3 fresnel = fresnelSchlick(max(dot(viewdir, halfdir), 0.0f), F0);
 
     float3 kS = fresnel;            // specular
     float3 kD = float3(1.0, 1.0, 1.0) - kS;   // diffuse
     kD *= 1.0 - metallic;
-
+    
+    float3 numerator    = NDF * G * fresnel;
+    float denominator = 4.0 * NdotV * NdotL + 0.0001;
+    float3 specular     = numerator / denominator;
+    
     float filterSize = 1.0 / float(SAMPLE_SIZE); //SAMPLE_SIZE should be size of Shadow Map,so it equals to  '1 / textureSize(shadowMap, 0)'
-    float visibility = POINT_SHADOW(worldPos - pointLight.pos, pointLight.range,  0.005);
+    float visibility = POINT_SHADOW(worldPos - pointLight.pos, pointLight.range,  0.0005);
 
-    float3 light_color = pointLight.color.rgb * attenuation;
-    return (kD * albedo.rgb / PI + specular) * light_color * visibility;
+    float3 light_color = pointLight.color.rgb * attenuation;   
+    return (kD * albedo.rgb / PI + specular) * light_color * NdotL * visibility;
 }
 
 

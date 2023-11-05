@@ -27,6 +27,7 @@ namespace TinyEngine
             Vector3 m_color;
             float padding2;
         };
+        bool exist;
         DirectionalLightBuffer m_buffer;
         Matrix4x4 m_lightView;
         Matrix4x4 m_lightProj;
@@ -92,7 +93,6 @@ namespace TinyEngine
         std::vector<Renderer *>     selectedRenderers;
         std::vector<EffectDesc>     CamVisibleRenderers;
 
-        Bounds scene_bounds;
         void                        Lock() { m_scene_mutex.lock(); }
         void                        Unlock() { m_scene_mutex.unlock(); }
         void                        Load();

@@ -333,12 +333,16 @@ GameObject* Level::addGameObject(GameObject* pGo)
         camGO->pTransform->SetPosition({ -4.0f, 00.0f, -5.0f });
         camGO->pTransform->SetEulerAngle({ 00.0f, 35.0f, 0.0f });
 
-        auto pDirLightGO = Light::CreateDirectionalLight("dirLight");
-        auto pDirLight = pDirLightGO->GetComponent<Light>();
-        pDirLight->pTransform->SetPosition({ 0.0f, 0.0f, 0.0f });
-        pDirLight->SetIntensity(0.2f);
+        // auto pDirLightGO = Light::CreateDirectionalLight("dirLight");
+        // auto pDirLight = pDirLightGO->GetComponent<Light>();
+        // pDirLight->pTransform->SetPosition({ 0.0f, 0.0f, 0.0f });
+        // pDirLight->SetIntensity(0.2f);
 
-
+        // auto cam2 = CreateGameObject("Cam2")->AddComponent<Camera>();
+        // cam2->GetGameObject()->AddComponent<FrustumTest>();
+        // cam2->pTransform->SetPosition({ 0.0f, 0.0f, 0.0f });
+        // cam2->SetNear(0.1f);
+        // cam2->SetFar(10.f);
         auto pPointLightGO = Light::CreatePointLight("pointLight");
         auto pPointLight = pPointLightGO->GetComponent<Light>();
         pPointLight->pTransform->SetPosition({ 0.0f, 0.0f, -3.0f });

@@ -54,11 +54,14 @@ namespace TinyEngine::Graph
         shadowMap->BindAsTexture(pGfx, HLSLShaderHelper::ShadowMapSlot);
 
         // for point light
-        helper.SetGlobalVariable("g_PointLight", &scene->m_point_lights[0].m_buffer, sizeof(TinyEngine::PointLight::PointLightBuffer));
+        if(scene->m_point_lights.size() > 0)
+        {
+            helper.SetGlobalVariable("g_PointLight", &scene->m_point_lights[0].m_buffer, sizeof(TinyEngine::PointLight::PointLightBuffer));
+        }
 
         shadowCubeMap->BindAsTexture(pGfx, HLSLShaderHelper::ShadowCubeMapSlot);
         pGfx->BindSampler(0, shadowMap->GetSamplerState(), Graphics::EBindType::ToPS);
-
+        
         pGfx->UpdateCBuffer(graph.GetFrameConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerFrameCBufSlot));
         pGfx->UpdateCBuffer(graph.GetLightingConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
         for(size_t i=0; i < scene->CamVisibleRenderers.size(); ++i)

@@ -1,6 +1,7 @@
 #include "Basic.hlsli"
 #include "Math.hlsli"
-#include "PBR.hlsli"
+// #include "PBR.hlsli"
+#include "Lambert.hlsli"
 
 
 float4 albedo = float4(1.0, 1.0, 1.0, 1.0);

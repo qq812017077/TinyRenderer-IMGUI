@@ -51,7 +51,7 @@ float3 get_point_light(VS_OUTPUT ps_in, PointLight pointLight, float3 texColor)
   float3 specular = light_color * pow(saturate(dot(vReflect, vView)), 10);
   
   float filterSize = 1.0 / float(SAMPLE_SIZE); //SAMPLE_SIZE should be size of Shadow Map,so it equals to  '1 / textureSize(shadowMap, 0)'
-  float visibility = POINT_SHADOW(worldPos - pointLight.pos, pointLight.range,  0.005);
+  float visibility = POINT_SHADOW(worldPos - pointLight.pos, pointLight.range,  0.0005);
   return (diffuse + specular) * visibility;
 }
 

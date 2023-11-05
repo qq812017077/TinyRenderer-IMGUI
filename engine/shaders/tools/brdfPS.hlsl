@@ -63,10 +63,10 @@ float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
 
 half2 IntegrateBRDF(float NdotV, float roughness)
 {
-    float3 V;
-    V.x = sqrt(1.0 - NdotV*NdotV);
+    float3 V; // (sin, 0, cos)
+    V.x = sqrt(1.0 - NdotV*NdotV);  // sin
     V.y = 0.0;
-    V.z = NdotV;
+    V.z = NdotV;                    // cos
 
     float A = 0.0;
     float B = 0.0;

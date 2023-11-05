@@ -97,12 +97,24 @@ namespace TinyEngine
     
     Matrix4x4 Scene::CalculateDirectionalLightCamera()
     {
+        auto scene_min = Vector3::max;
+        auto scene_max = Vector3::min;
+        for(auto & renderer : m_renderers)
+        {
+            auto bounds = renderer->GetBounds();
+            scene_min = Vector3::Min(scene_min, bounds.GetMin());
+            scene_max = Vector3::Max(scene_max, bounds.GetMax());
+        }
+
+        Bounds scene_bounds;
+        scene_bounds.SetMinMax(scene_min, scene_max);
+
         Matrix4x4 camVP = m_main_camera->GetProjectionMatrix() * m_main_camera->GetViewMatrix();
         Frustum frustum(camVP);
 
         Bounds frustum_bounds = frustum.GetBounds();
         
-        Vector3 eye = frustum_bounds.GetCenter() + m_directional_light.m_buffer.m_direction * frustum_bounds.GetExtents().length();
+        Vector3 eye = frustum_bounds.GetCenter() - m_directional_light.m_buffer.m_direction * frustum_bounds.GetExtents().length();
         Vector3 center = frustum_bounds.GetCenter();
         Matrix4x4 view = Matrix4x4::LookAtLH(eye, center, Vector3::up);
 
@@ -113,8 +125,8 @@ namespace TinyEngine
                         std::min(view_frustum_bounds.GetMax().x, view_scene_bounds.GetMax().x),
                         std::max(view_frustum_bounds.GetMin().y, view_scene_bounds.GetMin().y),
                         std::min(view_frustum_bounds.GetMax().y, view_scene_bounds.GetMax().y),
-                        -view_scene_bounds.GetMax().z, // the objects which are nearer than the frustum bounding box may caster shadow as well
-                        -std::max(view_frustum_bounds.GetMin().z, view_scene_bounds.GetMax().z));
+                        view_scene_bounds.GetMax().z, // the objects which are nearer than the frustum bounding box may caster shadow as well
+                        std::max(view_frustum_bounds.GetMax().z, view_scene_bounds.GetMax().z));
         
         return orth * view;
     }

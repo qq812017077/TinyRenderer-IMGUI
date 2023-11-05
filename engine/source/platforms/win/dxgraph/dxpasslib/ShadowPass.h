@@ -11,7 +11,7 @@
 #include "scene/Scene.h"
 #include "HLSLShaderHelper.h"
 #include "dxgraph/DirectXRenderGraph.h"
-
+#include "global/RuntimeGlobalContext.h"
 namespace wrl = Microsoft::WRL;
 class DirectXGraphics;
 
@@ -30,11 +30,14 @@ namespace TinyEngine::Graph
 
             dir_shadowPass = EffectManager::Get().FindPass("Default/ShadowCastPass");
             dir_shadowPass.psName = "none";
-            dir_shadowPass.rasterDesc.DepthBias = 40;
-            dir_shadowPass.rasterDesc.SlopeScaledDepthBias =  2.5f;
-            dir_shadowPass.rasterDesc.DepthBiasClamp = 1.00f;
+            dir_shadowPass.rasterDesc.DepthBias = g_runtime_global_context.m_shadow_config.m_point_shadow_config.depth_bias;
+            dir_shadowPass.rasterDesc.SlopeScaledDepthBias = g_runtime_global_context.m_shadow_config.m_point_shadow_config.slope_scaled_bias;
+            dir_shadowPass.rasterDesc.DepthBiasClamp = g_runtime_global_context.m_shadow_config.m_point_shadow_config.depth_bias_clamp;
 
             point_ShadowPass = ShaderPass::Get("PointShadowPass", "shaders/effects/PointShadowVS.hlsl", "shaders/effects/PointShadowPS.hlsl");
+            point_ShadowPass.rasterDesc.DepthBias = g_runtime_global_context.m_shadow_config.m_point_shadow_config.depth_bias;
+            point_ShadowPass.rasterDesc.SlopeScaledDepthBias = g_runtime_global_context.m_shadow_config.m_point_shadow_config.slope_scaled_bias;
+            point_ShadowPass.rasterDesc.DepthBiasClamp = g_runtime_global_context.m_shadow_config.m_point_shadow_config.depth_bias_clamp;
         }
         virtual ~ShadowPass() = default;
 
@@ -56,27 +59,34 @@ namespace TinyEngine::Graph
             auto & helper = HLSLShaderHelper::Get();
             
             // for directional light
-            helper.SetGlobalVariable("g_DirLight", &scene->m_directional_light.m_buffer, sizeof(TinyEngine::DirectionalLight::DirectionalLightBuffer));
-            helper.SetGlobalMatrix("g_LightVP", scene->m_directional_light.m_lightViewProj);
+            if(scene->m_directional_light.exist)
+            {
+                helper.SetGlobalVariable("g_DirLight", &scene->m_directional_light.m_buffer, sizeof(TinyEngine::DirectionalLight::DirectionalLightBuffer));
+                helper.SetGlobalMatrix("g_LightViewProj", scene->m_directional_light.m_lightViewProj);
             
-            pGfx->UpdateCBuffer(graph.GetLightingConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
-            // draw all objects that cast shadow
-            pGfx->ApplyPassToRenderList(dir_shadowPass, scene->m_directional_light.visibleRenderers); // load shader and render state
+                pGfx->UpdateCBuffer(graph.GetLightingConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
+                // draw all objects that cast shadow
+                pGfx->ApplyPassToRenderList(dir_shadowPass, scene->m_directional_light.visibleRenderers); // load shader and render state
+            }
+            
             
             //for points light
-            auto & light = scene->m_point_lights[0];
-            helper.SetGlobalMatrix("g_LightProj", light.m_lightProj);
-            helper.SetGlobalVariable("g_PointLight", &light.m_buffer, sizeof(TinyEngine::PointLight::PointLightBuffer));
-            for(int face = 0 ; face < 6; face++)
+            if(scene->m_point_lights.size() > 0)
             {
-                auto depthMap = shadowCubeMap->GetFaceBuffer(face);
-                depthStencil->Clear(pGfx);
-                pGfx->BindRenderTarget(depthMap, depthStencil.get());
-                pGfx->SetViewport(Graphics::ViewPort{0, 0, depthMap->GetWidth(), depthMap->GetHeight()});
-                helper.SetGlobalMatrix("g_LightView", light.m_lightView[face]);
-                helper.SetGlobalMatrix("g_LightViewProj", light.m_lightViewProj[face]);
-                pGfx->UpdateCBuffer(graph.GetLightingConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
-                pGfx->ApplyPassToRenderList(point_ShadowPass, scene->m_point_lights[0].visibleRenderers); // load shader and render state
+                auto & light = scene->m_point_lights[0];
+                helper.SetGlobalMatrix("g_LightProj", light.m_lightProj);
+                helper.SetGlobalVariable("g_PointLight", &light.m_buffer, sizeof(TinyEngine::PointLight::PointLightBuffer));
+                for(int face = 0 ; face < 6; face++)
+                {
+                    auto depthMap = shadowCubeMap->GetFaceBuffer(face);
+                    depthStencil->Clear(pGfx);
+                    pGfx->BindRenderTarget(depthMap, depthStencil.get());
+                    pGfx->SetViewport(Graphics::ViewPort{0, 0, depthMap->GetWidth(), depthMap->GetHeight()});
+                    helper.SetGlobalMatrix("g_LightView", light.m_lightView[face]);
+                    helper.SetGlobalMatrix("g_LightViewProj", light.m_lightViewProj[face]);
+                    pGfx->UpdateCBuffer(graph.GetLightingConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
+                    pGfx->ApplyPassToRenderList(point_ShadowPass, scene->m_point_lights[0].visibleRenderers); // load shader and render state
+                }
             }
         }
 

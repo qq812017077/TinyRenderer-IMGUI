@@ -150,8 +150,8 @@ Bounds Bounds::Transform(Matrix4x4 transform)
 
     size_t const CORNER_COUNT = 8;
 
-    Vector3 min;
-    Vector3 max;
+    Vector3 min = Vector3::max;
+    Vector3 max = Vector3::min;
 
     // Compute and transform the corners and find new min/max bounds.
     for (size_t i = 0; i < CORNER_COUNT; ++i)
@@ -162,16 +162,8 @@ Bounds Bounds::Transform(Matrix4x4 transform)
                                         corner_with_w.y / corner_with_w.w,
                                         corner_with_w.z / corner_with_w.w);
 
-        if (0 == i)
-        {
-            min = corner;
-            max = corner;
-        }
-        else
-        {
-            min = Vector3::Min(min, corner);
-            max = Vector3::Max(max, corner);
-        }
+        min = Vector3::Min(min, corner);
+        max = Vector3::Max(max, corner);
     }
 
     Bounds out;
