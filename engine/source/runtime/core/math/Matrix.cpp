@@ -458,22 +458,35 @@ Matrix4x4 Matrix4x4::Perspective(float fov, float aspect, float near, float far)
     float fRange = 1.0f / (far - near);
     auto fovradian = fov * 3.1415926f / 180.0f;
     float tan_half_fov = std::tan(fovradian / 2);
-    auto height = 2 * near * tan_half_fov;
-    auto width = height * aspect;
+    
+    // auto height = 2 * near * tan_half_fov;
+    // auto width = height * aspect;
 
-    float pers2orth[4][4] = {
-        {near, 0, 0, 0},
-        {0, near, 0, 0},
-        {0, 0, near + far, -near * far},
+    // float pers2orth[4][4] = {
+    //     {near, 0, 0, 0},
+    //     {0, near, 0, 0},
+    //     {0, 0, near + far, -near * far},
+    //     {0, 0, 1, 0}
+    // };
+    // auto projMatrix = OrthographicLH(width, height, near, far) * Matrix4x4(pers2orth);
+    // return projMatrix;
+
+    float proj[4][4] = {
+        {1 / (aspect * tan_half_fov),   0, 0, 0},
+        {0, 1 / tan_half_fov, 0, 0},
+        {0, 0, far * fRange, -far * near * fRange},
         {0, 0, 1, 0}
     };
-    auto projMatrix = OrthographicLH(width, height, near, far) * Matrix4x4(pers2orth);
-    return projMatrix;
+    return Matrix4x4(proj);
 }
 
 
 
-
+/***
+ * NOTE: if you want to use this function, you should know that:
+ *      1. here we set width and height, means we think left + right = 0, top + bottom = 0.
+ *      2. if left + right is not 0, DONT USE THIS FUNCTION!!!!
+*/
 Matrix4x4 Matrix4x4::OrthographicLH(float width, float height, float zNear, float zFar)
 {
     float fRange = 1.0f / (zFar - zNear);
@@ -483,7 +496,6 @@ Matrix4x4 Matrix4x4::OrthographicLH(float width, float height, float zNear, floa
         {0, 0, fRange, -zNear * fRange},
         {0, 0, 0, 1}
     };
-
     return Matrix4x4(orth);
 }
 /**
@@ -493,9 +505,9 @@ Matrix4x4 Matrix4x4::OrthographicLH(float width, float height, float zNear, floa
  *               near and far are positive.
  *          if far and near are positive, we use far - near.
  *          Morth = S * T.
- *              S = (   2/(right-left)  0    00               0                   0
+ *              S = (   2/(right-left)  0    00               0                 0
  *                      0               2/(top-bottom)      0                   0
- *                      0               0                   2/(far-near)        0
+ *                      0               0                   1/(far-near)        0
  *                      0               0                   0                   1)
  *              T = (   1               0                   0               -(left+right)/2
  *                  0               1                   0                   -(top+bottom)/2
@@ -515,31 +527,16 @@ Matrix4x4 Matrix4x4::OrthographicLH(float left, float right, float bottom, float
     float fRange = 1.0f / (far - near);
     auto viewWidth = right - left;
     auto viewHeight = top - bottom;
-    return OrthographicLH(viewWidth, viewHeight, near, far);
-    // XMMATRIX M;
-    // M.m[0][0] = 2.0f / ViewWidth;
-    // M.m[0][1] = 0.0f;
-    // M.m[0][2] = 0.0f;
-    // M.m[0][3] = 0.0f;
 
-    // M.m[1][0] = 0.0f;
-    // M.m[1][1] = 2.0f / ViewHeight;
-    // M.m[1][2] = 0.0f;
-    // M.m[1][3] = 0.0f;
 
-    // M.m[2][0] = 0.0f;
-    // M.m[2][1] = 0.0f;
-    // M.m[2][2] = fRange;
-    // M.m[2][3] = 0.0f;
+    float orth[4][4] ={
+        {2.0f / viewWidth,  0,                  0,      -(left + right) / viewWidth},
+        {0,                 2.0f / viewHeight,  0,      -(top + bottom) / viewHeight},
+        {0,                 0,                  fRange, -near * fRange},
+        {0,                 0,                  0,      1}
+    };
 
-    // M.m[3][0] = 0.0f;
-    // M.m[3][1] = 0.0f;
-    // M.m[3][2] = -fRange * NearZ;
-    // M.m[3][3] = 1.0f;
-    // return M;0
-    // auto trans = Matrix4x4::Translation({-(left+right)/2, -(top+bottom)/2, -(near+far)/2});
-    // auto scale = Matrix4x4::Scale({2/(right-left), 2/(top-bottom), 2/(far-near)});
-    // return scale * trans;
+    return Matrix4x4(orth);
 }
 
 /**************************************************************************************************/

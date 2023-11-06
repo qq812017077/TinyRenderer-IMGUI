@@ -197,7 +197,7 @@ bool HLSLShaderHelper::SetGlobalMatrix(const char * varName, Matrix4x4& matrix)
     viewVar->SetFloatMatrix(4, 4, reinterpret_cast<float*>(&matrix));
     return true;
 }
-bool HLSLShaderHelper::SetGlobalVector(const char * varName, Vector3& vec)
+bool HLSLShaderHelper::SetGlobalVector3(const char * varName, Vector3& vec)
 {
     if (m_ConstantBufferVariables.find(varName) == m_ConstantBufferVariables.end())
         return false;
@@ -214,7 +214,7 @@ bool HLSLShaderHelper::SetGlobalUINT(const char * varName, size_t uintVal)
     viewVar->SetUInt(uintVal);
     return true;
 }
-bool HLSLShaderHelper::SetVector(const char * varName, Vector4& vec)
+bool HLSLShaderHelper::SetGlobalVector4(const char * varName, Vector4& vec)
 {
     if (m_ConstantBufferVariables.find(varName) == m_ConstantBufferVariables.end())
         return false;

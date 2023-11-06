@@ -1,6 +1,5 @@
 #include "DXUtil.h"
 #include "EngineWin.h"
-#include "Texture.h"
 #include "Exceptions.h"
 // COM Release
 #define SAFE_RELEASE(p) { if ((p)) { (p)->Release(); (p) = nullptr; } }
@@ -261,10 +260,25 @@ DXGI_FORMAT GetTextureFormat(ETextureFormat textureFormat, bool islinear)
             return DXGI_FORMAT_R32G32B32_FLOAT;
         case ETextureFormat::RGHalf:
             return DXGI_FORMAT_R16G16_FLOAT;
+        case ETextureFormat::RFloat:
+            return DXGI_FORMAT_R32_FLOAT;
     }
     
     auto msg = "Unsupported texture format["+std::to_string((int)textureFormat)+"], now only support RGBA32/RGB32 and RGBAFloat";
     THROW_ENGINE_EXCEPTION("Unsupported texture format");
+}
+
+UINT GetTextureBindFlag(TextureResDesc::BindFlag bindflag)
+{
+    UINT bindFlags = 0;
+    if(bindflag & TextureResDesc::BindFlag::ShaderResource)
+        bindFlags |= D3D11_BIND_SHADER_RESOURCE;
+    if(bindflag & TextureResDesc::BindFlag::RenderTarget)
+        bindFlags |= D3D11_BIND_RENDER_TARGET;
+    if(bindflag & TextureResDesc::BindFlag::DepthStencil)
+        bindFlags |= D3D11_BIND_DEPTH_STENCIL;
+    return bindFlags;
+
 }
 
 D3D11_FILTER GetTextureFilterMode(EFilterMode filterMode)

@@ -84,7 +84,7 @@ public:
         // move speed
         GUI::SliderFloat("move speed", &moveSpeed, 0.0f, 1000.0f);
         GUI::SliderFloat("rotate speed", &rotateSpeed, 0.0f, 10.0f);
-        GUI::SliderFloat("far plane", &farPlane, 1000.0f, 5000.0f);
+        GUI::SliderFloat("far plane", &farPlane, 100.0f, 5000.0f);
         GUI::End();
     }
 

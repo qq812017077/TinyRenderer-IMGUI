@@ -34,8 +34,8 @@ namespace TinyEngine
             inline Plane& bottom()  { return planes[2]; }
             inline Plane& top()  { return planes[3]; }
 
-            Plane& Near() { return planes[4]; }
-            Plane& Far() { return planes[5]; }
+            inline Plane& Near() { return planes[4]; }
+            inline Plane& Far() { return planes[5]; }
 
             Bounds GetBounds() const { return bounds; }
             

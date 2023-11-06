@@ -24,7 +24,19 @@ float3 get_directional_light(VS_OUTPUT ps_in, DirectionalLight dirLight, float3 
   float3 specular = light_color * pow(saturate(dot(vReflect, vView)), 10);
 
   float filterSize = 1.0 / float(SAMPLE_SIZE); //SAMPLE_SIZE should be size of Shadow Map,so it equals to  '1 / textureSize(shadowMap, 0)'
-  float visibility = DIR_PCF(ps_in.lightPos / ps_in.lightPos.w, filterSize,  0.005);
+
+  DirLightShadowConfig dir_shadow_config;
+  int index = 3;
+	if(ps_in.pos.z < g_farPlane.x) index = 0;
+	else if(ps_in.pos.z < g_farPlane.y) index = 1;
+	else if(ps_in.pos.z < g_farPlane.z) index = 2;
+
+  dir_shadow_config.index = 0;
+  float4 lightpos = mul(float4(ps_in.worldPos, 1.0), g_DirLightViewProjs[index]);
+  dir_shadow_config.shadowCoord = lightpos * float4(0.5f, -0.5f, 1.0f, 1.0f) + float4(0.5f, 0.5f, 0.0f, 0.0f);
+  dir_shadow_config.filterSize = filterSize * 5;
+  dir_shadow_config.bias = 0.005;
+  float visibility = DIR_PCF(dir_shadow_config);
   // float visibility = useShadowMap(ps_in.lightPos / ps_in.lightPos.w, 0.005);
   // float visibility = PCSS(ps_in.lightPos / ps_in.lightPos.w, filterSize,  0.005);
   return (diffuse + specular) * visibility;

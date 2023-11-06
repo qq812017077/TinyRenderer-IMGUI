@@ -49,6 +49,12 @@ void Camera::SetFar(float farPlane)
     updateFrusutmMesh();
 }
 
+void Camera::SetOrthSize(float orthSize)
+{
+    this->orthSize = orthSize;
+    updateFrusutmMesh();
+}
+
 Mesh * Camera::GetFrustumMesh()
 {
     return &frustumMesh;
@@ -78,9 +84,6 @@ Matrix4x4 Camera::GetViewMatrix()
 
 Matrix4x4 Camera::GetProjectionMatrix()
 {
-    orthSize = 100.0f;
-    auto heightSize = orthSize;
-    auto widthSize = orthSize * aspect;
     auto projection = Matrix4x4::Perspective(fov, aspect, nearPlane, farPlane);
     return projection;
 }
@@ -98,5 +101,12 @@ void Camera::LookAt(Vector3 target)
 
 void Camera::updateFrusutmMesh()
 {
-    frustumMesh = Primitive::CreateCameraFrustumMesh(fov, aspect, nearPlane, farPlane);
+    if(orth)
+    {
+        frustumMesh = Primitive::CreateCameraOrthFrustumMesh(orthSize, aspect, nearPlane, farPlane);
+        return;
+    }else
+    {
+        frustumMesh = Primitive::CreateCameraFrustumMesh(fov, aspect, nearPlane, farPlane);
+    }
 }

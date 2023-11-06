@@ -70,7 +70,7 @@ public:
     void SetMinMax(Vector3 min, Vector3 max) { m_Extents = (max - min) * 0.5f; m_Center = min + m_Extents; }
 
     Bounds Transform(Matrix4x4 transform);
-    void GetVertices(Vector3* vertices);
+    void GetCorners(Vector3* vertices);
     static Bounds Union(const Bounds& a, const Bounds& b);
     // static bool IntersectRayAABB(Ray ray, Bounds bounds, float &dist);
 private:

@@ -139,14 +139,16 @@ Vector3 Bounds::ClosestPoint(Vector3 point)
 
 Bounds Bounds::Transform(Matrix4x4 transform)
 {
-    const Vector3 g_BoxOffset[8] = {Vector3(-1.0f, -1.0f, 1.0f),
+    const Vector3 g_BoxOffset[8] = {    Vector3(-1.0f, -1.0f, -1.0f),
+                                        Vector3(-1.0f, -1.0f, 1.0f),
+                                        Vector3(-1.0f, 1.0f, 1.0f),
+                                        Vector3(-1.0f, 1.0f, -1.0f),
+
                                         Vector3(1.0f, -1.0f, 1.0f),
                                         Vector3(1.0f, 1.0f, 1.0f),
-                                        Vector3(-1.0f, 1.0f, 1.0f),
-                                        Vector3(-1.0f, -1.0f, -1.0f),
                                         Vector3(1.0f, -1.0f, -1.0f),
                                         Vector3(1.0f, 1.0f, -1.0f),
-                                        Vector3(-1.0f, 1.0f, -1.0f)};
+                                        };
 
     size_t const CORNER_COUNT = 8;
 
@@ -171,7 +173,7 @@ Bounds Bounds::Transform(Matrix4x4 transform)
     return out;
 }
 
-void Bounds::GetVertices(Vector3* vertices)
+void Bounds::GetCorners(Vector3* vertices)
 {
     auto min = GetMin();
     auto max = GetMax();

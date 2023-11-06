@@ -20,6 +20,9 @@ namespace TinyEngine
     /// @brief initialize environments
     void Engine::Initialize()
     {
+        RuntimeGlobalContextInitInfo init_info = {m_graphics};
+        g_runtime_global_context.initialize(init_info);
+        
         // 1. initialize config
 
         // 2. initialize assetManager

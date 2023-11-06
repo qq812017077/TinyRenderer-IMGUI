@@ -17,5 +17,6 @@ public:
     static Mesh CreateQuadMesh();
     static Mesh CreateCameraWireframeMesh();
     static Mesh CreateCameraFrustumMesh(float fov,float aspect,float nearPlane,float farPlane);
+    static Mesh CreateCameraOrthFrustumMesh(float orthSize,float aspect,float nearPlane,float farPlane);
     static Mesh CreateCubeMesh(float scale = 1.0f);
 };

@@ -7,6 +7,13 @@ NOTE: 需要首先单独构建assimp，然后构建tinyrenderer，否则无法�
 # 进度情况
 
 &nbsp;
+2023-11-6  
+使用了[PSSM](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html---PSSM)的方法实现了CSM：
+<div align=center><img src="images/20231106_NOCSM.png"/></div>
+<div align=center><img src="images/20231106_CSM.png"/></div>
+
+
+&nbsp;
 2023-11-3  
 添加了对IBL的支持，IrradianceMap和PrefilterMap, BRDFLUT的计算使用了动态计算的方式，运行时会首先依据加载的SkyBox计算效果。
 <div align=center><img src="images/20231103_PBR.png"/></div>

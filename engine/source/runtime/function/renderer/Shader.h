@@ -47,7 +47,7 @@ public:
     // virtual std::shared_ptr<ICBufferVariable> GetConstantBufferVariable(const char * varName) = 0;
     virtual bool SetGlobalVariable(const char * varName, void * data, unsigned int bytesize) = 0;
     virtual bool SetGlobalMatrix(const char * varName, Matrix4x4& matrix) = 0;
-    virtual bool SetGlobalVector(const char * varName, Vector3& vec) = 0;
-    virtual bool SetVector(const char * varName, Vector4& vec) = 0;
+    virtual bool SetGlobalVector3(const char * varName, Vector3& vec) = 0;
+    virtual bool SetGlobalVector4(const char * varName, Vector4& vec) = 0;
     virtual bool SetGlobalUINT(const char * varName, size_t uintVal) = 0;
 };

@@ -10,7 +10,7 @@ const Vector3 Vector3::up = Vector3(0.0f, 1.0f, 0.0f);
 const Vector3 Vector3::right = Vector3(1.0f, 0.0f, 0.0f);
 const Vector3 Vector3::forward = Vector3(0.0f, 0.0f, 1.0f);
 
-const Vector3  Vector3::min = Vector3(FLT_MIN, FLT_MIN, FLT_MIN);
+const Vector3  Vector3::min = Vector3(-INFINITY, -INFINITY, -INFINITY);
 const Vector3  Vector3::max = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 
 /****************************************************************************************/
@@ -234,6 +234,10 @@ Vector3 Vector3::Min(const Vector3& v1, const Vector3& v2)
 /****************************************************************************************/
 //Vector4.cpp
 /****************************************************************************************/
+
+
+const Vector4 Vector4::zero = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+const Vector4 Vector4::one = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 //复制构造函数，必须为常量引用参数，否则编译不通过
 Vector4::Vector4(const Vector4 &v):x(v.x), y(v.y), z(v.z), w(v.w)
 {

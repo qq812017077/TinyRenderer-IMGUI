@@ -35,7 +35,7 @@ void Renderer::OnPreUpdate()
     if(IsVisible())
     {
         // RenderQueueManager::Get().AddMaterial(pMaterial.get());
-        RenderQueueManager::Get().AddRenderer(this);
+        // RenderQueueManager::Get().AddRenderer(this);
         TinyEngine::SceneManager::Get().AddRenderer(this);
 
         Vector3 worldCenter = pGameObject->transform().GetWorldMatrix() * Vector4(mesh.bounds.GetCenter(), 1.0f);

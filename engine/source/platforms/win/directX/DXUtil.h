@@ -14,9 +14,8 @@
 #include "ShaderDesc.h"
 #include "TextureFormat.h"
 #include "SampleMode.h"
+#include "Texture.h"
 
-
-class Texture;
 
 // ------------------------------
 // Shader函数
@@ -60,6 +59,7 @@ UINT GetDataStride(DXGI_FORMAT format);
 // Texture函数
 // ------------------------------
 DXGI_FORMAT GetTextureFormat(ETextureFormat textureFormat, bool islinear=false);
+UINT GetTextureBindFlag(TextureResDesc::BindFlag bindflag);
 D3D11_FILTER GetTextureFilterMode(EFilterMode filterMode);
 D3D11_TEXTURE_ADDRESS_MODE GetTextureWrapMode(EWrapMode wrapMode);
 

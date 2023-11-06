@@ -5,6 +5,7 @@
 #include "object/GameObject.h"
 #include "scene/SceneManager.h"
 #include "Material.h"
+#include "global/RuntimeGlobalContext.h"
 namespace TinyEngine
 {
     
@@ -278,8 +279,12 @@ namespace TinyEngine
         ImGui::End();
 
         // render button
-        if (ImGui::Begin("Render Utils"))
+        if (ImGui::Begin("Render Test"))
         {
+            // add toggle button
+            ImGui::Checkbox("Use CSM ", &g_runtime_global_context.m_shadow_config.m_directional_shadow_config.use_csm);
+            ImGui::DragFloat("CSM Split Lambda", &g_runtime_global_context.m_shadow_config.m_directional_shadow_config.csm_split_lambda, 0.01f, 0.0f, 1.0f);
+
             // get selected gameobject
             auto go = g_editor_global_context.m_scene_manager->getSelectedGameObject();
             if(go)

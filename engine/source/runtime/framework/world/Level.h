@@ -43,5 +43,6 @@ namespace TinyEngine
         void LoadDefault();
         void LoadSponzaScene();
         void LoadTestSphere();
+        void ShadowTest();
     };
 } // namespace Pilot

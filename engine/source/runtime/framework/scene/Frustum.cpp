@@ -49,14 +49,14 @@ namespace TinyEngine
         normal.y = VP[2][1];
         normal.z = VP[2][2];
         d =  VP[2][3];
-        planes[4] = Plane(normal, d);
+        Near() = Plane(normal, d);
 
         // far
         normal.x = VP[3][0] - VP[2][0];
         normal.y = VP[3][1] - VP[2][1];
         normal.z = VP[3][2] - VP[2][2];
         d = VP[3][3] - VP[2][3];
-        planes[5] = Plane(normal, d);
+        Far() = Plane(normal, d);
 
         // get eight corners of the frustum from view projection matrix
         Vector3 corners_ndc[8] = {
@@ -117,7 +117,7 @@ namespace TinyEngine
     static Vector3 corners[8];
     Intersection Frustum::ContainBounds(Bounds bounds) const
     {
-        bounds.GetVertices(corners);
+        bounds.GetCorners(corners);
         float dist;
         int inCount{};
         for(int i = 0; i < 6; ++i) {
@@ -142,7 +142,7 @@ namespace TinyEngine
     
     bool Frustum::IntersectAABB(Bounds bounds) const
     {
-        bounds.GetVertices(corners);
+        bounds.GetCorners(corners);
         float dist;
         for(int i = 0; i < 6; ++i) {
             int out{0};

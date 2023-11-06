@@ -145,77 +145,31 @@ namespace TinyEngine
         srvDesc.TextureCube.MipLevels = texDesc.MipLevels;
         srvDesc.TextureCube.MostDetailedMip = 0;
 
-        if(texDesc.MipLevels != 1) texDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
+
         GFX_THROW_INFO(pGfx->GetDevice()->CreateTexture2D(&texDesc, nullptr, &pTexture));
         GFX_THROW_INFO(pGfx->GetDevice()->CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
-
-        for(unsigned int mipmapLevel = 0; mipmapLevel < texDesc.MipLevels; mipmapLevel++)
+        
+        for(unsigned int face = 0 ; face < 6; face++)
         {
-            std::vector<std::unique_ptr<DirectXRenderTarget>> faceBuffers;
-            for(unsigned int face = 0 ; face < 6; face++)
-            {
-                faceBuffers.push_back(std::make_unique<DirectXRenderTarget>(pGfx, pTexture.Get(), face, mipmapLevel));
-            }
-            renderBuffers.push_back(std::move(faceBuffers));
+            renderBuffers.push_back(std::make_unique<DirectXRenderTarget>(pGfx, pTexture.Get(), face));
         }
-        // for(unsigned int face = 0 ; face < 6; face++)
-        // {
-        //     renderBuffers.push_back(std::make_unique<DirectXRenderTarget>(pGfx, pTexture.Get(), face));
-        // }
     }
     
-    // CubeRenderTexture::CubeRenderTexture(DirectXGraphics* pGfx, unsigned int texSize, int mipmapLevels, DXGI_FORMAT format): BufferResource(pGfx, texSize, texSize)
-    // {
-    //     INFOMAN(*pGfx);
-
-    //     D3D11_TEXTURE2D_DESC texDesc = {};
-    //     texDesc.Width = texSize;
-    //     texDesc.Height = texSize;
-    //     texDesc.MipLevels = mipmapLevels;                                           // no mip mapping
-    //     texDesc.ArraySize = 6;
-    //     texDesc.Format = DXGI_FORMAT_R32_FLOAT;
-    //     texDesc.SampleDesc.Count = 1;
-    //     texDesc.SampleDesc.Quality = 0;
-    //     texDesc.Usage = D3D11_USAGE_DEFAULT;
-    //     texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-    //     texDesc.CPUAccessFlags = 0;
-    //     texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
-
-    //     //create the texture resource
-    //     wrl::ComPtr<ID3D11Texture2D> pTexture;
-    //     GFX_THROW_INFO(pGfx->GetDevice()->CreateTexture2D(&texDesc, nullptr, &pTexture));
-
-    //     // create the resource view on the texture
-    //     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    //     srvDesc.Format = texDesc.Format;
-    //     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-    //     srvDesc.TextureCube.MipLevels = texDesc.MipLevels;
-    //     srvDesc.TextureCube.MostDetailedMip = 0;
-    //     GFX_THROW_INFO(pGfx->GetDevice()->CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
-
-    //     for(unsigned int face = 0 ; face < 6; face++)
-    //     {
-    //         renderBuffers.push_back(std::make_unique<DirectXRenderTarget>(pGfx, pTexture.Get(), face));
-    //     }
-    // }
 
     void CubeRenderTexture::BindAsTexture(DirectXGraphics* pGfx, UINT slot)
     {
         auto dxGfx = reinterpret_cast<DirectXGraphics*>(pGfx);
         dxGfx->BindTexture(slot, pTextureView, Graphics::EBindType::ToPS);
     }
-    DirectXRenderTarget * CubeRenderTexture::GetFaceBuffer(unsigned int face, int mipmapLevel)
+    DirectXRenderTarget * CubeRenderTexture::GetFaceBuffer(unsigned int face)
     { 
-        return renderBuffers[mipmapLevel][face].get(); 
+        return renderBuffers[face].get(); 
     }
 
     void CubeRenderTexture::Clear(Graphics* pGfx)
     {
-        for(int i = 0, size = renderBuffers.size(); i < size; i++)
-        {
-            for(int j = 0; j < 6; j++)
-                renderBuffers[i][j]->Clear(pGfx);
-        }
+        for(int j = 0; j < 6; j++)
+            renderBuffers[j]->Clear(pGfx);
     }
     
     std::shared_ptr<CubeRenderTexture> CubeRenderTexture::Create(Graphics* pGfx, TinyEngine::Graph::ResourceDesc desc)

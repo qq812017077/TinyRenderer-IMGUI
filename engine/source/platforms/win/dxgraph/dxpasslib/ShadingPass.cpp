@@ -12,7 +12,7 @@ namespace TinyEngine::Graph
 {
     ShadingPass::ShadingPass(std::string name) : RasterPass(name)
     {
-        RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DirectXDepthStencil>>("shadowmap", shadowMapHandle));
+        RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DitectXDepthArray>>("shadowmap", shadowMapArrayHandle));
         RegisterSink(std::make_unique<SinkAttachment<TinyEngine::CubeRenderTexture>>("shadowcubemap", shadowCubeMapHandle));
     }
     
@@ -27,7 +27,7 @@ namespace TinyEngine::Graph
 
     void ShadingPass::internalExecute(DirectXGraphics *pGfx, DXDefaultRenderGraph& graph)
     {
-        auto * shadowMap = graph.GetBufferResource(shadowMapHandle);
+        auto * shadowMapArray = graph.GetBufferResource(shadowMapArrayHandle);
         auto * shadowCubeMap = graph.GetBufferResource(shadowCubeMapHandle);
         
         // bind irradiance map and specular map for pbr
@@ -46,13 +46,29 @@ namespace TinyEngine::Graph
         helper.SetGlobalMatrix("g_Proj", scene->m_main_camera->GetProjectionMatrix());
 
         helper.SetGlobalMatrix("g_ViewProj", scene->m_main_camera->GetProjectionMatrix() * scene->m_main_camera->GetViewMatrix());
-        helper.SetGlobalVector("g_EyePos", scene->m_main_camera->pTransform->GetPosition());
+        helper.SetGlobalVector3("g_EyePos", scene->m_main_camera->pTransform->GetPosition());
 
         // for directional light
-        helper.SetGlobalVariable("g_DirLight", &scene->m_directional_light.m_buffer, sizeof(TinyEngine::DirectionalLight::DirectionalLightBuffer));
-        helper.SetGlobalMatrix("g_LightViewProj", scene->m_directional_light.m_lightViewProj);
-        shadowMap->BindAsTexture(pGfx, HLSLShaderHelper::ShadowMapSlot);
-
+        if(scene->m_directional_light.exist)
+        {
+            shadowMapArray->BindAsTexture(pGfx, HLSLShaderHelper::ShadowMapSlot);
+            helper.SetGlobalVariable("g_DirLight", &scene->m_directional_light.m_buffer, sizeof(TinyEngine::DirectionalLight::DirectionalLightBuffer));
+            if(scene->m_directional_light.use_csm)
+            {
+                unsigned int numSplits = scene->m_directional_light.m_csm.m_split_view_proj.size();
+                helper.SetGlobalVariable("g_DirLightViewProjs", scene->m_directional_light.m_csm.m_split_view_proj.data(),numSplits * sizeof(Matrix4x4));
+                helper.SetGlobalVector4("g_farPlane", scene->m_directional_light.m_csm.m_far_planes);
+            }
+            else
+            {
+                // here we only set first matrix
+                helper.SetGlobalVariable("g_DirLightViewProjs", &scene->m_directional_light.m_nsm.m_view_proj, sizeof(Matrix4x4));
+                auto one = Vector4::one;
+                helper.SetGlobalVector4("g_farPlane", one);
+            }
+        }
+        
+        
         // for point light
         if(scene->m_point_lights.size() > 0)
         {
@@ -60,7 +76,7 @@ namespace TinyEngine::Graph
         }
 
         shadowCubeMap->BindAsTexture(pGfx, HLSLShaderHelper::ShadowCubeMapSlot);
-        pGfx->BindSampler(0, shadowMap->GetSamplerState(), Graphics::EBindType::ToPS);
+        pGfx->BindSampler(0, shadowMapArray->GetSamplerState(), Graphics::EBindType::ToPS);
         
         pGfx->UpdateCBuffer(graph.GetFrameConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerFrameCBufSlot));
         pGfx->UpdateCBuffer(graph.GetLightingConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));

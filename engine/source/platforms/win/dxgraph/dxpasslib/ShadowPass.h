@@ -23,8 +23,8 @@ namespace TinyEngine::Graph
         ShadowPass(std::string name) : DXRenderPass(name)
         {
             // RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DirectXRenderTarget>>("renderTarget", renderTargetHandle));
-            RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DirectXDepthStencil>>("shadowmap", shadowMapHandle));
-            RegisterSource(std::make_unique<SourceAttachment<TinyEngine::DirectXDepthStencil>>("shadowmap", shadowMapHandle));
+            RegisterSink(std::make_unique<SinkAttachment<TinyEngine::DitectXDepthArray>>("shadowmap", shadowMapArrayHandle));
+            RegisterSource(std::make_unique<SourceAttachment<TinyEngine::DitectXDepthArray>>("shadowmap", shadowMapArrayHandle));
             RegisterSink(std::make_unique<SinkAttachment<TinyEngine::CubeRenderTexture>>("shadowcubemap", shadowCubeMapHandle));
             RegisterSource(std::make_unique<SourceAttachment<TinyEngine::CubeRenderTexture>>("shadowcubemap", shadowCubeMapHandle));
 
@@ -50,10 +50,8 @@ namespace TinyEngine::Graph
 
         void internalExecute(DirectXGraphics* pGfx, DXDefaultRenderGraph& graph) override
         {
-            auto * shadowMap = graph.GetBufferResource(shadowMapHandle);
+            auto * shadowMapArray = graph.GetBufferResource(shadowMapArrayHandle);
             auto * shadowCubeMap = graph.GetBufferResource(shadowCubeMapHandle);
-            pGfx->BindRenderTarget(nullptr, shadowMap);
-            
             // for directional light, we need bind light transform, view, proj matrix
             auto scene = pScene.get();
             auto & helper = HLSLShaderHelper::Get();
@@ -62,11 +60,28 @@ namespace TinyEngine::Graph
             if(scene->m_directional_light.exist)
             {
                 helper.SetGlobalVariable("g_DirLight", &scene->m_directional_light.m_buffer, sizeof(TinyEngine::DirectionalLight::DirectionalLightBuffer));
-                helper.SetGlobalMatrix("g_LightViewProj", scene->m_directional_light.m_lightViewProj);
-            
-                pGfx->UpdateCBuffer(graph.GetLightingConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
-                // draw all objects that cast shadow
-                pGfx->ApplyPassToRenderList(dir_shadowPass, scene->m_directional_light.visibleRenderers); // load shader and render state
+                if(scene->m_directional_light.use_csm)
+                {
+                    int num_splits = scene->m_directional_light.m_csm.m_split_num;
+                    if(num_splits != 4) THROW_ENGINE_EXCEPTION("only support 4 splits now");
+
+                    for(int i = 0; i < num_splits; i++)
+                    {
+                        auto targetBuffer = shadowMapArray->GetIndexBuffer(i);
+                        pGfx->BindRenderTarget(nullptr, targetBuffer);
+                        helper.SetGlobalMatrix("g_LightViewProj", scene->m_directional_light.m_csm.m_split_view_proj[i]);
+                        pGfx->UpdateCBuffer(graph.GetLightingConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
+                        // draw all objects that cast shadow
+                        pGfx->ApplyPassToRenderList(dir_shadowPass, scene->m_directional_light.m_csm.m_split_visible_renderers[i]); // load shader and render state
+                    }
+                }else{
+                    auto targetBuffer = shadowMapArray->GetIndexBuffer(0);
+                    pGfx->BindRenderTarget(nullptr, targetBuffer);
+                    helper.SetGlobalMatrix("g_LightViewProj", scene->m_directional_light.m_nsm.m_view_proj);
+                    pGfx->UpdateCBuffer(graph.GetLightingConstantBuffer(), helper.GetCommonCBufferBySlot(HLSLShaderHelper::PerLightingCBufSlot));
+                    // draw all objects that cast shadow
+                    pGfx->ApplyPassToRenderList(dir_shadowPass, scene->m_directional_light.m_nsm.visibleRenderers); // load shader and render state
+                }
             }
             
             
@@ -91,7 +106,7 @@ namespace TinyEngine::Graph
         }
 
     private:
-        ResourceHandle<TinyEngine::DirectXDepthStencil> shadowMapHandle;
+        ResourceHandle<TinyEngine::DitectXDepthArray> shadowMapArrayHandle;
         ResourceHandle<TinyEngine::CubeRenderTexture> shadowCubeMapHandle;
         std::shared_ptr<TinyEngine::DirectXDepthStencil> depthStencil{nullptr};
         ShaderPass dir_shadowPass;

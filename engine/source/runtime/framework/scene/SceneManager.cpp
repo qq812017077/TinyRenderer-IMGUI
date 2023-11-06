@@ -7,6 +7,7 @@
 #include "FrameBuffer.h"
 #include "effect/Pass.h"
 #include "Texture.h"
+#include "global/RuntimeGlobalContext.h"
 
 namespace TinyEngine
 {
@@ -21,11 +22,13 @@ namespace TinyEngine
     void SceneManager::Initialize()
     {
         if (m_scene && m_scene->m_loaded == false) m_scene->Load();
-
+        
+        m_scene->m_directional_light.m_csm.m_split_num = g_runtime_global_context.m_shadow_config.m_directional_shadow_config.csm_split_num;
+        
         m_map_resource = std::make_shared<SceneResource>();
         m_map_resource->m_skybox_cubemap = std::make_shared<CubeTexture>();
         for(int i = 0 ; i < 6; i++)
-            m_map_resource->m_skybox_cubemap->textures[i] = Texture::LoadFrom("res/images/skybox/1/" + std::to_string(i) + ".png");
+            m_map_resource->m_skybox_cubemap->textures[i] = Texture::LoadFrom(g_runtime_global_context.m_skybox_cubemap_path[i]);
     }
 
     int SceneManager::Tick(FrameBuffer * pFrameBuffer)
@@ -71,6 +74,8 @@ namespace TinyEngine
         m_scene->m_directional_light.exist = Light::GetDirectionalLight() != nullptr;
         if(m_scene->m_directional_light.exist)
         {
+            m_scene->m_directional_light.use_csm = g_runtime_global_context.m_shadow_config.m_directional_shadow_config.use_csm;
+            m_scene->m_directional_light.m_csm.m_split_lambda = g_runtime_global_context.m_shadow_config.m_directional_shadow_config.csm_split_lambda;
             m_scene->m_directional_light.m_buffer.m_direction = Light::GetDirectionalLight()->pTransform->forward();
             m_scene->m_directional_light.m_buffer.m_color = Light::GetDirectionalLight()->GetColor();
         }
@@ -102,7 +107,10 @@ namespace TinyEngine
             for(auto & effect : pair.second)
             {
                 if(effect->CastShadow()) 
+                {
                     shadowCastDescs.emplace_back(ShadowCastDesc{rendererQueue[effect]});
+                    m_scene->shadowCastRenderers.insert(m_scene->shadowCastRenderers.end(), rendererQueue[effect].begin(), rendererQueue[effect].end());
+                }
                 
                 effectDescs.emplace_back(EffectDesc{effect,rendererQueue[effect]});
             }

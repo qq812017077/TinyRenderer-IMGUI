@@ -14,7 +14,7 @@ float4 main(VS_OUTPUT ps_in) : SV_Target
 	float4 texColor = _MainTex.Sample(sampler_MainTex, ps_in.tex);
     texColor.rgb = texColor.rgb * albedo.rgb;
     
-    float3 ambient = texColor.rgb * get_ambient(ps_in, texColor.rgb);
+    float3 ambient = texColor.rgb * get_ambient(ps_in, texColor.rgb * 0.3f);
     // directional light
     float3 dir_color = get_directional_light(ps_in, g_DirLight, texColor.rgb);
     // point light

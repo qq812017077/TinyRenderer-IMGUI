@@ -333,33 +333,31 @@ GameObject* Level::addGameObject(GameObject* pGo)
         camGO->pTransform->SetPosition({ -4.0f, 00.0f, -5.0f });
         camGO->pTransform->SetEulerAngle({ 00.0f, 35.0f, 0.0f });
 
-        // auto pDirLightGO = Light::CreateDirectionalLight("dirLight");
-        // auto pDirLight = pDirLightGO->GetComponent<Light>();
-        // pDirLight->pTransform->SetPosition({ 0.0f, 0.0f, 0.0f });
-        // pDirLight->SetIntensity(0.2f);
+        auto pDirLightGO = Light::CreateDirectionalLight("dirLight");
+        auto pDirLight = pDirLightGO->GetComponent<Light>();
+        pDirLight->pTransform->SetPosition({ 0.0f, 0.0f, 0.0f });
+        pDirLight->SetIntensity(0.8f);
 
         // auto cam2 = CreateGameObject("Cam2")->AddComponent<Camera>();
         // cam2->GetGameObject()->AddComponent<FrustumTest>();
-        // cam2->pTransform->SetPosition({ 0.0f, 0.0f, 0.0f });
-        // cam2->SetNear(0.1f);
-        // cam2->SetFar(10.f);
-        auto pPointLightGO = Light::CreatePointLight("pointLight");
-        auto pPointLight = pPointLightGO->GetComponent<Light>();
-        pPointLight->pTransform->SetPosition({ 0.0f, 0.0f, -3.0f });
-        pPointLight->SetIntensity(1.0f);
-        pPointLight->SetRange(20.f);
         
-        if(pPointLight)
-        {
-            auto pMat = Material::Create("Unlit", "Unlit-Material");
-            auto pWhiteLittleCube = Primitive::CreateCube("white littleCube");
-            pWhiteLittleCube->GetComponent<Renderer>()->SetMaterial(pMat);
-            pWhiteLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::White());
-            pWhiteLittleCube->transform().SetPosition({ 0.0f, 0.f, 0.0f });
-            pWhiteLittleCube->transform().SetScale({ 0.1f, 0.1f, 0.1f });
-            pWhiteLittleCube->transform().SetParent(pPointLightGO->transform());
-            pWhiteLittleCube->transform().SetLocalPosition({ 0.0f, 0.0f, 0.0f });
-        }
+        // auto pPointLightGO = Light::CreatePointLight("pointLight");
+        // auto pPointLight = pPointLightGO->GetComponent<Light>();
+        // pPointLight->pTransform->SetPosition({ 0.0f, 0.0f, -3.0f });
+        // pPointLight->SetIntensity(1.0f);
+        // pPointLight->SetRange(20.f);
+        
+        // if(pPointLight)
+        // {
+        //     auto pMat = Material::Create("Unlit", "Unlit-Material");
+        //     auto pWhiteLittleCube = Primitive::CreateCube("white littleCube");
+        //     pWhiteLittleCube->GetComponent<Renderer>()->SetMaterial(pMat);
+        //     pWhiteLittleCube->GetComponent<Renderer>()->GetMaterial()->SetColor("color", Color::White());
+        //     pWhiteLittleCube->transform().SetPosition({ 0.0f, 0.f, 0.0f });
+        //     pWhiteLittleCube->transform().SetScale({ 0.1f, 0.1f, 0.1f });
+        //     pWhiteLittleCube->transform().SetParent(pPointLightGO->transform());
+        //     pWhiteLittleCube->transform().SetLocalPosition({ 0.0f, 0.0f, 0.0f });
+        // }
 
         // auto cubeMapMat = Material::Create("Prefilter", "CubeMap-Material");
         // auto cubeMapTex = Texture::LoadHDRFrom("res/images/hdr/ibl_hdr_radiance.png");
@@ -368,12 +366,13 @@ GameObject* Level::addGameObject(GameObject* pGo)
         // cube->GetComponent<Renderer>()->SetMaterial(cubeMapMat);
         
         // Create 5 * 5 spheres
+        auto rootGO = CreateGameObject("root");
         auto pMat = Material::GetDefaultMaterialPtr();
         std::string name = "sphere";
         int count = 0;
         float metallic = 0.0f;
         float smoothness = 0.0f;
-        int size = 3;
+        int size = 2;
         int line = size * 2 + 1;
         float fsize = (float)size;
         for (int i = -size ; i <= size; i++)
@@ -383,6 +382,7 @@ GameObject* Level::addGameObject(GameObject* pGo)
             {
                 smoothness = ( j + size) / float(line);
                 auto sphere = addGameObject(Primitive::CreateSphere(name + std::to_string(count++), 20, 20));
+                sphere->transform().SetParent(rootGO->transform());
                 // auto sphere = addGameObject(Primitive::CreateCube(name + std::to_string(count++)));
                 sphere->transform().SetPosition({ i * 2.0f,  j * 2.0f, 0.0f });
                 sphere->transform().SetScale({ 0.5f, 0.5f, 0.5f });
@@ -391,6 +391,50 @@ GameObject* Level::addGameObject(GameObject* pGo)
                 pRenderer->GetMaterial()->SetColor("albedo", Color::White());
                 pRenderer->GetMaterial()->SetFloat("metallic", metallic);
                 pRenderer->GetMaterial()->SetFloat("smoothness", smoothness);
+            }
+        }
+    }
+
+    void Level::ShadowTest()
+    {
+        auto camGO = CreateGameObject("Cam");
+        auto m_main_camera = camGO->AddComponent<Camera>();
+        camGO->AddComponent<CamController>();
+
+        camGO->pTransform->SetPosition({ -70.0f, 7.0f, -70.0f });
+        camGO->pTransform->SetEulerAngle({ 30.0f, 40.0f, 0.0f });
+
+        auto pDirLightGO = Light::CreateDirectionalLight("dirLight");
+        auto pDirLight = pDirLightGO->GetComponent<Light>();
+        pDirLight->pTransform->SetPosition({ 0.0f, 0.0f, 0.0f });
+        pDirLight->SetIntensity(0.8f);
+
+        auto planeMat = Material::GetDefaultMaterialPtr();
+        planeMat->SetColor("albedo", Color::White());
+
+        //add plane
+        auto plane = addGameObject(Primitive::CreatePlane("plane"));
+        plane->transform().SetPosition({ 0.0f, -1.0f, 0.0f });
+        plane->transform().SetScale({ 10.0f, 1.0f, 10.0f });
+        plane->GetComponent<Renderer>()->SetSharedMaterial(planeMat);
+
+        //add cube
+        auto cubeMat = Material::GetDefaultMaterialPtr();
+        cubeMat = Material::CreateInstance(cubeMat);
+        cubeMat->SetColor("albedo", Color::LightGray());
+        auto rootGO = CreateGameObject("root");
+        int size = 3;
+        int line = size * 2 + 1;
+        float fsize = (float)size;
+        for (int i = -size ; i <= size; i++)
+        {
+            for(int j = -size; j <= size; j++)
+            {
+                auto cube = addGameObject(Primitive::CreateCube("cube"));
+                cube->transform().SetParent(rootGO->transform());
+                cube->transform().SetPosition({ i * 20.0f,  0.0, j * 20.0f });
+                auto pRenderer = cube->GetComponent<Renderer>();
+                pRenderer->SetSharedMaterial(cubeMat);
             }
         }
     }

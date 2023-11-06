@@ -11,6 +11,7 @@ namespace TinyEngine
 {
     class DirectXRenderTarget;
     class DirectXDepthStencil;
+    class DitectXDepthArray;
     class CubeRenderTexture;
 }
 namespace TinyEngine::Graph
@@ -33,7 +34,8 @@ namespace TinyEngine::Graph
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXRenderTarget> goIdRTHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> depthStencilHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> goIdDSHandle;
-        TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> shadowMapHandle;
+        // TinyEngine::Graph::ResourceHandle<TinyEngine::DirectXDepthStencil> shadowMapHandle;
+        TinyEngine::Graph::ResourceHandle<TinyEngine::DitectXDepthArray> shadowMapHandle;
         TinyEngine::Graph::ResourceHandle<TinyEngine::CubeRenderTexture> shadowCubeHandle;
 
         

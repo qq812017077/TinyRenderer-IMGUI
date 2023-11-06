@@ -81,14 +81,12 @@ namespace TinyEngine::Rendering
         GFX_THROW_INFO(pGfx->GetDevice()->CreateSamplerState(&samplerDesc, &pSampler));
     }
 
-    
-    void DirectXCubeTexture::BindAsTexture(DirectXGraphics* pGfx, UINT slot)
+    void DirectXCubeTexture::internalBindAsTexture(DirectXGraphics* pGfx, UINT slot)
     {
         if(pTextureView == nullptr) return;
         pGfx->GetContext()->PSSetShaderResources(slot, 1, pTextureView.GetAddressOf());
         pGfx->GetContext()->PSSetSamplers(slot, 1, pSampler.GetAddressOf());
     }
-
     
     void DirectXCubeTexture::BindCubeMap(std::shared_ptr<CubeTexture> pCubeTex)
     {
@@ -115,12 +113,13 @@ namespace TinyEngine::Rendering
         GFX_THROW_INFO(pGfx->GetDevice()->CreateSamplerState(&samplerDesc, &pSampler));
     }
 
-    void DirectXTexture::BindAsTexture(DirectXGraphics* pGfx, UINT slot)
+    void DirectXTexture::internalBindAsTexture(DirectXGraphics* pGfx, UINT slot)
     {
         if(pTextureView == nullptr) return;
         pGfx->GetContext()->PSSetShaderResources(slot, 1, pTextureView.GetAddressOf());
         pGfx->GetContext()->PSSetSamplers(slot, 1, pSampler.GetAddressOf());
     }
+
 
     void DirectXTexture::BindTexture(std::shared_ptr<Texture> pTexture)
     {
@@ -130,5 +129,4 @@ namespace TinyEngine::Rendering
         pTextureView = nullptr;
         pSampler = nullptr;
     }
-
 }

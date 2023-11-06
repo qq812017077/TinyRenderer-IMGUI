@@ -39,19 +39,16 @@ namespace TinyEngine
     class CubeRenderTexture : public BufferResource
     {
         public:
-
             CubeRenderTexture(DirectXGraphics* pGfx, TextureResDesc texDesc);
-
             void BindAsTexture(Graphics* pGfx, unsigned int slot) { BindAsTexture(reinterpret_cast<DirectXGraphics*>(pGfx), slot); }
-
             void Clear(Graphics* pGfx) override;
             
             void BindAsTexture(DirectXGraphics* pGfx, UINT slot);
-            DirectXRenderTarget * GetFaceBuffer(unsigned int face, int mipmapLevel = 0);
+            DirectXRenderTarget * GetFaceBuffer(unsigned int face);
             static std::shared_ptr<CubeRenderTexture> Create(Graphics* pGfx, TinyEngine::Graph::ResourceDesc desc);
             Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pTextureView{ nullptr };
         private:
-            std::vector<std::vector<std::unique_ptr<DirectXRenderTarget>>> renderBuffers;
+            std::vector<std::unique_ptr<DirectXRenderTarget>> renderBuffers;
     };
 
 }

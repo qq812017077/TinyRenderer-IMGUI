@@ -3,21 +3,29 @@
 
 #include "Math.hlsli"
 #include "Basic.hlsli"
-
+struct DirLightShadowConfig
+{
+  float   index;
+  float4  shadowCoord;
+  float   filterSize;
+  float   bias;
+};
 
 // Soft-Shadow 1
-float PCF_Filter(in float2 poissonDisk[PCF_NUM_SAMPLES], float4 shadowCoord, float filterSize, float bias)
+float PCF_Filter(in float2 poissonDisk[PCF_NUM_SAMPLES], DirLightShadowConfig dir_shadow_config)
 {
-  float current_depth = shadowCoord.z;
+  float current_depth = dir_shadow_config.shadowCoord.z;
   float visibility_sum = 0.0;
   
+  float3 shadowCoord = float3(dir_shadow_config.shadowCoord.xy, dir_shadow_config.index);
+
   [unroll]
   for( int x = -PCF_RANGE; x <= PCF_RANGE; x++)
   {
     [unroll]
     for( int y = -PCF_RANGE; y <= PCF_RANGE; y++)
     {
-      visibility_sum += _ShadowMap.SampleCmpLevelZero(sampler_ShadowMap, shadowCoord.xy, current_depth - bias, int2(x,y)).r;
+      visibility_sum += _ShadowMap.SampleCmpLevelZero(sampler_ShadowMap, shadowCoord , current_depth - dir_shadow_config.bias, int2(x,y)).r;
     }
   }
   int sample_num = (PCF_RANGE * 2 + 1) * (PCF_RANGE * 2 + 1);
@@ -49,22 +57,20 @@ float PCF_Filter(in float2 poissonDisk[PCF_NUM_SAMPLES], float4 shadowCoord, flo
 
 // Hard-Shadow
 float useShadowMap(float4 shadowCoord, float bias){
-  
-  if(shadowCoord.z > 1.0f) return 1.0;
-  // float depth = _ShadowMap.Sample(sampler_ShadowMap, shadowCoord.xy).r;
-  // return (depth + bias) > shadowCoord.z ? 1.0 : 0.0;
-
-  return _ShadowMap.SampleCmpLevelZero(sampler_ShadowMap, shadowCoord.xy, shadowCoord.z - bias);
+    if(shadowCoord.z > 1.0f) return 1.0;
+    // float depth = _ShadowMap.Sample(sampler_ShadowMap, shadowCoord.xy).r;
+    // return (depth + bias) > shadowCoord.z ? 1.0 : 0.0;
+    return _ShadowMap.SampleCmpLevelZero(sampler_ShadowMap, float3(shadowCoord.xy, 0.0), shadowCoord.z - bias);
   
 }
 
-float DIR_PCF(in float4 shadowCoord, float filterSize, float bias) 
+float DIR_PCF(DirLightShadowConfig dir_shadow_config) 
 {
-  if(shadowCoord.z > 1.0f || shadowCoord.z < 0.0f) return 1.0;
+  if(dir_shadow_config.shadowCoord.z > 1.0f || dir_shadow_config.shadowCoord.z < 0.0f) return 1.0;
   float2 poissonDisk[PCF_NUM_SAMPLES];
-  poissonDiskSamples(shadowCoord.xy, poissonDisk);
+  poissonDiskSamples(dir_shadow_config.shadowCoord.xy, poissonDisk);
   //uniformDiskSamples(shadowCoord.xy, poissonDisk);
-  return PCF_Filter(poissonDisk, shadowCoord, filterSize * 5, bias);
+  return PCF_Filter(poissonDisk, dir_shadow_config);
 }
 
 // Soft-Shadow 2

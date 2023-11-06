@@ -104,4 +104,7 @@ struct alignas(4) Vector4
     void normalize();
     Vector4 crossProduct(const Vector4 &v);
     void printVec4();
+
+    static const Vector4 zero;
+    static const Vector4 one;
 };

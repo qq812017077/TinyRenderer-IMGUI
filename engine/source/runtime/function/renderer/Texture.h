@@ -7,11 +7,25 @@
 #include "TextureFormat.h"
 #include "SampleMode.h"
 
+
 struct TextureResDesc
 {
+    enum BindFlag : int
+    {
+        ShaderResource  = 0x1,
+        RenderTarget    = 0x2,
+        DepthStencil    = 0x4,
+    };
+    friend BindFlag operator|(BindFlag a, BindFlag b)
+    {
+        return static_cast<BindFlag>(static_cast<int>(a) | static_cast<int>(b));
+    }
+
+    BindFlag bind{BindFlag::ShaderResource};
     uint32_t width;
     uint32_t height;
     uint32_t mipLevels{1};
+    uint32_t arraySize{1};
     ETextureFormat format{ETextureFormat::RGBA32};
     bool linear{false};
     EWrapMode wrapMode{EWrapMode::Repeat};

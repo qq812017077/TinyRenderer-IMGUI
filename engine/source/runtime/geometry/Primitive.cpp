@@ -447,6 +447,33 @@ Mesh Primitive::CreateCameraFrustumMesh(float fov,float aspect,float nearPlane,f
     return mesh; 
 }
 
+Mesh Primitive::CreateCameraOrthFrustumMesh(float orthSize,float aspect,float nearPlane,float farPlane)
+{
+    float halfHeight = orthSize * 0.5f;
+    float halfWidth = halfHeight * aspect;
+    std::vector<Float3> position = {
+        { halfWidth, halfHeight, nearPlane},
+        { -halfWidth, halfHeight, nearPlane},
+        { -halfWidth, -halfHeight, nearPlane},
+        { halfWidth, -halfHeight, nearPlane},
+        { halfWidth, halfHeight, farPlane},
+        { -halfWidth, halfHeight, farPlane},
+        { -halfWidth, -halfHeight, farPlane},
+        { halfWidth, -halfHeight, farPlane}
+    };
+
+    std::vector<INDICE_TYPE> indices = {
+        0,1, 1,2, 2,3, 3,0,
+        0,4, 1,5, 2,6, 3,7,
+        4,5, 5,6, 6,7, 7,4
+    };
+
+    Mesh mesh;
+    mesh.SetVertexPosition(position);
+    mesh.SetVertexIndices(indices);
+    return mesh;
+}
+
 Mesh Primitive::CreateCubeMesh(float scale)
 {
     const float side = 1.0f * scale;

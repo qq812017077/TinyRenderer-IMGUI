@@ -114,7 +114,7 @@ float3 get_ambient(VS_OUTPUT ps_in, float3 albedo)
     float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
     // float3 specular = float3(0.0, 0.0, 0.0);
     
-    float3 ambient    = kD * diffuse + specular;
+    float3 ambient = kD * diffuse + specular;
     return ambient;
 }
 
@@ -143,10 +143,23 @@ float3 get_directional_light(VS_OUTPUT ps_in, DirectionalLight dirLight, float3 
     kD *= 1.0 - metallic;
 
     float filterSize = 1.0 / float(SAMPLE_SIZE); //SAMPLE_SIZE should be size of Shadow Map,so it equals to  '1 / textureSize(shadowMap, 0)'
-    float visibility = DIR_PCF(ps_in.lightPos / ps_in.lightPos.w, filterSize,  0.005);
+
+    DirLightShadowConfig dir_shadow_config;
+    int index = 3;
+	// find the appropriate depth map to look up in
+	// based on the depth of this fragment
+	if(ps_in.pos.z < g_farPlane.x) index = 0;
+	else if(ps_in.pos.z < g_farPlane.y) index = 1;
+	else if(ps_in.pos.z < g_farPlane.z) index = 2;
+
+    dir_shadow_config.index = index;
+    float4 lightpos = mul(float4(ps_in.worldPos, 1.0), g_DirLightViewProjs[index]);
+    dir_shadow_config.shadowCoord = lightpos * float4(0.5f, -0.5f, 1.0f, 1.0f) + float4(0.5f, 0.5f, 0.0f, 0.0f);
+    dir_shadow_config.filterSize = filterSize * 5;
+    dir_shadow_config.bias = 0.005;
+    float visibility = DIR_PCF(dir_shadow_config);  // no need to divide by w, because in ortho projection, w is always 1.0
     // float visibility = useShadowMap(ps_in.lightPos / ps_in.lightPos.w, 0.005);
     // float visibility = PCSS(ps_in.lightPos / ps_in.lightPos.w, filterSize,  0.005);
-    
     
     return (kD * albedo.rgb / PI + specular) * dirLight.color.rgb * NdotL * visibility;
 }

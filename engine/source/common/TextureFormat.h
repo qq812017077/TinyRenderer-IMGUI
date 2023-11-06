@@ -48,4 +48,9 @@ enum class ETextureFormat
     RGBFloat = 20,
     RGBAFloat = 21, //     RGB color and alpha texture format, 32-bit floats per channel.
     
+
+    /**
+     * 
+     */
+    R32_TYPELESS = 41,
 };

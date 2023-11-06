@@ -17,7 +17,7 @@ namespace TinyEngine::Graph
         effectRTHandle = CreateResource<DirectXRenderTarget>("postRT", ResourceDesc::RenderTarget());
         backBufferHandle = CreateResource<DirectXRenderTarget>("backbuffer", ResourceDesc::SwapChain());
         depthStencilHandle = CreateResource<DirectXDepthStencil>("depthstencil", ResourceDesc::DepthStencil());
-        shadowMapHandle = CreateResource<DirectXDepthStencil>("shadowmap", ResourceDesc::ShadowMap());
+        shadowMapHandle = CreateResource<DitectXDepthArray>("shadowmap", ResourceDesc::ShadowMap());
         shadowCubeHandle = CreateResource<CubeRenderTexture>("shadowcubemap", ResourceDesc::ShadowCubeMap());
         goIdRTHandle = CreateResource<DirectXRenderTarget>("idRT", ResourceDesc::GOIDRT());
         goIdDSHandle = CreateResource<DirectXDepthStencil>("idDS", ResourceDesc::DepthStencil());

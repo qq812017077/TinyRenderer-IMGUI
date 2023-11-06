@@ -37,7 +37,7 @@ struct VS_OUTPUT
 	float4 pos : SV_Position;
 	float4 color : Color;
     float3 worldPos : POSITION;
-    float4 lightPos : POSITION1;
+    // float4 lightPos : POSITION1;
     float3 normal : NORMAL;
 	float2 tex : TEXCOORD;
 };
@@ -68,13 +68,16 @@ cbuffer PerDrawCBuf : register(b1)
 cbuffer LightingCBuf : register(b2) // 160 because of float4 alignment
 {
     DirectionalLight g_DirLight;    // 32
+    matrix g_DirLightViewProjs[4];     // 64
+    float4 g_farPlane;              // 16
+
     PointLight g_PointLight;        // 48
     SpotLight g_SpotLight;          // 64
     float3 g_EyePos;                // 16
-};                                  // 32 + 48 + 64 + 16 = 160
+};
 
-
-Texture2D _ShadowMap : register(t0);
+Texture2DArray _ShadowMap : register(t0);
+// Texture2D _ShadowMap : register(t0);
 SamplerComparisonState sampler_ShadowMap : register(s0);
 
 TextureCube _ShadowCubeMap : register(t3);

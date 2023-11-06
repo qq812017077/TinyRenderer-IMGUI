@@ -49,6 +49,7 @@ public:
     void OnGUI() override
     {
         GUI::Begin("Lights");
+        
         if(pLight)
         {
             GUI::Separator();
@@ -64,6 +65,7 @@ public:
             pLight->SetIntensity(intensity);
             pLight->pTransform->SetEulerAngle(eulerAngle);
         }
+
         if(pPointLight)
         {
             GUI::Separator();
